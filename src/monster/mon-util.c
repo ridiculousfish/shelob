@@ -24,6 +24,8 @@
 #include "monster/mon-util.h"
 #include "squelch.h"
 
+wchar_t summon_kin_type;
+
 /**
  * Returns the r_idx of the monster with the given name. If no monster has
  * the exact name given, returns the r_idx of the first monster having the

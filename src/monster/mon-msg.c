@@ -474,3 +474,6 @@ void flush_all_monster_messages(void)
 	size_mon_msg = 0;
 	size_mon_hist = 0;
 }
+
+monster_race_message *mon_msg;
+monster_message_history *mon_message_hist;

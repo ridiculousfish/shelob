@@ -136,7 +136,7 @@ typedef struct
 /**
  * Flags for menu appearance & behaviour
  */
-enum
+enum menu_type_flags_t
 {
 	/* Tags are associated with the view, not the element */
 	MN_REL_TAGS = 0x01,
@@ -156,7 +156,8 @@ enum
 
 	/* no select events to be triggered */
 	MN_NO_ACTION = 0x20
-} menu_type_flags;
+};
+extern enum menu_type_flags_t menu_type_flags;
 
 
 /* Base menu type */

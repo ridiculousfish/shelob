@@ -962,3 +962,4 @@ void menu_dynamic_free(menu_type *m)
 	mem_free(m);
 }
 
+enum menu_type_flags_t menu_type_flags;

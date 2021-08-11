@@ -2651,3 +2651,5 @@ bool panel_contains(unsigned int y, unsigned int x)
 	wid = SCREEN_WID;
 	return (y - Term->offset_y) < hgt && (x - Term->offset_x) < wid;
 }
+
+struct keypress keylog[KEYLOG_SIZE];

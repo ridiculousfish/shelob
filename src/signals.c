@@ -20,7 +20,7 @@
 #include "files.h"
 #include "savefile.h"
 
-#ifndef WINDOWS
+#if !defined(WINDOWS) && !defined(WASM)
 
 #include <signal.h>
 

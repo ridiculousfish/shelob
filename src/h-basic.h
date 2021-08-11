@@ -70,7 +70,7 @@
  * Basically, SET_UID should *only* be set for "Unix" machines.
  */
 #if !defined(MACH_O_CARBON) && !defined(WINDOWS) && \
-		!defined(GAMEBOY) && !defined(NDS)
+		!defined(GAMEBOY) && !defined(NDS) && !defined(WASM)
 # define SET_UID
 
 /* Without autoconf, turn on some things */
