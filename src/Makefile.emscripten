@@ -11,7 +11,7 @@ WARNINGS = -W -Wall -Wextra -Wold-style-definition -Wdeclaration-after-statement
 		  -Winit-self -Wmissing-include-dirs -Wundef -Wmissing-format-attribute -Wnested-externs \
 		  -Wunreachable-code -Wno-unused-parameter -Wno-missing-field-initializers \
 		  -Wno-incompatible-pointer-types-discards-qualifiers
-CFLAGS = -O2 -g $(WARNINGS) -DWASM=1
+CFLAGS = -Os -g $(WARNINGS) -DWASM=1 -s ASYNCIFY
 
 # Add additional search directives here
 # Example: -I/usr/X11R6/include -I/usr/include/ncurses
@@ -81,11 +81,14 @@ $(ASSET_DIR): $(OUTPUT_DIR)
 	@-cp ../lib/xtra/graf/*.png $@/lib/xtra/graf
 	@cp ../changes.txt ../readme.txt $@
 
-built/angband%html built/angband%js built/angband%wasm built/angband%data: $(OBJS) $(OUTPUT_DIR) $(ASSET_DIR)
+built/angband%js built/angband%wasm built/angband%data: $(OBJS) $(OUTPUT_DIR) $(ASSET_DIR)
 	@printf "%10s %-20s\n" LINK $@
 	# The @ here makes the assets directory the root of the VFS.
-	$(CC) $(CFLAGS) $(LDFLAGS) -o built/angband.html --preload-file built/assets@/ $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o built/angband.js --preload-file built/assets@/ $(OBJS) $(LIBS)
 
+.PHONY: $(OUTPUT_DIR)/angband.html
+$(OUTPUT_DIR)/angband.html: angband.html | $(OUTPUT_DIR)
+	cp $< $@
 
 docs: doc/index.html
 
