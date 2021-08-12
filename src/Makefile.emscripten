@@ -2,41 +2,22 @@
 # emscripten makefile for Angband.
 #
 
-# Support curses console mode (main-gcu.c)
-# If this fails, try the alternate below
-SYS_gcu = -DUSE_GCU -DUSE_NCURSES -lncursesw
-#SYS_gcu = -DUSE_GCU -lcurses -ltermcap
-
-# Support the GTK2 graphical tookit (main-gtk.c)
-#SYS_gtk = -rdynamic -export-dynamic -DUSE_GTK $(shell pkg-config libglade-2.0 gtk+-2.0 --libs --cflags)
-
-# Support SDL frontend
-SYS_sdl = -DUSE_SDL $(shell sdl-config --cflags) $(shell sdl-config --libs) -lSDL_ttf -lSDL_image
-
-# Stats pseudo-frontend
-# SYS_stats = -DUSE_STATS
-
-## Support SDL_mixer for sound
-#SOUND_sdl = -DSOUND_SDL $(shell sdl-config --cflags) $(shell sdl-config --libs) -lSDL_mixer
-
-
+EM_INCLUDE_PATH = ${EMSDK}/upstream/emscripten/system/include/
 
 # Basic compiler stuff
-CC = gcc
-WARNINGS = -W -Wall -Wextra -Wold-style-definition -Wdeclaration-after-statement -Wmissing-declarations -Wredundant-decls -Wpointer-arith -Wcast-align -Wwrite-strings -Winline -Wformat-security -Winit-self -Wmissing-include-dirs -Wundef -Wmissing-format-attribute -Wnested-externs -Wunreachable-code -Wno-unused-parameter -Wno-missing-field-initializers
-CFLAGS = -O0 -g $(WARNINGS)
+CC = emcc
+WARNINGS = -W -Wall -Wextra -Wold-style-definition -Wdeclaration-after-statement -Wmissing-declarations \
+		  -Wredundant-decls -Wpointer-arith -Wcast-align -Wwrite-strings -Winline -Wformat-security \
+		  -Winit-self -Wmissing-include-dirs -Wundef -Wmissing-format-attribute -Wnested-externs \
+		  -Wunreachable-code -Wno-unused-parameter -Wno-missing-field-initializers \
+		  -Wno-incompatible-pointer-types-discards-qualifiers
+CFLAGS = -O2 -g $(WARNINGS) -DWASM=1
 
 # Add additional search directives here
 # Example: -I/usr/X11R6/include -I/usr/include/ncurses
-INCLUDES = -I.
+INCLUDES = -I. -I${EM_INCLUDE_PATH}/SDL/
 # Example: -L/usr/X11R6/lib 
 LIBS = -lm
-
-
-# Version info
-EXE = angband
-
-
 
 #### Things you probably shouldn't change, unless there is a problem ####
 
@@ -47,15 +28,13 @@ EXE = angband
 
 
 # Extract CFLAGS and LIBS from the system definitions
-MODULES = $(SYS_x11) $(SYS_gcu) $(SYS_gtk) $(SYS_sdl) $(SOUND_sdl) $(SYS_stats)
+MODULES = $(SYS_stats)
 CFLAGS += $(patsubst -l%,,$(MODULES)) $(INCLUDES)
 LIBS += $(patsubst -D%,,$(patsubst -I%,, $(MODULES)))
 
 
 # Object definitions
-OBJS = $(BASEOBJS) main.o main-stats.o main-gcu.o main-x11.o main-sdl.o snd-sdl.o
-
-
+OBJS = $(BASEOBJS) main-emscripten.o
 
 
 #### Targets and objects #####
@@ -73,22 +52,47 @@ include Makefile.inc
 # Targets
 #
 
-# Build the "Angband" program
-$(EXE): $(OBJS)
-	@printf "%10s %-20s\n" LINK $@
-	@$(CC) $(CFLAGS) $(LDFLAGS) -o $(EXE) $(OBJS) $(LIBS)
+OUTPUT_DIR := built
+ASSET_DIR := $(OUTPUT_DIR)/assets
 
-# Install the game.
-install: ../$(EXE)
+ASSET_DATA := $(OUTPUT_DIR)/angband.data
+EXES = $(OUTPUT_DIR)/angband.html $(OUTPUT_DIR)/angband.js $(OUTPUT_DIR)/angband.wasm
+
+install: $(EXES) $(ASSET_DATA)
+
+.PHONY: $(OUTPUT_DIR)
+$(OUTPUT_DIR):
+	mkdir -p $@
+	rm -Rf $@/*
+
+
+.PHONY: $(ASSET_DIR)
+$(ASSET_DIR): $(OUTPUT_DIR)
+	mkdir -p $@/lib/edit $@/lib/file $@/lib/help $@/lib/pref $@/lib/xtra/font
+	mkdir -p $@/lib/xtra/sound $@/lib/xtra/graf
+	@echo copying files...
+	@cp ../lib/edit/*.txt $@/lib/edit
+	@cp ../lib/file/*.txt $@/lib/file
+	@cp ../lib/help/*.txt ../lib/help/*.hlp $@/lib/help
+	@cp ../lib/pref/*.prf $@/lib/pref
+	@cp ../lib/xtra/font/*.fon $@/lib/xtra/font
+	@echo attempting to install sound and graphics
+	@-cp ../lib/xtra/sound/*.wav $@/lib/xtra/sound
+	@-cp ../lib/xtra/graf/*.png $@/lib/xtra/graf
+	@cp ../changes.txt ../readme.txt $@
+
+built/angband%html built/angband%js built/angband%wasm built/angband%data: $(OBJS) $(OUTPUT_DIR) $(ASSET_DIR)
+	@printf "%10s %-20s\n" LINK $@
+	# The @ here makes the assets directory the root of the VFS.
+	$(CC) $(CFLAGS) $(LDFLAGS) -o built/angband.html --preload-file built/assets@/ $(OBJS) $(LIBS)
+
 
 docs: doc/index.html
-
-../$(EXE): $(EXE)
-	cp $(EXE) ..
 
 # Clean up old junk
 clean:
 	-rm -f $(OBJS) $(EXE)
+	-rm -Rf built/*
 	-rm -f ../lib/data/*.raw
 
 # make a distribution
@@ -130,7 +134,7 @@ depend:
 # Some file dependencies
 %.o: %.c
 	@printf "%10s %-20s\n" CC $<
-	@$(CC) $(CFLAGS) -o $@ -c $<
+	$(CC) $(CFLAGS) -o $@ -c $<
 
 # X11 dependencies
 main-x11.o: $(HEADERS) main.h

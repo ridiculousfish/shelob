@@ -1,9 +1,7 @@
 /*
- * File: main-wasm.c
+ * File: main-emscripten.c
  * Purpose: Core game initialisation for UNIX (and other) machines
- *
- * Copyright (c) 1997 Ben Harrison, and others
- *
+ **
  * This work is free software; you can redistribute it and/or modify it
  * under the terms of either:
  *
@@ -33,16 +31,18 @@
 #include "textui.h"
 #include "init.h"
 
-errr init_wasm(int argc, char **argv);
+#include <emscripten/emscripten.h>
 
-static const char * const help_wasm = "wasm mode";
+errr init_emscripten(int argc, char **argv);
+
+static const char * const help_emscripten = "emscripten mode";
 
 /*
  * List of the available modules in the order they are tried.
  */
 static const struct module modules[] =
 {
-	{ "gcu", help_wasm, init_wasm },
+	{ "emscripten", help_emscripten, init_emscripten },
 #ifdef USE_STATS
 	{ "stats", help_stats, init_stats },
 #endif /* USE_STATS */
@@ -82,9 +82,190 @@ static void quit_hook(const char *s)
 	}
 }
 
-errr init_wasm(int argc, char **argv)
-{
+/*
+ * Information about a term
+ */
+typedef struct term_data {
+	term t;                 /* All term info */
+} term_data;
 
+/* Max number of windows on screen */
+#define MAX_TERM_DATA 1
+
+/* Information about our windows */
+static term_data data[MAX_TERM_DATA];
+
+static void Term_init_emscripten(term *t) {
+}
+
+static void Term_nuke_emscripten(term *t) {
+}
+/*
+ * Place some text on the screen using an attribute
+ */
+static errr Term_text_emscripten(int x, int y, int n, byte a, const wchar_t *s) {
+	term_data *td = (term_data *)(Term->data);
+
+	/* the lower 7 bits of the attribute indicate the fg/bg */
+	//int attr = a & 127;
+
+	/* the high bit of the attribute indicates a reversed fg/bg */
+	//int flip = a > 127 ? A_REVERSE : A_NORMAL;
+
+	//wattrset(td->win, colortable[attr] | flip);
+	//mvwaddnwstr(td->win, y, x, s, n);
+	//wattrset(td->win, A_NORMAL);
+	return 0;
+}
+
+
+/*
+ * "Move" the hardware cursor.
+ */
+static errr Term_curs_emscripten(int x, int y) {
+	term_data *td = (term_data *)(Term->data);
+	//wmove(td->win, y, x);
+	return 0;
+}
+
+
+/*
+ * Erase a grid of space
+ */
+static errr Term_wipe_emscripten(int x, int y, int n) {
+	term_data *td = (term_data *)(Term->data);
+
+	//wmove(td->win, y, x);
+
+	// if (x + n >= td->t.wid)
+	// 	/* Clear to end of line */
+	// 	wclrtoeol(td->win);
+	// else
+	// 	/* Clear some characters */
+	// 	whline(td->win, ' ', n);
+
+	return 0;
+}
+
+/*
+ * React to changes
+ */
+static errr Term_xtra_emscripten_react(void) {
+	return 0;
+}
+
+/*
+ * Check for Events, return 1 if we process any.
+ */
+static int Term_xtra_emscripten_event(int wait)
+{ 
+    
+    //Term_keypress;
+	return 0;
+}
+
+/*
+ * Handle a "special request"
+ */
+static errr Term_xtra_emscripten(int n, int v) {
+	printf("Got xtra %d -> %d\n", n, v);
+	emscripten_sleep(100);
+	term_data *td = (term_data *)(Term->data);
+
+	/* Analyze the request */
+	switch (n) {
+		/* Clear screen */
+		case TERM_XTRA_CLEAR:
+			//touchwin(td->win);
+			//wclear(td->win);
+			return 0;
+
+		/* Make a noise */
+		case TERM_XTRA_NOISE:
+			//write(1, "\007", 1);
+			return 0;
+
+		/* Flush the Curses buffer */
+		case TERM_XTRA_FRESH:
+			//wrefresh(td->win);
+			return 0;
+
+		/* Change the cursor visibility */
+		case TERM_XTRA_SHAPE:
+			printf("Ignoring TERM_XTRA_SHAPE %d\n", v);
+			return 0;
+
+		/* Process events */
+		case TERM_XTRA_EVENT:
+			return Term_xtra_emscripten_event(v);
+
+		/* Flush events */
+		case TERM_XTRA_FLUSH:
+			while (Term_xtra_emscripten_event(FALSE)) continue;
+			return 0;
+
+		/* Delay */
+		case TERM_XTRA_DELAY:
+			emscripten_sleep(v);
+			return 0;
+
+		/* React to events */
+		case TERM_XTRA_REACT:
+			Term_xtra_emscripten_react();
+			return 0;
+	}
+
+	/* Unknown event */
+	return 1;
+}
+
+
+/*
+ * Create a window for the given "term_data" argument.
+ */
+static errr term_data_init_emscripten(term_data *td, int rows, int cols, int y, int x) {
+	term *t = &td->t;
+
+	/* Initialize the term */
+	term_init(t, cols, rows, 256);
+
+	/* Erase with "white space" */
+	t->attr_blank = TERM_WHITE;
+	t->char_blank = ' ';
+
+	/* Differentiate between BS/^h, Tab/^i, etc. */
+	t->complex_input = TRUE;
+
+	/* Set some hooks */
+	t->init_hook = Term_init_emscripten;
+	t->nuke_hook = Term_nuke_emscripten;
+
+	/* Set some more hooks */
+	t->text_hook = Term_text_emscripten;
+	t->wipe_hook = Term_wipe_emscripten;
+	t->curs_hook = Term_curs_emscripten;
+	t->xtra_hook = Term_xtra_emscripten;
+
+	/* Save the data */
+	t->data = td;
+
+	/* Activate it */
+	Term_activate(t);
+
+	/* Success */
+	return (0);
+}
+
+errr init_emscripten(int argc, char **argv)
+{
+	/* Make one term. */
+	int x = 0;
+	int y = 0;
+	term_data_init_emscripten(&data[0], 100 /* rows */, 100 /* cols */, y, x);
+	angband_term[0] = &data[0].t;
+	Term_activate(&data[0].t);
+	term_screen = &data[0].t;
+	return 0;
 }
 
 /*
@@ -152,30 +333,6 @@ static void change_path(const char *info)
 }
 
 
-
-
-#ifdef SET_UID
-
-/*
- * Find a default user name from the system.
- */
-static void user_name(char *buf, size_t len, int id)
-{
-	struct passwd *pw = getpwuid(id);
-
-	/* Default to PLAYER */
-	if (!pw || !pw->pw_name || !pw->pw_name[0] ) {
-		my_strcpy(buf, "PLAYER", len);
-		return;
-	}
-
-	/* Copy and capitalise */
-	my_strcpy(buf, pw->pw_name, len);
-	my_strcap(buf);
-}
-
-#endif /* SET_UID */
-
 static bool new_game;
 
 /*
@@ -240,21 +397,6 @@ int main(int argc, char *argv[])
 
 	/* Save the "program name" XXX XXX XXX */
 	argv0 = argv[0];
-
-
-#ifdef SET_UID
-
-	/* Default permissions on files */
-	(void)umask(022);
-
-	/* Get the user id */
-	player_uid = getuid();
-
-	/* Save the effective GID for later recall */
-	player_egid = getegid();
-
-#endif /* SET_UID */
-
 
 	/* Drop permissions */
 	safe_setuid_drop();
@@ -389,19 +531,6 @@ int main(int argc, char *argv[])
 
 	/* Make sure we have a display! */
 	if (!done) quit("Unable to prepare any 'display module'!");
-
-#ifdef SET_UID
-
-	/* Get the "user name" as a default player name, unless set with -u switch */
-	if (!op_ptr->full_name[0])
-	{
-		user_name(op_ptr->full_name, sizeof(op_ptr->full_name), player_uid);
-	}
-
-	/* Create any missing directories */
-	create_needed_dirs();
-
-#endif /* SET_UID */
 
 	/* Process the player name */
 	process_player_name(TRUE);
