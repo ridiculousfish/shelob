@@ -31,6 +31,7 @@
 #include "textui.h"
 #include "init.h"
 
+#include <stdint.h>
 #include <emscripten/emscripten.h>
 
 errr init_emscripten(int argc, char **argv);
@@ -89,6 +90,14 @@ typedef struct term_data {
 	term t;                 /* All term info */
 } term_data;
 
+/* Return an RGB color for a given attribute index. */
+uint32_t rgb_from_table_index(byte idx) {
+    uint32_t r = angband_color_table[idx][1];
+    uint32_t g = angband_color_table[idx][2];
+    uint32_t b = angband_color_table[idx][3];
+	return (r << 16) | (g << 8) | (b);
+}
+
 /* Max number of windows on screen */
 #define MAX_TERM_DATA 1
 
@@ -105,6 +114,16 @@ static void Term_nuke_emscripten(term *t) {
  */
 static errr Term_text_emscripten(int x, int y, int n, byte a, const wchar_t *s) {
 	term_data *td = (term_data *)(Term->data);
+	uint32_t color = rgb_from_table_index(a);
+
+	for (int i=0; i < n; i++) {
+		int row = y;
+		int col = x + i;
+		wchar_t c = s[i];
+		EM_ASM({
+			GRID.setCell($0, $1, $2, $3);
+		}, row, col, c, color);
+	}
 
 	/* the lower 7 bits of the attribute indicate the fg/bg */
 	//int attr = a & 127;
@@ -168,8 +187,8 @@ static int Term_xtra_emscripten_event(int wait)
  * Handle a "special request"
  */
 static errr Term_xtra_emscripten(int n, int v) {
-	printf("Got xtra %d -> %d\n", n, v);
-	emscripten_sleep(100);
+	//printf("Got xtra %d -> %d\n", n, v);
+	emscripten_sleep(1);
 	term_data *td = (term_data *)(Term->data);
 
 	/* Analyze the request */
@@ -192,7 +211,7 @@ static errr Term_xtra_emscripten(int n, int v) {
 
 		/* Change the cursor visibility */
 		case TERM_XTRA_SHAPE:
-			printf("Ignoring TERM_XTRA_SHAPE %d\n", v);
+			//printf("Ignoring TERM_XTRA_SHAPE %d\n", v);
 			return 0;
 
 		/* Process events */
@@ -261,7 +280,7 @@ errr init_emscripten(int argc, char **argv)
 	/* Make one term. */
 	int x = 0;
 	int y = 0;
-	term_data_init_emscripten(&data[0], 100 /* rows */, 100 /* cols */, y, x);
+	term_data_init_emscripten(&data[0], 24 /* rows */, 80 /* cols */, y, x);
 	angband_term[0] = &data[0].t;
 	Term_activate(&data[0].t);
 	term_screen = &data[0].t;

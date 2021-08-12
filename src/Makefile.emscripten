@@ -11,7 +11,8 @@ WARNINGS = -W -Wall -Wextra -Wold-style-definition -Wdeclaration-after-statement
 		  -Winit-self -Wmissing-include-dirs -Wundef -Wmissing-format-attribute -Wnested-externs \
 		  -Wunreachable-code -Wno-unused-parameter -Wno-missing-field-initializers \
 		  -Wno-incompatible-pointer-types-discards-qualifiers
-CFLAGS = -Os -g $(WARNINGS) -DWASM=1 -s ASYNCIFY
+CFLAGS = -Os -g $(WARNINGS) -DWASM=1
+LDFLAGS = -s ASYNCIFY
 
 # Add additional search directives here
 # Example: -I/usr/X11R6/include -I/usr/include/ncurses
@@ -56,18 +57,18 @@ OUTPUT_DIR := built
 ASSET_DIR := $(OUTPUT_DIR)/assets
 
 ASSET_DATA := $(OUTPUT_DIR)/angband.data
-EXES = $(OUTPUT_DIR)/angband.html $(OUTPUT_DIR)/angband.js $(OUTPUT_DIR)/angband.wasm
+EXES = $(OUTPUT_DIR)/angband.html $(OUTPUT_DIR)/angband-render.js $(OUTPUT_DIR)/angband.js $(OUTPUT_DIR)/angband.wasm
 
-install: $(EXES) $(ASSET_DATA)
+install: $(EXES) $(ASSET_DATA) 
 
 .PHONY: $(OUTPUT_DIR)
 $(OUTPUT_DIR):
 	mkdir -p $@
-	rm -Rf $@/*
+	#rm -Rf $@/*
 
 
 .PHONY: $(ASSET_DIR)
-$(ASSET_DIR): $(OUTPUT_DIR)
+$(ASSET_DIR): copy-statics $(OUTPUT_DIR) 
 	mkdir -p $@/lib/edit $@/lib/file $@/lib/help $@/lib/pref $@/lib/xtra/font
 	mkdir -p $@/lib/xtra/sound $@/lib/xtra/graf
 	@echo copying files...
@@ -89,6 +90,11 @@ built/angband%js built/angband%wasm built/angband%data: $(OBJS) $(OUTPUT_DIR) $(
 .PHONY: $(OUTPUT_DIR)/angband.html
 $(OUTPUT_DIR)/angband.html: angband.html | $(OUTPUT_DIR)
 	cp $< $@
+
+.PHONY: copy-statics
+copy-statics: | $(OUTPUT_DIR)
+	cp -r static $(OUTPUT_DIR)/
+
 
 docs: doc/index.html
 
