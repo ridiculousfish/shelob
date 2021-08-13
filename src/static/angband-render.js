@@ -42,6 +42,28 @@ function AngbandGrid(gridElement) {
   };
 };
 
-GRID = new AngbandGrid(document.getElementById('main-angband-grid'));
-GRID.rebuildCells();
+function AngbandRunner(grid) {
+  const self = this;
+  self.grid = grid;
+  self.grid.rebuildCells();
 
+  self.worker = new Worker('angband-loader.js');
+  self.worker.onmessage = function(e) {
+    const msg = e.data;
+    switch (msg.name) {
+      case 'ERROR':
+        // TODO: display this.
+        console.log("Got error: " + msg.text);
+        break;
+
+      case 'SET_CELL':
+        self.grid.setCell(msg.row, msg.col, msg.charCode, msg.rgb);
+        break;
+
+      default:
+        console.log("Unknown message: " + JSON.stringify(msg));
+    }
+  };
+}
+
+const RUNNER = new AngbandRunner(new AngbandGrid(document.getElementById('main-angband-grid')));

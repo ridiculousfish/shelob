@@ -121,7 +121,7 @@ static errr Term_text_emscripten(int x, int y, int n, byte a, const wchar_t *s) 
 		int col = x + i;
 		wchar_t c = s[i];
 		EM_ASM({
-			GRID.setCell($0, $1, $2, $3);
+			ANGBAND.setCell($0, $1, $2, $3);
 		}, row, col, c, color);
 	}
 
@@ -188,7 +188,7 @@ static int Term_xtra_emscripten_event(int wait)
  */
 static errr Term_xtra_emscripten(int n, int v) {
 	//printf("Got xtra %d -> %d\n", n, v);
-	emscripten_sleep(1);
+	//emscripten_sleep(1);
 	term_data *td = (term_data *)(Term->data);
 
 	/* Analyze the request */
@@ -225,7 +225,7 @@ static errr Term_xtra_emscripten(int n, int v) {
 
 		/* Delay */
 		case TERM_XTRA_DELAY:
-			emscripten_sleep(v);
+			//emscripten_sleep(v);
 			return 0;
 
 		/* React to events */
