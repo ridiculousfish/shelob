@@ -3,3 +3,6 @@
 autoconf.h
 autoconf.h.in
 angband
+stage
+built
+

@@ -13,12 +13,8 @@ WARNINGS = -W -Wall -Wextra -Wold-style-definition -Wdeclaration-after-statement
 		  -Wno-incompatible-pointer-types-discards-qualifiers
 CFLAGS = -Os -g $(WARNINGS) -DWASM=1
 LDFLAGS = -s ENVIRONMENT=worker -s ASYNCIFY $(ASYNCIFY_IMPORTS)
-
-# Add additional search directives here
-# Example: -I/usr/X11R6/include -I/usr/include/ncurses
-INCLUDES = -I. -I${EM_INCLUDE_PATH}/SDL/
-# Example: -L/usr/X11R6/lib 
-LIBS = -lm
+INCLUDES = -I.
+LIBS =
 
 #### Things you probably shouldn't change, unless there is a problem ####
 
@@ -53,24 +49,57 @@ include Makefile.inc
 # Targets
 #
 
-OUTPUT_DIR := built
-ASSET_DIR := $(OUTPUT_DIR)/assets
+STAGE_DIR := stage
+BUILT_DIR := built
 
-ASSET_DATA := $(OUTPUT_DIR)/angband.data
-EXES = $(OUTPUT_DIR)/angband.html $(OUTPUT_DIR)/angband-render.js $(OUTPUT_DIR)/angband.js $(OUTPUT_DIR)/angband.wasm
+JS_FILENAMES := angband-loader.js angband-render.js angband-shared.js
+JS_BUILT := $(JS_FILENAMES:%.js=web/built/%.js)
+TSC_PATHS := $(JS_FILENAMES:%.js=web/src/%.ts)
+JS_STAGED := $(JS_FILENAMES:%.js=$(STAGE_DIR)/%.js)
 
-install: $(EXES) $(ASSET_DATA) 
+JS_GEN := $(STAGE_DIR)/angband-gen.js
+WASM := $(JS_GEN:.js=.wasm)
+ASSET_DATA := $(JS_GEN:.js=.data)
 
-.PHONY: $(OUTPUT_DIR)
-$(OUTPUT_DIR):
-	mkdir -p $@
-	#rm -Rf $@/*
+ASSET_DIR := $(STAGE_DIR)/assets/
+STATIC := $(STAGE_DIR)/static
+ANGBAND_HTML := $(STAGE_DIR)/angband.html
+ANGBAND_CSS := $(STAGE_DIR)/style.css
 
+.PHONY: install
+install: staging
+	@mkdir -p $(BUILT_DIR)/
+	@rm -Rf $(BUILT_DIR)/*
+	@cp $(ANGBAND_HTML) $(BUILT_DIR)/
 
-.PHONY: $(ASSET_DIR)
-$(ASSET_DIR): copy-statics $(OUTPUT_DIR) 
-	mkdir -p $@/lib/edit $@/lib/file $@/lib/help $@/lib/pref $@/lib/xtra/font
-	mkdir -p $@/lib/xtra/sound $@/lib/xtra/graf
+	@mkdir -p $(BUILT_DIR)/assets/
+	@cp $(ASSET_DATA) $(WASM) $(JS_BUILT) $(ANGBAND_CSS) $(BUILT_DIR)/assets/
+	@echo "Built $(BUILT_DIR)/"
+
+$(STAGE_DIR):
+	mkdir -p $(STAGE_DIR)
+
+$(ANGBAND_HTML): web/static/angband.html | $(STAGE_DIR)
+	cp $< $@
+
+$(ANGBAND_CSS): web/static/style.css | $(STAGE_DIR)
+	cp $< $@
+
+# Note: this requires GNU Make 4.3 or later.
+$(JS_BUILT) &: $(TSC_PATHS) web/tsconfig.json
+	cd web && tsc
+
+$(STAGE_DIR)/%.js: web/built/%.js | $(STAGE_DIR)
+	cp $< $@
+
+.PHONY: staging
+staging: $(WASM) $(ASSET_DATA) $(JS_STAGED) $(ANGBAND_HTML) $(ANGBAND_CSS)
+
+$(ASSET_DIR): $(wildcard ../lib/**/*) | $(STAGE_DIR)
+	@rm -Rf $(ASSET_DIR)
+	@mkdir -p $(ASSET_DIR)
+	@mkdir -p $@/lib/edit $@/lib/file $@/lib/help $@/lib/pref $@/lib/xtra/font
+	@mkdir -p $@/lib/xtra/sound $@/lib/xtra/graf
 	@echo copying files...
 	@cp ../lib/edit/*.txt $@/lib/edit
 	@cp ../lib/file/*.txt $@/lib/file
@@ -82,26 +111,17 @@ $(ASSET_DIR): copy-statics $(OUTPUT_DIR)
 	@-cp ../lib/xtra/graf/*.png $@/lib/xtra/graf
 	@cp ../changes.txt ../readme.txt $@
 
-built/angband%js built/angband%wasm built/angband%data: $(OBJS) $(OUTPUT_DIR) $(ASSET_DIR)
-	@printf "%10s %-20s\n" LINK $@
-	# The @ here makes the assets directory the root of the VFS.
-	$(CC) $(CFLAGS) $(LDFLAGS) -o built/angband.js --preload-file built/assets@/ $(OBJS) $(LIBS)
-
-.PHONY: $(OUTPUT_DIR)/angband.html
-$(OUTPUT_DIR)/angband.html: angband.html | $(OUTPUT_DIR)
-	cp $< $@
-
-.PHONY: copy-statics
-copy-statics: | $(OUTPUT_DIR)
-	cp -r static/* $(OUTPUT_DIR)/
-
+# Note: this requires GNU Make 4.3 or later.
+$(ASSET_DATA) $(WASM) $(JS_GEN) &: $(OBJS) $(ASSET_DIR)
+	@# The @ here makes the assets directory the root of the VFS.
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(JS_GEN) --preload-file $(STAGE_DIR)/assets@/ $(OBJS) $(LIBS)
 
 docs: doc/index.html
 
 # Clean up old junk
 clean:
 	-rm -f $(OBJS) $(EXE)
-	-rm -Rf built/*
+	-rm -Rf $(STAGE_DIR) $(BUILT_DIR)
 	-rm -f ../lib/data/*.raw
 
 # make a distribution
