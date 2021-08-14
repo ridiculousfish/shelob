@@ -93,11 +93,11 @@ class AngbandWorker {
   }
 
   // Wait for events, optionally blocking.
-  public async gatherEvent(block: boolean): Promise<boolean> {
+  public gatherEvent(block: boolean): Promise<boolean> {
     if (this.hasEvent()) {
       // Already have one.
       console.log("Already had event");
-      return true;
+      return new Promise((resolve) => resolve(true));
     } else if (block) {
       // Wait until we get the next event.
       console.log("Waiting for event");

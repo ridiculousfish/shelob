@@ -49,11 +49,10 @@ include Makefile.inc
 # Targets
 #
 
-STAGE_DIR := stage
-BUILT_DIR := built
+STAGE_DIR := ./stage
+BUILT_DIR := ./built
 
 JS_FILENAMES := angband-loader.js angband-render.js angband-shared.js
-JS_BUILT := $(JS_FILENAMES:%.js=web/built/%.js)
 TSC_PATHS := $(JS_FILENAMES:%.js=web/src/%.ts)
 JS_STAGED := $(JS_FILENAMES:%.js=$(STAGE_DIR)/%.js)
 
@@ -73,7 +72,7 @@ install: staging
 	@cp $(ANGBAND_HTML) $(BUILT_DIR)/
 
 	@mkdir -p $(BUILT_DIR)/assets/
-	@cp $(ASSET_DATA) $(WASM) $(JS_BUILT) $(ANGBAND_CSS) $(BUILT_DIR)/assets/
+	@cp $(ASSET_DATA) $(WASM) $(JS_STAGED) $(ANGBAND_CSS) $(BUILT_DIR)/assets/
 	@echo "Built $(BUILT_DIR)/"
 
 $(STAGE_DIR):
@@ -86,8 +85,8 @@ $(ANGBAND_CSS): web/static/style.css | $(STAGE_DIR)
 	cp $< $@
 
 # Note: this requires GNU Make 4.3 or later.
-$(JS_BUILT) &: $(TSC_PATHS) web/tsconfig.json
-	cd web && tsc
+$(JS_STAGED) &: $(TSC_PATHS) web/tsconfig.json
+	tsc --project ./web --outDir $(STAGE_DIR)
 
 $(STAGE_DIR)/%.js: web/built/%.js | $(STAGE_DIR)
 	cp $< $@

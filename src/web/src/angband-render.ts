@@ -76,7 +76,7 @@ class AngbandUI {
 
   constructor(public grid: AngbandGrid) {
     this.grid.rebuildCells();
-    this.worker = new Worker('angband-loader.js');
+    this.worker = new Worker('assets/angband-loader.js');
     this.worker.onmessage = this.onMessage.bind(this);
   }
 };

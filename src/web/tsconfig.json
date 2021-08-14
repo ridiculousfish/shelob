@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "outDir": "./built",
-    "allowJs": true,
-    "target": "ES2017",
+    "target": "ES6",
+    "alwaysStrict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
   },
