@@ -3,7 +3,7 @@ function AngbandGrid(gridElement) {
   if (! gridElement) throw "Invalid grid element";
 
   const self = this;
-  self.grid = gridElement;
+  self.element = gridElement;
   self.columns = 80;
   self.rows = 24;
 
@@ -14,8 +14,8 @@ function AngbandGrid(gridElement) {
   const nbsp = "\xA0";
 
   self.rebuildCells = () => {
-    while (self.grid.firstChild) {
-      self.grid.removeChild(self.grid.firstChild);
+    while (self.element.firstChild) {
+      self.element.removeChild(self.element.firstChild);
     }
     self.cells.length = 0;
     for (let row = 0; row < self.rows; row++) {
@@ -28,7 +28,7 @@ function AngbandGrid(gridElement) {
         rowlist.push(td);
       }
       self.cells.push(rowlist);
-      self.grid.appendChild(tr);
+      self.element.appendChild(tr);
     }
   };
 
@@ -64,6 +64,17 @@ function AngbandRunner(grid) {
         console.log("Unknown message: " + JSON.stringify(msg));
     }
   };
+
+  self.handleKeyEvent = (evt) => {
+    console.log("Posting " + evt.key);
+    self.worker.postMessage({
+      name: "KEY_EVENT",
+      key: evt.key,
+      modifiers: 0,
+    });
+    if (evt.preventDefault) evt.preventDefault();
+  };
+  document.addEventListener('keydown', self.handleKeyEvent.bind(self));
 }
 
 const RUNNER = new AngbandRunner(new AngbandGrid(document.getElementById('main-angband-grid')));

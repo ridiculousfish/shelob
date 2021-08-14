@@ -174,13 +174,30 @@ static errr Term_xtra_emscripten_react(void) {
 }
 
 /*
+ * Wait for an event, optionally blocking.
+ */
+EM_JS(int, emscripten_gather_event, (int wait), {
+	return Asyncify.handleSleep((wakeup) => {
+		console.log("waitForEvent: " + wait + " - " + wakeup);
+		ANGBAND.waitForEvent(wait, wakeup);
+	});
+});
+
+/*
+ * Return true if we have an event ready to go.
+ */
+EM_JS(int, emscripten_has_event, (), {
+	return ANGBAND.hasEvent();
+});
+
+/*
  * Check for Events, return 1 if we process any.
  */
 static int Term_xtra_emscripten_event(int wait)
-{ 
-    
-    //Term_keypress;
-	return 0;
+{
+	emscripten_gather_event(wait);
+	if (! emscripten_has_event()) return 0;
+	return 1;
 }
 
 /*
@@ -225,7 +242,7 @@ static errr Term_xtra_emscripten(int n, int v) {
 
 		/* Delay */
 		case TERM_XTRA_DELAY:
-			//emscripten_sleep(v);
+			emscripten_sleep(v);
 			return 0;
 
 		/* React to events */

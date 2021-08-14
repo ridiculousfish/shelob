@@ -2,6 +2,7 @@ body {
     font-family: Helvetica;
     margin: 0;
     padding: none;
+    width: 100%;
   }
 
   .spinner {
@@ -85,6 +86,8 @@ body {
   .angband-grid {
     font-family: 'Menlo', 'Monaco', 'Courier', monospace;
     table-layout: fixed;
+    position: relative;
+    margin: 0 auto;
   }
 
   .angband-grid tr {
@@ -94,13 +97,12 @@ body {
     background-color: black;
     color: white;
     text-align: left;
-    font-size: 36pt;
+    font-size: 18pt;
     text-align: center;
   }
 
   .angband-grid, .angband-grid tr, .angband-grid td {
     border: none;
     padding: 0;
-    margin: 0;
     border-spacing: 0;
   }
