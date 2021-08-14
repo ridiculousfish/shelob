@@ -106,11 +106,6 @@ function AngbandThreadRunner() {
     postMessage(ERROR_MSG);
   };
 
-  // Helper to construct a promise for a timeout.
-  function promiseTimeout(timeMs) {
-    return new Promise((resolve) => setTimeout(resolve, timeMs));
-  }
-
   // Our queue of incoming events, and a promise which is resolved and refreshed when an event is handled.
   self.eventQueue = [];
   self.eventPromise = undefined;
@@ -122,11 +117,10 @@ function AngbandThreadRunner() {
     self.eventPromise = new Promise((resolve) => {
       self.eventPromiseCallback = resolve;
     });
-    if (cb) cb();
+    if (cb) cb(self.hasEvent());
   };
   
   self.gotEvent = (evt) => {
-    console.log("Got key event: " + JSON.stringify(evt));
     self.eventQueue.push(evt);
     self.callAndRefreshEventPromise();
   };
@@ -134,7 +128,7 @@ function AngbandThreadRunner() {
   // Incoming message handler.
   self.onmessage = (msg) => {
     switch (msg.data.name) {
-      case 'KEY_EVENT_MSG':
+      case 'KEY_EVENT':
         self.gotEvent(msg.data);
         break;
     }
@@ -165,19 +159,21 @@ function AngbandThreadRunner() {
   self.hasEvent = () => { return self.eventQueue.length > 0; };
 
   // Wait for events, optionally blocking.
-  // Invoke the handler with whether we have an event.
-  self.waitForEvent = (block, handler) => {
-    console.log("Wait for event: " + block + " - " + handler);
-    if (self.hasEvent()) return handler(true);
-    cb = () => {
-      handler(self.hasEvent());
-    };
-    if (block) {
-      // Wait until we get an event.
-      self.promiseTimeout = self.promiseTimeout.then(cb);
+  self.gatherEvent = async (block) => {
+    if (self.hasEvent()) {
+      // Already have one.
+      console.log("Already had event");
+      return true;
+    } else if (block) {
+        // Wait until we get the next event.
+        console.log("Waiting for event");
+        return self.eventPromise;
     } else {
-      // Invoke the handler after returning to the event loop.
-      setTimeout(cb);
+      // Pump the event loop and then see.
+      console.log("Briefly checking for event");
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(self.hasEvent()), 0)
+      });
     }
   };
 

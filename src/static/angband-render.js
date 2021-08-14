@@ -66,7 +66,6 @@ function AngbandRunner(grid) {
   };
 
   self.handleKeyEvent = (evt) => {
-    console.log("Posting " + evt.key);
     self.worker.postMessage({
       name: "KEY_EVENT",
       key: evt.key,

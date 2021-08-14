@@ -11,7 +11,7 @@ WARNINGS = -W -Wall -Wextra -Wold-style-definition -Wdeclaration-after-statement
 		  -Winit-self -Wmissing-include-dirs -Wundef -Wmissing-format-attribute -Wnested-externs \
 		  -Wunreachable-code -Wno-unused-parameter -Wno-missing-field-initializers \
 		  -Wno-incompatible-pointer-types-discards-qualifiers
-CFLAGS = -O0 -g $(WARNINGS) -DWASM=1
+CFLAGS = -Os -g $(WARNINGS) -DWASM=1
 LDFLAGS = -s ENVIRONMENT=worker -s ASYNCIFY $(ASYNCIFY_IMPORTS)
 
 # Add additional search directives here
