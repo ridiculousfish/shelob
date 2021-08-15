@@ -113,9 +113,7 @@ static void Term_nuke_emscripten(term *t) {
  * Place some text on the screen using an attribute
  */
 static errr Term_text_emscripten(int x, int y, int n, byte a, const wchar_t *s) {
-	term_data *td = (term_data *)(Term->data);
 	uint32_t color = rgb_from_table_index(a);
-
 	for (int i=0; i < n; i++) {
 		int row = y;
 		int col = x + i;
@@ -123,27 +121,19 @@ static errr Term_text_emscripten(int x, int y, int n, byte a, const wchar_t *s) 
 		EM_ASM({
 			ANGBAND.setCell($0, $1, $2, $3);
 		}, row, col, c, color);
+		// TODO: "the high bit of the attribute indicates a reversed fg/bg"?
 	}
-
-	/* the lower 7 bits of the attribute indicate the fg/bg */
-	//int attr = a & 127;
-
-	/* the high bit of the attribute indicates a reversed fg/bg */
-	//int flip = a > 127 ? A_REVERSE : A_NORMAL;
-
-	//wattrset(td->win, colortable[attr] | flip);
-	//mvwaddnwstr(td->win, y, x, s, n);
-	//wattrset(td->win, A_NORMAL);
 	return 0;
 }
 
 
 /*
- * "Move" the hardware cursor.
+ * "Move" the "hardware" cursor.
  */
 static errr Term_curs_emscripten(int x, int y) {
-	term_data *td = (term_data *)(Term->data);
-	//wmove(td->win, y, x);
+	EM_ASM({
+		ANGBAND.setCursor($0, $1, $2);
+	}, y, x);
 	return 0;
 }
 
@@ -152,17 +142,9 @@ static errr Term_curs_emscripten(int x, int y) {
  * Erase a grid of space
  */
 static errr Term_wipe_emscripten(int x, int y, int n) {
-	term_data *td = (term_data *)(Term->data);
-
-	//wmove(td->win, y, x);
-
-	// if (x + n >= td->t.wid)
-	// 	/* Clear to end of line */
-	// 	wclrtoeol(td->win);
-	// else
-	// 	/* Clear some characters */
-	// 	whline(td->win, ' ', n);
-
+	EM_ASM({
+		ANGBAND.wipeCells($0, $1, $2);
+	}, y, x, n);
 	return 0;
 }
 
@@ -170,6 +152,7 @@ static errr Term_wipe_emscripten(int x, int y, int n) {
  * React to changes
  */
 static errr Term_xtra_emscripten_react(void) {
+	// This is an opportunity to react to settings from JS, e.g. switching to graphics mode.
 	return 0;
 }
 
@@ -212,8 +195,7 @@ static errr Term_xtra_emscripten(int n, int v) {
 	switch (n) {
 		/* Clear screen */
 		case TERM_XTRA_CLEAR:
-			//touchwin(td->win);
-			//wclear(td->win);
+			EM_ASM({ ANGBAND.clearScreen(); });
 			return 0;
 
 		/* Make a noise */
@@ -271,6 +253,9 @@ static errr term_data_init_emscripten(term_data *td, int rows, int cols, int y, 
 
 	/* Differentiate between BS/^h, Tab/^i, etc. */
 	t->complex_input = TRUE;
+
+    /* Use a "software" cursor */
+    t->soft_cursor = TRUE;
 
 	/* Set some hooks */
 	t->init_hook = Term_init_emscripten;

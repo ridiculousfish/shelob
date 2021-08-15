@@ -39,8 +39,20 @@ namespace angband {
     ESCAPE: 0xE000
   }
 
-  function keyCodeForKey(key: string) {
-    switch (key) {
+  // \return an Angband key code for the given JS keyboard event, or null if the event should be dropped (e.g. just shift key).
+  function angbandKeyCodeForEvent(evt: KeyboardEvent): number | null {
+    // On Mac, meta key maps to command, and so this interferes with native command key handling.
+    // Do not try to handle these.
+    if (evt.metaKey) return null;
+
+    // This is probably an ordinary ASCII character like 3 or w.
+    if (evt.key.length == 1) {
+      let asciiCode = evt.key.charCodeAt(0);
+      if (0 <= asciiCode && asciiCode <= 127) return asciiCode;
+    }
+
+    // Check more exotic keys.
+    switch (evt.code) {
       case 'ArrowLeft': return KEY_CODE_MAPPING.ARROW_LEFT;
       case 'ArrowRight': return KEY_CODE_MAPPING.ARROW_RIGHT;
       case 'ArrowUp': return KEY_CODE_MAPPING.ARROW_UP;
@@ -74,8 +86,37 @@ namespace angband {
       case 'Delete': return KEY_CODE_MAPPING.KC_DELETE;
       case 'Backspace': return KEY_CODE_MAPPING.KC_BACKSPACE;
       case 'Escape': return KEY_CODE_MAPPING.ESCAPE;
-      default: return key.charCodeAt(0);
+
+      // Do not report pure modifier key changes.
+      case 'ShiftLeft':
+      case 'ShiftRight':
+      case 'AltLeft':
+      case 'AltRight':
+      // fall through
+      default:
+        return null;
     }
+  }
+
+  // Key modifiers copied from ui-event.h
+  const KEY_MODIFIER_MAPPING = {
+    KC_MOD_CONTROL: 0x01,
+    KC_MOD_SHIFT: 0x02,
+    KC_MOD_ALT: 0x04,
+    KC_MOD_META: 0x08,
+    KC_MOD_KEYPAD: 0x10,
+  };
+
+  // \return an Angband modifier mask for the given JS keyboard event.
+  function angbandKeyModifiersForEvent(evt: KeyboardEvent): number {
+    let res = 0;
+    if (evt.ctrlKey) res |= KEY_MODIFIER_MAPPING.KC_MOD_CONTROL;
+    if (evt.shiftKey) res |= KEY_MODIFIER_MAPPING.KC_MOD_SHIFT;
+    if (evt.altKey) res |= KEY_MODIFIER_MAPPING.KC_MOD_ALT;
+    if (evt.metaKey) res |= KEY_MODIFIER_MAPPING.KC_MOD_META;
+    // This handles numpad digit keys and numpad enter.
+    if (evt.code.startsWith("Numpad")) res |= KEY_MODIFIER_MAPPING.KC_MOD_KEYPAD;
+    return res;
   }
 
 
@@ -87,11 +128,13 @@ namespace angband {
     public rows: number;
 
     cells: Row[];
+    cursor: HTMLTableDataCellElement | null;
     nbsp: "\xA0";
 
     constructor(public element: HTMLTableElement) {
       this.columns = 80;
       this.rows = 24;
+      this.cursor = null;
     }
 
     // Rebuild our table.
@@ -99,6 +142,8 @@ namespace angband {
       while (this.element.firstChild) {
         this.element.removeChild(this.element.firstChild);
       }
+      this.cursor = null;
+
       this.cells = [];
       for (let row = 0; row < this.rows; row++) {
         var tr = document.createElement('tr');
@@ -114,14 +159,55 @@ namespace angband {
       }
     }
 
+    // Clear the cursor. Note angband expects drawing a cell to clear the cursor in that cell.
+    private clearCursor() {
+      if (this.cursor !== null) this.cursor.classList.remove("angband-cursor");
+    }
+
     // Set the cell at (row, col) to a character given by charCode, with the color rgb.
     public setCell(msg: SET_CELL_MSG) {
       let { row, col, charCode, rgb } = msg;
-      if (row > this.cells.length || col > this.cells[row].length)
+      if (row >= this.cells.length || col >= this.cells[row].length) {
         throw (`Cell ${row}, ${col} out of bounds`);
+      }
       let cell = this.cells[row][col];
-      cell.style.color = '#' + rgb.toString(16);
+      if (cell === this.cursor) this.clearCursor();
+      let rgbtext = rgb.toString(16);
+      while (rgbtext.length < 6) rgbtext = '0' + rgbtext;
+      cell.style.color = '#' + rgbtext;
       cell.textContent = (charCode === 0x20 ? this.nbsp : String.fromCharCode(charCode));
+    }
+
+    // Set the cursor location.
+    public setCursor(msg: SET_CURSOR_MSG) {
+      this.clearCursor();
+      let { row, col } = msg;
+      if (row < this.cells.length && col < this.cells[row].length) {
+        this.cursor = this.cells[row][col];
+        this.cursor.classList.add("angband-cursor");
+      }
+    }
+
+    // Wipe (clear) some cells.
+    public wipeCells(msg: WIPE_CELLS_MSG) {
+      let { row, col, count } = msg;
+      if (row >= this.cells.length || col + count > this.cells[row].length)
+        throw (`Cell ${row}, ${col} out of bounds`);
+      for (let i = 0; i < count; i++) {
+        let cell = this.cells[row][col + i];
+        cell.textContent = this.nbsp;
+        if (cell === this.cursor) this.clearCursor();
+      }
+    }
+
+    // Wipe (clear) all cells.
+    public wipeAllCells(_msg: CLEAR_SCREEN_MSG) {
+      this.clearCursor();
+      this.cells.forEach((row) => {
+        row.forEach((cell) => {
+          cell.textContent = this.nbsp;
+        });
+      });
     }
   }
 
@@ -169,12 +255,27 @@ namespace angband {
           // TODO: display this.
           console.log("Got error: " + msg.text);
           break;
+
         case 'STATUS':
           this.status.setStatusText(msg.text);
           break;
+
         case 'SET_CELL':
           this.grid.setCell(msg as SET_CELL_MSG);
           break;
+
+        case 'SET_CURSOR':
+          this.grid.setCursor(msg as SET_CURSOR_MSG);
+          break;
+
+        case 'WIPE_CELLS':
+          this.grid.wipeCells(msg as WIPE_CELLS_MSG);
+          break;
+
+        case 'CLEAR_SCREEN':
+          this.grid.wipeAllCells(msg as CLEAR_SCREEN_MSG);
+          break;
+
         default:
           console.log("Unknown message: " + JSON.stringify(msg));
           break;
@@ -188,14 +289,17 @@ namespace angband {
 
     // Called when we receive a key event.
     public handleKeyEvent(evt: KeyboardEvent) {
-      this.postMessage({
-        name: "KEY_EVENT",
-        key: evt.key,
-        code: keyCodeForKey(evt.code),
-        modifiers: 0,
-      });
-      if (evt.preventDefault)
-        evt.preventDefault();
+      let angbandCode = angbandKeyCodeForEvent(evt);
+      if (angbandCode !== null) {
+        this.postMessage({
+          name: "KEY_EVENT",
+          key: evt.key,
+          code: angbandCode,
+          modifiers: angbandKeyModifiersForEvent(evt),
+        });
+        if (evt.preventDefault)
+          evt.preventDefault();
+      }
     };
 
     constructor(private grid: Grid, private status: Status) {

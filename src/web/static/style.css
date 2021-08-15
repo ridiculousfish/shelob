@@ -97,6 +97,7 @@ body {
     margin-top: 100px;
     padding: 20px;
     border: 1px solid #333;
+    white-space:nowrap;
   }
 
   .angband-grid tr {
@@ -108,10 +109,16 @@ body {
     text-align: left;
     font-size: 18pt;
     text-align: center;
+    height: 1.2em;
   }
 
   .angband-grid tr, .angband-grid td {
     border: none;
     padding: 0;
     border-spacing: 0;
+  }
+
+  .angband-cursor {
+    -webkit-box-shadow: inset 0px 0px 0px 1.5px rgba(255, 229, 97, 0.75);
+    box-shadow: inset 0px 0px 0px 1.5px rgba(255, 229, 97, 0.75);
   }

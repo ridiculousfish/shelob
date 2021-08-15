@@ -111,19 +111,49 @@ namespace angband {
       this.postMessage(msg);
     }
 
+    // Wipe N cells at (row, column).
+    public wipeCells(row: number, col: number, count: number) {
+      if (count <= 0) return;
+      const msg: WIPE_CELLS_MSG = {
+        name: "WIPE_CELLS",
+        row,
+        col,
+        count,
+      };
+      this.postMessage(msg);
+    }
+
+    // Clear the entire screen.
+    public clearScreen() {
+      const msg: CLEAR_SCREEN_MSG = {
+        name: "CLEAR_SCREEN"
+      };
+      this.postMessage(msg);
+    }
+
+    // Move the cursor to a cell.
+    public setCursor(row: number, col: number) {
+      const msg: SET_CURSOR_MSG = {
+        name: "SET_CURSOR",
+        row,
+        col,
+      };
+      this.postMessage(msg);
+    }
+
     // Wait for events, optionally blocking.
     public gatherEvent(block: boolean): Promise<boolean> {
       if (this.hasEvent()) {
         // Already have one.
-        console.log("Already had event");
+        //console.log("Already had event");
         return new Promise((resolve) => resolve(true));
       } else if (block) {
         // Wait until we get the next event.
-        console.log("Waiting for event");
+        //console.log("Waiting for event");
         return this.eventPromise;
       } else {
         // Pump the event loop and then see.
-        console.log("Briefly checking for event");
+        //console.log("Briefly checking for event");
         return new Promise((resolve) => {
           setTimeout(() => resolve(this.hasEvent()), 0)
         });
@@ -132,7 +162,6 @@ namespace angband {
 
     // \return the key code for the current event.
     public eventKeyCode(): number {
-      console.log("eventKeyCode: " + this.eventQueue[0].code);
       return this.eventQueue[0].code;
     }
 
