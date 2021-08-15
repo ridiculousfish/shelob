@@ -9,21 +9,21 @@
 </head>
 
 <body>
-  <div class="spinner" id='spinner'></div>
-  <div class="emscripten" id="status">Downloading...</div>
+  <div id="angband-progress-overlay">
+    <div id='main-angband-spinner' class="spinner"></div>
+    <div id='main-angband-status'>Downloading...</div>
+    <div>
+      <progress value="0" max="100" id="main-angband-progress" class="progress" hidden=1></progress>
+    </div>
+  </div>
 
-  <span id='controls'>
+  <span id='controls' style="display: none">
     <span><input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer &nbsp;&nbsp;&nbsp;</span>
     <span><input type="button" value="Fullscreen"
         onclick="Module.requestFullscreen(document.getElementById('pointerLock').checked, 
                                                                             document.getElementById('resize').checked)">
     </span>
   </span>
-
-  <div class="emscripten">
-    <progress value="0" max="100" id="progress" hidden=1></progress>
-  </div>
-  <br />
 
   <table id="main-angband-grid" class="angband-grid" tabindex="0"></table>
   <textarea id="output" rows="8"></textarea>
@@ -57,44 +57,9 @@
         if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
         console.error(text);
       },
-      setStatus: function (text) {
-        if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
-        if (text === Module.setStatus.last.text) return;
-        var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
-        var now = Date.now();
-        if (m && now - Module.setStatus.last.time < 30) return; // if this is a progress update, skip it if too soon
-        Module.setStatus.last.time = now;
-        Module.setStatus.last.text = text;
-        if (m) {
-          text = m[1];
-          progressElement.value = parseInt(m[2]) * 100;
-          progressElement.max = parseInt(m[4]) * 100;
-          progressElement.hidden = false;
-          spinnerElement.hidden = false;
-        } else {
-          progressElement.value = null;
-          progressElement.max = null;
-          progressElement.hidden = true;
-          if (!text) spinnerElement.style.display = 'none';
-        }
-        statusElement.innerHTML = text;
-      },
-      totalDependencies: 0,
-      monitorRunDependencies: function (left) {
-        this.totalDependencies = Math.max(this.totalDependencies, left);
-        Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
-      }
-    };
-    Module.setStatus('Downloading...');
-    window.onerror = function (event) {
-      // TODO: do not warn on ok events like simulating an infinite loop or exitStatus
-      Module.setStatus('Exception thrown, see JavaScript console');
-      spinnerElement.style.display = 'none';
-      Module.setStatus = function (text) {
-        if (text) Module.printErr('[post-exception status] ' + text);
-      };
     };
   </script>
   <script type="text/javascript" src="assets/render.js"></script>
 </body>
+
 </html>

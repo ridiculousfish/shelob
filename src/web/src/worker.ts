@@ -8,7 +8,7 @@ namespace angband {
   }
 
   // A class which gets called from C source.
-  export class AngbandWorker {
+  export class ThreadWorker {
     // List of queued events.
     eventQueue: KeyEvent[];
 
@@ -70,6 +70,24 @@ namespace angband {
       }
     }
 
+    // Report status in our Emscripten module.
+    public moduleSetStatus(text: string) {
+      const msg: STATUS_MSG = {
+        name: "STATUS",
+        text,
+      };
+      this.postMessage(msg);
+    }
+
+    // Report run dependencies.
+    public getModuleDependencyMonitor(): (a: number) => void {
+      let totalDependencies = 0;
+      return (left: number) => {
+        if (totalDependencies < left) totalDependencies = left;
+        this.moduleSetStatus(left ? 'Preparing... (' + (totalDependencies - left) + '/' + totalDependencies + ')' : 'All downloads complete.');
+      };
+    }
+
     // Entry point.
     public run() {
       try {
@@ -114,6 +132,7 @@ namespace angband {
 
     // \return the key code for the current event.
     public eventKeyCode(): number {
+      console.log("eventKeyCode: " + this.eventQueue[0].code);
       return this.eventQueue[0].code;
     }
 
@@ -129,6 +148,14 @@ namespace angband {
     }
   }
 }
-let ANGBAND = new angband.AngbandWorker(self as unknown as Worker);
+var ANGBAND: angband.ThreadWorker = new angband.ThreadWorker(self as unknown as Worker);
+
+// JS has a global worker onmessage hook.
 onmessage = ANGBAND.onMessage.bind(ANGBAND);
+
+// Set up our Module object for emscripten.
+var Module: any = {};
+Module['setStatus'] = ANGBAND.moduleSetStatus.bind(ANGBAND);
+Module['monitorRunDependencies'] = ANGBAND.getModuleDependencyMonitor();
+
 ANGBAND.run();

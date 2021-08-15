@@ -82,7 +82,7 @@ namespace angband {
   type Column = HTMLTableDataCellElement;
   type Row = Column[];
 
-  export class AngbandGrid {
+  export class Grid {
     public columns: number;
     public rows: number;
 
@@ -125,7 +125,40 @@ namespace angband {
     }
   }
 
-  export class AngbandUI {
+  export class Status {
+    public setStatusText(text: string) {
+      if (text === this.lastText) return;
+      var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+      if (m) {
+        text = m[1];
+        this.progressElement.value = parseInt(m[2]) * 100;
+        this.progressElement.max = parseInt(m[4]) * 100;
+        this.progressElement.hidden = false;
+        this.spinnerElement.hidden = false;
+      } else {
+        this.progressElement.value = 0;
+        this.progressElement.max = 0;
+        this.progressElement.hidden = true;
+        if (!text) this.spinnerElement.style.display = 'none';
+      }
+      this.statusElement.textContent = text;
+      this.lastText = text;
+    }
+
+    // onerror handler.
+    public globalReportError(evt: Event) {
+      this.setStatusText('Exception thrown, see JavaScript console');
+      this.spinnerElement.style.display = 'none';
+    }
+
+    constructor(private statusElement: HTMLElement, private progressElement: HTMLProgressElement, private spinnerElement: HTMLElement) {
+      this.lastText = "";
+    }
+
+    private lastText: string;
+  }
+
+  export class UI {
     worker: Worker;
 
     // Called when we receive a message from our WebWorker.
@@ -136,6 +169,9 @@ namespace angband {
           // TODO: display this.
           console.log("Got error: " + msg.text);
           break;
+        case 'STATUS':
+          this.status.setStatusText(msg.text);
+          break;
         case 'SET_CELL':
           this.grid.setCell(msg as SET_CELL_MSG);
           break;
@@ -145,18 +181,24 @@ namespace angband {
       }
     }
 
+    // Called to send a message to our WebWorker.
+    postMessage(msg: WorkerEvent) {
+      this.worker.postMessage(msg);
+    }
+
     // Called when we receive a key event.
     public handleKeyEvent(evt: KeyboardEvent) {
-      this.worker.postMessage({
+      this.postMessage({
         name: "KEY_EVENT",
         key: evt.key,
+        code: keyCodeForKey(evt.code),
         modifiers: 0,
       });
       if (evt.preventDefault)
         evt.preventDefault();
     };
 
-    constructor(public grid: AngbandGrid) {
+    constructor(private grid: Grid, private status: Status) {
       this.grid.rebuildCells();
       this.worker = new Worker('assets/worker.js');
       this.worker.onmessage = this.onMessage.bind(this);
@@ -164,5 +206,21 @@ namespace angband {
   }
 }
 
-const ANGBAND_UI = new angband.AngbandUI(new angband.AngbandGrid(document.getElementById('main-angband-grid') as HTMLTableElement));
-document.addEventListener('keydown', ANGBAND_UI.handleKeyEvent.bind(ANGBAND_UI));
+const ANGBAND_UI: angband.UI = (function () {
+  function getElem<T extends HTMLElement>(id: string): T {
+    let elem = document.getElementById(id);
+    if (!elem) throw new Error("No element with id " + id);
+    return elem as T;
+  };
+  let grid = new angband.Grid(getElem<HTMLTableElement>('main-angband-grid'));
+  let status = new angband.Status(
+    getElem('main-angband-status'),
+    getElem('main-angband-progress'),
+    getElem('main-angband-spinner'));
+
+  window.onerror = status.globalReportError.bind(status);
+
+  let ui = new angband.UI(grid, status);
+  document.addEventListener('keydown', ui.handleKeyEvent.bind(ui));
+  return ui;
+})();

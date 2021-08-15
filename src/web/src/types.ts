@@ -8,6 +8,11 @@ namespace angband {
     text: string,
   }
 
+  export interface STATUS_MSG {
+    name: "STATUS",
+    text: string,
+  }
+
   export interface SET_CELL_MSG {
     name: "SET_CELL",
     row: number,
@@ -16,7 +21,7 @@ namespace angband {
     rgb: number
   }
 
-  export type RenderEvent = ERROR_MSG | SET_CELL_MSG;
+  export type RenderEvent = ERROR_MSG | STATUS_MSG | SET_CELL_MSG;
 
   // Messages sent from render.
   export interface KEY_EVENT_MSG {

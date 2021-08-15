@@ -56,33 +56,28 @@ JS_FILENAMES := render.js worker.js
 TSC_PATHS := $(JS_FILENAMES:%.js=web/src/%.ts) web/src/types.ts
 JS_STAGED := $(JS_FILENAMES:%.js=$(STAGE_DIR)/%.js)
 
+STATIC_FILEPATHS = $(wildcard ./web/static/*)
+
 JS_GEN := $(STAGE_DIR)/angband-gen.js
 WASM := $(JS_GEN:.js=.wasm)
 ASSET_DATA := $(JS_GEN:.js=.data)
 
 ASSET_DIR := $(STAGE_DIR)/assets/
 STATIC := $(STAGE_DIR)/static
-ANGBAND_HTML := $(STAGE_DIR)/angband.html
-ANGBAND_CSS := $(STAGE_DIR)/style.css
 
 .PHONY: install
 install: staging
-	@mkdir -p $(BUILT_DIR)/
-	@rm -Rf $(BUILT_DIR)/*
-	@cp $(ANGBAND_HTML) $(BUILT_DIR)/
+	mkdir -p $(BUILT_DIR)/
+	rm -Rf $(BUILT_DIR)/*
+	cp web/static/angband.html $(BUILT_DIR)/
 
-	@mkdir -p $(BUILT_DIR)/assets/
-	@cp $(ASSET_DATA) $(WASM) $(JS_STAGED) $(JS_GEN) $(ANGBAND_CSS) $(BUILT_DIR)/assets/
+	mkdir -p $(BUILT_DIR)/assets/
+	cp $(ASSET_DATA) $(WASM) $(JS_STAGED) $(JS_GEN) $(BUILT_DIR)/assets/
+	cp $(filter-out */angband.html, $(STATIC_FILEPATHS)) $(BUILT_DIR)/assets/
 	@echo "Built $(BUILT_DIR)/"
 
 $(STAGE_DIR):
 	mkdir -p $(STAGE_DIR)
-
-$(ANGBAND_HTML): web/static/angband.html | $(STAGE_DIR)
-	cp $< $@
-
-$(ANGBAND_CSS): web/static/style.css | $(STAGE_DIR)
-	cp $< $@
 
 # Note: this requires GNU Make 4.3 or later.
 $(JS_STAGED) &: $(TSC_PATHS) web/tsconfig.json
@@ -92,7 +87,7 @@ $(STAGE_DIR)/%.js: web/built/%.js | $(STAGE_DIR)
 	cp $< $@
 
 .PHONY: staging
-staging: $(WASM) $(ASSET_DATA) $(JS_STAGED) $(ANGBAND_HTML) $(ANGBAND_CSS)
+staging: $(WASM) $(ASSET_DATA) $(JS_STAGED)
 
 $(ASSET_DIR): $(wildcard ../lib/**/*) | $(STAGE_DIR)
 	@rm -Rf $(ASSET_DIR)

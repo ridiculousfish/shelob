@@ -3,29 +3,32 @@ body {
     margin: 0;
     padding: none;
     width: 100%;
+    background-color: black;
+    color: #101010;
   }
 
   .spinner {
-    height: 30px;
-    width: 30px;
-    margin: 0;
-    margin-top: 20px;
-    margin-left: 20px;
+    height: 80px;
+    width: 80px;
+    margin: 20px;
     display: inline-block;
     vertical-align: top;
 
-    -webkit-animation: rotation .8s linear infinite;
-    -moz-animation: rotation .8s linear infinite;
-    -o-animation: rotation .8s linear infinite;
-    animation: rotation 0.8s linear infinite;
+    -webkit-animation: rotation 3s linear infinite;
+    -moz-animation: rotation 3s linear infinite;
+    -o-animation: rotation 3s linear infinite;
+    animation: rotation 3s linear infinite;
 
-    border-left: 5px solid rgb(235, 235, 235);
-    border-right: 5px solid rgb(235, 235, 235);
-    border-bottom: 5px solid rgb(235, 235, 235);
-    border-top: 5px solid rgb(120, 120, 120);
-    
-    border-radius: 100%;
-    background-color: rgb(189, 215, 46);
+    background-color: black;
+    background-image: url("logo_small.png");
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+
+  #angband-progress-overlay {
+    position: absolute;
+    left: 20px;
+    top: 20px;
   }
 
   @-webkit-keyframes rotation {
@@ -45,7 +48,7 @@ body {
     to {transform: rotate(360deg);}
   }
 
-  #status {
+  #main-angband-status {
     display: inline-block;
     vertical-align: top;
     margin-top: 30px;
@@ -54,7 +57,7 @@ body {
     color: rgb(120, 120, 120);
   }
 
-  #progress {
+  #main-angband-progress {
     height: 20px;
     width: 300px;
   }
@@ -79,6 +82,7 @@ body {
     display: block;
     background-color: black;
     color: white;
+    border: none;
     font-family: 'Lucida Console', Monaco, monospace;
     outline: none;
   }
@@ -86,8 +90,13 @@ body {
   .angband-grid {
     font-family: 'Menlo', 'Monaco', 'Courier', monospace;
     table-layout: fixed;
+    width: 85%;
     position: relative;
-    margin: 0 auto;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 100px;
+    padding: 20px;
+    border: 1px solid #333;
   }
 
   .angband-grid tr {
@@ -101,7 +110,7 @@ body {
     text-align: center;
   }
 
-  .angband-grid, .angband-grid tr, .angband-grid td {
+  .angband-grid tr, .angband-grid td {
     border: none;
     padding: 0;
     border-spacing: 0;
