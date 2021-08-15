@@ -276,6 +276,10 @@ namespace angband {
           this.grid.wipeAllCells(msg as CLEAR_SCREEN_MSG);
           break;
 
+        case 'PRINT':
+          this.printOutput(msg as PRINT_MSG);
+          break;
+
         default:
           console.log("Unknown message: " + JSON.stringify(msg));
           break;
@@ -300,9 +304,17 @@ namespace angband {
         if (evt.preventDefault)
           evt.preventDefault();
       }
-    };
+    }
 
-    constructor(private grid: Grid, private status: Status) {
+    printOutput(evt: PRINT_MSG) {
+      // Print some text.
+      let { text, stderr } = evt;
+      this.printOutputElement.value += text + "\n";
+      this.printOutputElement.scrollTop = this.printOutputElement.scrollHeight;
+      (stderr ? console.error : console.log)(text);
+    }
+
+    constructor(private grid: Grid, private status: Status, private printOutputElement: HTMLTextAreaElement) {
       this.grid.rebuildCells();
       this.worker = new Worker('assets/worker.js');
       this.worker.onmessage = this.onMessage.bind(this);
@@ -321,10 +333,11 @@ const ANGBAND_UI: angband.UI = (function () {
     getElem('main-angband-status'),
     getElem('main-angband-progress'),
     getElem('main-angband-spinner'));
-
   window.onerror = status.globalReportError.bind(status);
 
-  let ui = new angband.UI(grid, status);
+  let printOutput = getElem<HTMLTextAreaElement>('output');
+
+  let ui = new angband.UI(grid, status, printOutput);
   document.addEventListener('keydown', ui.handleKeyEvent.bind(ui));
   return ui;
 })();

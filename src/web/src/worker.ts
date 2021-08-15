@@ -79,6 +79,25 @@ namespace angband {
       this.postMessage(msg);
     }
 
+    // Reflect anything printed to stdout.
+    public modulePrint(text: string) {
+      const msg: PRINT_MSG = {
+        name: "PRINT",
+        text,
+        stderr: false,
+      };
+      this.postMessage(msg);
+    }
+
+    public modulePrintErr(text: string) {
+      const msg: PRINT_MSG = {
+        name: "PRINT",
+        text,
+        stderr: true,
+      };
+      this.postMessage(msg);
+    }
+
     // Report run dependencies.
     public getModuleDependencyMonitor(): (a: number) => void {
       let totalDependencies = 0;
@@ -186,5 +205,7 @@ onmessage = ANGBAND.onMessage.bind(ANGBAND);
 var Module: any = {};
 Module['setStatus'] = ANGBAND.moduleSetStatus.bind(ANGBAND);
 Module['monitorRunDependencies'] = ANGBAND.getModuleDependencyMonitor();
+Module['print'] = ANGBAND.modulePrint.bind(ANGBAND);
+Module['printErr'] = ANGBAND.modulePrintErr.bind(ANGBAND);
 
 ANGBAND.run();

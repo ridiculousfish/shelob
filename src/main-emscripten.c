@@ -179,6 +179,16 @@ static int Term_xtra_emscripten_event(int wait)
 	int ch = EM_ASM_INT({ return ANGBAND.eventKeyCode(); });
 	int mods = EM_ASM_INT({ return ANGBAND.eventModifiers(); });
 	EM_ASM({ ANGBAND.popEvent(); });
+
+	// Apply the MODS_INCLUDE_CONTROL logic, but in reverse.
+	// This is because the web does not encode CONTROL in key event characters.
+	if (! (mods & KC_MOD_KEYPAD)) {
+		if (! MODS_INCLUDE_SHIFT(ch)) mods &= ~KC_MOD_SHIFT;
+		if ((mods & KC_MOD_CONTROL) && ENCODE_KTRL(ch)) {
+			ch = KTRL(ch);
+			mods &= ~KC_MOD_CONTROL;
+		}
+	}
 	Term_keypress(ch, mods);	
 	return 1;
 }
