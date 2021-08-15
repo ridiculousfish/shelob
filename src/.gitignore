@@ -5,4 +5,5 @@ autoconf.h.in
 angband
 stage
 built
+*.dep
 
