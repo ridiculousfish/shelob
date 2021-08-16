@@ -25,7 +25,7 @@
 /*
  * Extract various bonuses
  */
-extern void borg_notice(bool notice_swap);
+extern void borg_notice(bool notice_swap, bool do_inven_equip);
 
 /*
  * Extract the bonuses for items in the home.
@@ -42,6 +42,7 @@ extern void borg_notice_home(borg_item *in_item, bool no_items);
  * Calculate the basic "power"
  */
 extern s32b borg_power(void);
+extern s32b borg_power_aux1(void);
 
 /*
  * Calculate the basic "power" of the home
@@ -69,7 +70,7 @@ extern char *borg_restock(int depth);
 /*
  * Determine if the Borg is "prepared" for the given level
  */
-extern char *borg_prepared(int depth);
+extern char *borg_prep(int depth);
 
 
 /*
