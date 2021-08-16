@@ -120,21 +120,67 @@ namespace angband {
   }
 
 
-  type Column = HTMLTableDataCellElement;
+  const NBSP = "\xA0";
+
+  class Cell {
+    public text: string = NBSP;
+    public rgb: number = 0;
+    public dirty: boolean = false;
+    constructor(public element: HTMLTableDataCellElement) {
+    }
+
+    // Set our text and color, perhaps marking us dirty.
+    // \return if we are dirty.
+    public setTextAndColor(text: string, rgb: number): boolean {
+      if (this.text !== text || this.rgb !== rgb) {
+        this.text = text;
+        this.rgb = rgb;
+        this.dirty = true;
+      }
+      return this.dirty;
+    }
+
+    // \return a line like #FF0000 for our RGB.
+    rgbString(): string {
+      // Common case.
+      if (this.rgb === 0) return "#000000";
+      let rgbtext = this.rgb.toString(16);
+      while (rgbtext.length < 6) rgbtext = '0' + rgbtext;
+      return '#' + rgbtext;
+    }
+
+    // Mark ourselves as having the cursor.
+    public setHasCursor(flag: boolean) {
+      if (flag) {
+        this.element.classList.add("angband-cursor");
+      } else {
+        this.element.classList.remove("angband-cursor");
+      }
+    }
+
+
+    public drawIfDirty() {
+      if (this.dirty) {
+        this.dirty = false;
+        this.element.style.color = this.rgbString();
+        this.element.textContent = this.text;
+      }
+    }
+  }
+
+  type Column = Cell;
   type Row = Column[];
 
   export class Grid {
-    public columns: number;
-    public rows: number;
+    public columns: number = 80;
+    public rows: number = 24;
 
-    cells: Row[];
-    cursor: HTMLTableDataCellElement | null;
-    nbsp: "\xA0";
+    cells: Row[] = [];
+    cursor: Cell | null = null;
+
+    displayRequest: number | undefined = undefined;
 
     constructor(public element: HTMLTableElement) {
-      this.columns = 80;
-      this.rows = 24;
-      this.cursor = null;
     }
 
     // Rebuild our table.
@@ -144,24 +190,44 @@ namespace angband {
       }
       this.cursor = null;
 
-      this.cells = [];
+      this.cells.length = 0;
       for (let row = 0; row < this.rows; row++) {
         var tr = document.createElement('tr');
         let rowlist = [];
         for (let col = 0; col < this.columns; col++) {
           let td = document.createElement("td");
-          td.textContent = this.nbsp;
+          td.textContent = NBSP;
           tr.appendChild(td);
-          rowlist.push(td);
+          rowlist.push(new Cell(td));
         }
         this.cells.push(rowlist);
         this.element.appendChild(tr);
       }
     }
 
+    // Mark ourselves as needing display: we have dirty cells, wait and redraw them in batch.
+    private setNeedsDisplay() {
+      if (this.displayRequest === undefined) {
+        this.displayRequest = requestAnimationFrame(this.displayNow.bind(this));
+      }
+    }
+
+    // Called by requestAnimationFrame to display dirty cells.
+    private displayNow() {
+      this.displayRequest = undefined;
+      this.cells.forEach((row) => {
+        row.forEach((cell) => {
+          cell.drawIfDirty();
+        });
+      });
+    }
+
     // Clear the cursor. Note angband expects drawing a cell to clear the cursor in that cell.
     private clearCursor() {
-      if (this.cursor !== null) this.cursor.classList.remove("angband-cursor");
+      if (this.cursor !== null) {
+        this.cursor.setHasCursor(false);
+        this.cursor = null;
+      }
     }
 
     // Set the cell at (row, col) to a character given by charCode, with the color rgb.
@@ -170,12 +236,8 @@ namespace angband {
       if (row >= this.cells.length || col >= this.cells[row].length) {
         throw (`Cell ${row}, ${col} out of bounds`);
       }
-      let cell = this.cells[row][col];
-      if (cell === this.cursor) this.clearCursor();
-      let rgbtext = rgb.toString(16);
-      while (rgbtext.length < 6) rgbtext = '0' + rgbtext;
-      cell.style.color = '#' + rgbtext;
-      cell.textContent = (charCode === 0x20 ? this.nbsp : String.fromCharCode(charCode));
+      let text = (charCode === 0x20 ? NBSP : String.fromCharCode(charCode));
+      if (this.cells[row][col].setTextAndColor(text, rgb)) this.setNeedsDisplay();
     }
 
     // Set the cursor location.
@@ -184,7 +246,7 @@ namespace angband {
       let { row, col } = msg;
       if (row < this.cells.length && col < this.cells[row].length) {
         this.cursor = this.cells[row][col];
-        this.cursor.classList.add("angband-cursor");
+        this.cursor.setHasCursor(true);
       }
     }
 
@@ -195,7 +257,7 @@ namespace angband {
         throw (`Cell ${row}, ${col} out of bounds`);
       for (let i = 0; i < count; i++) {
         let cell = this.cells[row][col + i];
-        cell.textContent = this.nbsp;
+        if (cell.setTextAndColor(NBSP, 0)) this.setNeedsDisplay();
         if (cell === this.cursor) this.clearCursor();
       }
     }
@@ -205,7 +267,7 @@ namespace angband {
       this.clearCursor();
       this.cells.forEach((row) => {
         row.forEach((cell) => {
-          cell.textContent = this.nbsp;
+          if (cell.setTextAndColor(NBSP, 0)) this.setNeedsDisplay();
         });
       });
     }
@@ -238,10 +300,9 @@ namespace angband {
     }
 
     constructor(private statusElement: HTMLElement, private progressElement: HTMLProgressElement, private spinnerElement: HTMLElement) {
-      this.lastText = "";
     }
 
-    private lastText: string;
+    private lastText: string = "";
   }
 
   export class UI {

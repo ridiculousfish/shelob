@@ -5,6 +5,7 @@
     "alwaysStrict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
+    "strictPropertyInitialization": true,
   },
   "files": [
     "./src/render.ts",

@@ -10,7 +10,7 @@ namespace angband {
   // A class which gets called from C source.
   export class ThreadWorker {
     // List of queued events.
-    eventQueue: KeyEvent[];
+    eventQueue: KeyEvent[] = [];
 
     // Promise resolved when a new event is received.
     eventPromise: Promise<boolean>;
@@ -22,7 +22,7 @@ namespace angband {
     hasEvent(): boolean { return this.eventQueue.length > 0; }
 
     constructor(private worker: Worker) {
-      this.eventQueue = [];
+      this.eventPromiseCallback = (_b) => { }; // satisfy the compiler that this is assigned.
       this.eventPromise = new Promise((resolve) => {
         this.eventPromiseCallback = resolve;
       });
