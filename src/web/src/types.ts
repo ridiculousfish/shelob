@@ -41,8 +41,12 @@ namespace angband {
     name: "CLEAR_SCREEN",
   }
 
+  export interface FLUSH_DRAWING_MSG {
+    name: "FLUSH_DRAWING";
+  }
+
   // List of messages sent from ThreadWorker to Render.
-  export type RenderEvent = ERROR_MSG | STATUS_MSG | PRINT_MSG | SET_CELL_MSG | SET_CURSOR_MSG | WIPE_CELLS_MSG | CLEAR_SCREEN_MSG;
+  export type RenderEvent = ERROR_MSG | STATUS_MSG | PRINT_MSG | SET_CELL_MSG | SET_CURSOR_MSG | WIPE_CELLS_MSG | CLEAR_SCREEN_MSG | FLUSH_DRAWING_MSG;
 
   export interface KEY_EVENT_MSG {
     name: "KEY_EVENT",

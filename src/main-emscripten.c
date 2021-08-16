@@ -201,9 +201,8 @@ static int Term_xtra_emscripten_event(int wait)
  * Handle a "special request"
  */
 static errr Term_xtra_emscripten(int n, int v) {
-	//printf("Got xtra %d -> %d\n", n, v);
-	//emscripten_sleep(1);
 	term_data *td = (term_data *)(Term->data);
+	(void)td;
 
 	/* Analyze the request */
 	switch (n) {
@@ -217,9 +216,10 @@ static errr Term_xtra_emscripten(int n, int v) {
 			//write(1, "\007", 1);
 			return 0;
 
-		/* Flush the Curses buffer */
+		/* Flush the drawing buffer */
 		case TERM_XTRA_FRESH:
-			//wrefresh(td->win);
+			// Note this hurts frame rates, we could support this as a frame rate limiter.
+			//EM_ASM({ ANGBAND.flushDrawing(); });
 			return 0;
 
 		/* Change the cursor visibility */
@@ -270,6 +270,9 @@ static errr term_data_init_emscripten(term_data *td, int rows, int cols, int y, 
 
     /* Use a "software" cursor */
     t->soft_cursor = TRUE;
+
+	/* No need to flush individual rows. */
+	t->never_frosh = TRUE;
 
 	/* Set some hooks */
 	t->init_hook = Term_init_emscripten;

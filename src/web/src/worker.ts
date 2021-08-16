@@ -150,6 +150,14 @@ namespace angband {
       this.postMessage(msg);
     }
 
+    // Flush all drawing to the screen. Note this can affect frame rates.
+    public flushDrawing() {
+      const msg: FLUSH_DRAWING_MSG = {
+        name: "FLUSH_DRAWING"
+      };
+      this.postMessage(msg);
+    }
+
     // Move the cursor to a cell.
     public setCursor(row: number, col: number) {
       const msg: SET_CURSOR_MSG = {

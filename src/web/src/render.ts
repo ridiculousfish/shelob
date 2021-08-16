@@ -283,6 +283,13 @@ namespace angband {
         });
       });
     }
+
+    public flushDrawing(_msg: FLUSH_DRAWING_MSG) {
+      if (this.displayRequest !== undefined) {
+        cancelAnimationFrame(this.displayRequest);
+        this.displayNow();
+      }
+    }
   }
 
   export class Status {
@@ -347,6 +354,10 @@ namespace angband {
 
         case 'CLEAR_SCREEN':
           this.grid.wipeAllCells(msg as CLEAR_SCREEN_MSG);
+          break;
+
+        case 'FLUSH_DRAWING':
+          this.grid.flushDrawing(msg as FLUSH_DRAWING_MSG);
           break;
 
         case 'PRINT':
