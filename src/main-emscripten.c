@@ -181,12 +181,16 @@ static int Term_xtra_emscripten_event(int wait)
 	EM_ASM({ ANGBAND.popEvent(); });
 
 	// Apply the MODS_INCLUDE_CONTROL logic, but in reverse.
-	// This is because the web does not encode CONTROL in key event characters.
+	// This is because the web does not encode ctrl in key event character key codes.
 	if (! (mods & KC_MOD_KEYPAD)) {
 		if (! MODS_INCLUDE_SHIFT(ch)) mods &= ~KC_MOD_SHIFT;
-		if ((mods & KC_MOD_CONTROL) && ENCODE_KTRL(ch)) {
-			ch = KTRL(ch);
-			mods &= ~KC_MOD_CONTROL;
+		if (mods & KC_MOD_CONTROL) {
+			// Do what the the tty would have done if we had a tty.
+			// Note we must manually check for lowercase letters; MODS_INCLUDE_CONTROL assumes we'll only get uppercase.
+			if (!MODS_INCLUDE_CONTROL(ch) || ('a' <= ch && ch <= 'z')) {
+				ch = KTRL(ch);
+				mods &= ~KC_MOD_CONTROL;
+			}
 		}
 	}
 	Term_keypress(ch, mods);	

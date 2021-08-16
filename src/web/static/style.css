@@ -98,6 +98,7 @@ body {
     padding: 20px;
     border: 1px solid #333;
     white-space:nowrap;
+    outline: none; /* suppress focus ring */
   }
 
   .angband-grid tr {

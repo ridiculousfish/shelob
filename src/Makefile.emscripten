@@ -92,11 +92,12 @@ staging: $(WASM) $(ASSET_DATA) $(JS_STAGED)
 $(ASSET_DIR): $(wildcard ../lib/**/*) | $(STAGE_DIR)
 	@rm -Rf $(ASSET_DIR)
 	@mkdir -p $(ASSET_DIR)
-	@mkdir -p $@/lib/edit $@/lib/file $@/lib/help $@/lib/pref $@/lib/xtra/font
+	@mkdir -p $@/lib/edit $@/lib/file $@/lib/user $@/lib/help $@/lib/pref $@/lib/xtra/font
 	@mkdir -p $@/lib/xtra/sound $@/lib/xtra/graf
 	@echo copying files...
 	@cp ../lib/edit/*.txt $@/lib/edit
 	@cp ../lib/file/*.txt $@/lib/file
+	@cp ./borg/borg.txt $@/lib/user/
 	@cp ../lib/help/*.txt ../lib/help/*.hlp $@/lib/help
 	@cp ../lib/pref/*.prf $@/lib/pref
 	@cp ../lib/xtra/font/*.fon $@/lib/xtra/font
