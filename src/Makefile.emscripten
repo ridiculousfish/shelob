@@ -12,7 +12,7 @@ WARNINGS = -W -Wall -Wextra -Wold-style-definition -Wdeclaration-after-statement
 		  -Wunreachable-code -Wno-unused-parameter -Wno-missing-field-initializers \
 		  -Wno-incompatible-pointer-types-discards-qualifiers
 CFLAGS = -Os -g $(WARNINGS) -DWASM=1
-LDFLAGS = -s ENVIRONMENT=worker -s ASYNCIFY $(ASYNCIFY_IMPORTS)
+LDFLAGS = -s ENVIRONMENT=worker -s ASYNCIFY
 INCLUDES = -I.
 LIBS =
 
