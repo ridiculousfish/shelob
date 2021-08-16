@@ -2097,7 +2097,7 @@ extern bool borg_fighting_demon;
 extern bool borg_fighting_dragon;
 
 /* or a guy that can teleport the player around */
-bool borg_fighting_tele_to;
+extern bool borg_fighting_tele_to;
 
 
 
