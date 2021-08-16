@@ -6,6 +6,7 @@
 #include "cave.h"
 #include "files.h"
 
+#ifdef ALLOW_BORG
 #include "borg1.h"
 #include "borg2.h"
 #include "borg3.h"
@@ -55,365 +56,6 @@
  */
 
 
-static int borg_bonus_activation(int i, bool ultility)
-{
-	int value = 0;
-
-    /* This needs to be changed */
-    switch (borg_items[i].activation)
-    {
-		/* Artifact -- Narthanc- fire bolt 9d8*/
-		/* Artifact -- Paurhach- fire bolt 9d8 */
-		case EFF_FIRE_BOLT:
-		value +=(500+(9*(8+1)/2));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-		/* Artifact -- Nimthanc- frost bolt 6d8*/
-		/* Artifact -- Paurnimmen- frost bolt 6d8 */
-		case EFF_COLD_BOLT:
-		value +=(500+(6*(8+1)/2));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-		/* Artifact -- Dethanc- electric bolt 4d8*/
-		/* Artifact -- Pauraegen- lightning bolt 4d8 */
-		case EFF_ELEC_BOLT:
-		value +=(500+(4*(8+1)/2));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-
-		/* Artifact -- Rilia- poison gas 12*/
-		case EFF_STINKING_CLOUD:
-		value +=(500+(24));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-		/* Artifact -- Belangil- frost ball 48*/
-		case EFF_COLD_BALL50:
-		value +=(500+(96));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-
-		/* Artifact -- Arunruth- frost bolt 12d8*/
-		case EFF_COLD_BOLT2:
-		value +=(500+(12*(8+1)/2));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-
-		/* Artifact -- Ringil- frost ball 100*/
-		/* Artifact -- Aeglos- frost ball 100*/
-		case EFF_COLD_BALL100:
-		value +=(500+(200));
-		borg_skill[BI_NSRANGED] ++;
-		/* extra boost for speed (if this is Ringil) */
-		if (!op_ptr->opt[OPT_birth_randarts])
-			value +=25000L;
-		break;
-
-
-		/* Artifact -- Anduril- fire ball 72*/
-		/* Artifact -- Firestar- fire ball 72 */
-		case EFF_FIRE_BALL:
-		value +=(500+(144));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-		/* Artifact -- NARYA- FIRE BALL 120 */
-		case EFF_FIRE_BALL2:
-		value +=(500+(240));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-		/* Artifact -- Theoden- drain Life 120*/
-		case EFF_DRAIN_LIFE2:
-		value +=(500+120);
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-
-		/* Artifact -- Totila- confusion */
-		case EFF_CONFUSE2:
-		value +=(500+(200));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-		/* Artifact -- TURMIL- drain life 90 */
-		case EFF_DRAIN_LIFE1:
-		value +=(500+90);
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-
-		/* Artifact -- Razorback- spikes 150 */
-		/* Artifact -- FINGOLFIN- MISSILE 150 (bonus for TH TD)*/
-		case EFF_ARROW:
-		value +=(500+(300));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-
-		/* Artifact -- Cammithrim- Magic Missile 2d6 */
-		case EFF_MISSILE:
-		value +=(500+(2*(6+1)/2));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-		/* Artifact -- PaurNEN- ACID bolt 5d8 */
-		case EFF_ACID_BOLT:
-		value +=(500+(5*(8+1)/2));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-		/* Artifact -- INGWE- DISPEL EVIL X5 */
-		case EFF_DISPEL_EVIL:
-		value +=(500+(10 + (borg_skill[BI_CLEVEL]*5)/2));
-		break;
-
-
-		/* Artifact -- NENYA- COLD BALL 200 */
-		case EFF_COLD_BALL2:
-		value +=(500+(400));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-		/* Artifact -- VILYA- ELEC BALL 250 */
-		case EFF_ELEC_BALL2:
-		value +=(500+(500));
-		borg_skill[BI_NSRANGED] ++;
-		break;
-
-		/* Artifact -- POWER One Ring-*/
-		case EFF_BIZARRE:
-		value +=(999999);
-		break;
-
-		/* Artifact -- Ulmo- tele way */
-		case EFF_TELE_OTHER:
-		if (borg_class == CLASS_MAGE)
-		{
-			value +=500;
-		}
-		else
-			value +=(500+(500));
-		break;
-
-		/* Artifact -- Colluin - bladturner Resistance */
-		case EFF_RESIST_ALL:
-		case EFF_RAGE_BLESS_RESIST:
-		value +=(500+(150));
-		/* extra bonus for the non spell guys */
-		if (borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE) value +=65000;
-		break;
-
-		/* Artifact -- Holcolleth -- Sleep II */
-		case EFF_SLEEPII:
-		if ((borg_class == CLASS_MAGE) || (borg_class == CLASS_PRIEST) )
-		{
-			value +=500;
-		}
-		else
-			value +=(500+(200));
-		break;
-
-		/* Artifact -- Thingol recharge */
-		case EFF_RECHARGE:
-		if (borg_class == CLASS_MAGE)
-		{
-			value +=500;
-		}
-		else
-			value +=(500+(100));
-		break;
-
-		/* Artifact -- Holehenth detection */
-		case EFF_DETECT_ALL:
-			if (borg_class == CLASS_MAGE)
-			{
-				value +=100;
-			}
-			else
-				value +=(500+(100));
-			break;
-
-		/* Artifact -- Dal fear and poison */
-		case EFF_REM_FEAR_POIS:
-		if (borg_class == CLASS_MAGE || borg_class == CLASS_PRIEST)
-		{
-			value +=500;
-		}
-		else
-			value +=(500+(200));
-		break;
-
-		/* Artifact -- Carlammas PFE*/
-		case EFF_PROTEVIL:
-			if (borg_class == CLASS_PRIEST)
-			{
-				value +=300;
-			}
-			else
-				value +=(500+(100));
-			break;
-
-		/* Artifact -- Lotharang- cure light */
-
-		/* Artifact -- Eriril id */
-		case EFF_IDENTIFY:
-			if (borg_class == CLASS_MAGE)
-			{
-				value +=100;
-			}
-			else
-				value +=(500+(100));
-			break;
-
-		/* Artifact -- Cubragol brand bolts, bonus for speed */
-		case EFF_FIREBRAND:
-		value +=(500+(300));
-		/* extra boost for speed */
-		if (!op_ptr->opt[OPT_birth_randarts])
-			value +=25000L;
-		break;
-
-		/* Artifact -- Avavir WoR */
-		case EFF_RECALL:
-			if (borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE)
-			{
-				value +=800;
-			}
-			else
-				value +=(500);
-			break;
-
-		/* Artifact -- Taratol, feanor, tulkas speed */
-		case EFF_HASTE1:
-			if (borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE)
-			{
-				value +=800;
-			}
-			else
-				value +=(500);
-			break;
-
-		/* Artifact -- Soulkeeper, Gondor heal */
-		case EFF_HEAL1:
-		case EFF_HEAL2:
-		case EFF_HEAL3:
-			if (borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE)
-			{
-				value +=800;
-			}
-			else
-				value +=(500);
-			break;
-
-		/* Artifact -- Belegonnon   phase */
-		case EFF_TELE_PHASE:
-			if (borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE)
-			{
-				value +=800;
-			}
-			else
-				value +=(500);
-			break;
-
-		/* Artifact -- Colannon teleport */
-		case EFF_TELE_LONG:
-			if (borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE)
-			{
-				value +=800;
-			}
-			else
-				value +=(500);
-			break;
-
-		/* Artifact -- Luthien RLL */
-		case EFF_RESTORE_EXP:
-			if (borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE)
-			{
-				value +=800;
-			}
-			else
-				value +=(500);
-			break;
-
-		/* Artifact -- Phial */
-
-		/* Artifact -- Star */
-		case EFF_MAPPING:
-		value +=(1200);
-		break;
-
-		/* Artifact -- Arkstone */
-
-		/* Artifact -- Celeborn */
-		case EFF_BANISHMENT:
-			value += 10000;
-			if (borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE)
-				value += 20000;
-			break;
-
-		/* Rings with Element Activation */
-		case EFF_RESIST_COLD:
-		case EFF_RING_ICE:
-		if (!borg_skill[BI_ICOLD]) value +=1000;
-		/* extra bonus for the non spell guys */
-		if (!borg_skill[BI_ICOLD] && 
-			(borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE))
-		{
-			value +=2000;
-		}
-		break;
-
-		case EFF_RESIST_FIRE:
-		case EFF_RING_FLAMES:
-		if (!borg_skill[BI_IFIRE]) value +=1000;
-			if (!borg_skill[BI_IFIRE] && 
-				(borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE))
-
-			{
-				value +=2000;
-			}
-			break;
-
-		case EFF_RESIST_ACID:
-		case EFF_RING_ACID:
-		if (!borg_skill[BI_IACID]) value +=1000;
-			if (!borg_skill[BI_IACID] && 
-			(borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE))
-			{
-				value +=3500;
-			}
-			break;
-
-		case EFF_RESIST_ELEC:
-		case EFF_RING_LIGHTNING:
-		if (!borg_skill[BI_IELEC]) value +=1000;
-			if (!borg_skill[BI_IELEC] && 
-			(borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE))
-			{
-				value +=4000;
-			}
-			break;
-
-		case EFF_RESIST_POIS:
-		if (!borg_skill[BI_IPOIS]) value +=1000;
-			if (!borg_skill[BI_IPOIS] && 
-				(borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE))
-			{
-				value +=2000;
-			}
-			break;
-	}
-
-
-    /* Result */
-    return (value);
-}
 
 /*
  * Helper function -- notice the player equipment
@@ -507,7 +149,10 @@ static void borg_notice_aux1(void)
     if (rf_has(f, OF_TELEPORT)) borg_skill[BI_CRSTELE] = TRUE;
 	if (rf_has(f, OF_IMPAIR_HP)) borg_skill[BI_CRSHPIMP] = TRUE;
 	if (rf_has(f, OF_IMPAIR_MANA)) borg_skill[BI_CRSMPIMP] = TRUE;
-	if (rf_has(f, OF_AFRAID)) borg_skill[BI_CRSFEAR] = TRUE;
+	if (rf_has(f, OF_AFRAID))
+	{
+		borg_skill[BI_CRSFEAR] = TRUE;
+	}
 	if (rf_has(f, OF_VULN_FIRE)) borg_skill[BI_CRSFVULN] = TRUE;
 	if (rf_has(f, OF_VULN_ACID)) borg_skill[BI_CRSAVULN] = TRUE;
 	if (rf_has(f, OF_VULN_COLD)) borg_skill[BI_CRSCVULN] = TRUE;
@@ -552,7 +197,7 @@ static void borg_notice_aux1(void)
     /* Clear the stat modifiers */
     for (i = 0; i < 6; i++) my_stat_add[i] = 0;
 
-    /* Scan the usable equipment */
+    /* Scan the usable inventory */
     for (i = INVEN_WIELD; i < INVEN_TOTAL; i++)
     {
         item = &borg_items[i];
@@ -561,11 +206,10 @@ static void borg_notice_aux1(void)
         if (!item->iqty) continue;
 
 		/* Does the borg need to get an ID for it? */
-		if (strstr(item->note, "magical") ||
-            strstr(item->note, "ego") ||
-            strstr(item->note, "splendid") ||
-			strstr(item->note, "Quest") || 
-			strstr(item->note, "excellent")) my_need_id ++;
+		if (streq(item->note, "magical") ||
+            streq(item->note, "ego") ||
+            streq(item->note, "splendid") ||
+			streq(item->note, "excellent")) my_need_id ++;
 
         /* track number of items the borg has on him */
         /* Count up how many artifacts the borg has on him */
@@ -633,7 +277,10 @@ static void borg_notice_aux1(void)
         if (of_has(item->flags, OF_TELEPORT)) borg_skill[BI_CRSTELE] = TRUE;
 		if (of_has(item->flags, OF_IMPAIR_HP)) borg_skill[BI_CRSHPIMP] = TRUE;
 		if (of_has(item->flags, OF_IMPAIR_MANA)) borg_skill[BI_CRSMPIMP] = TRUE;
-		if (of_has(item->flags, OF_AFRAID)) borg_skill[BI_CRSFEAR] = TRUE;
+		if (of_has(item->flags, OF_AFRAID))
+		{
+			borg_skill[BI_CRSFEAR] = TRUE;
+		}
 		if (of_has(item->flags, OF_VULN_FIRE)) borg_skill[BI_CRSFVULN] = TRUE;
 		if (of_has(item->flags, OF_VULN_ACID)) borg_skill[BI_CRSAVULN] = TRUE;
 		if (of_has(item->flags, OF_VULN_COLD)) borg_skill[BI_CRSCVULN] = TRUE;
@@ -651,8 +298,20 @@ static void borg_notice_aux1(void)
 		if (of_has(item->flags, OF_LIGHT))
 		{
 			/* Special case for Torches/Lantern of Brightness, they are not perm. */
-			if (item->tval != TV_LIGHT) borg_skill[BI_LIGHT] ++;
+			if (item->tval != TV_LIGHT &&
+				item->sval != SV_LIGHT_TORCH &&
+				item->sval != SV_LIGHT_LANTERN) borg_skill[BI_LIGHT] ++;
 		}
+
+		/* Artifact-- borgs do not gain the knowlege of some flags until
+		 * after the *ID*. So we allow the borg to know that the
+		 * item does have lite even if its not *ID*
+		 */
+		if ((item->name1 >=1 && item->name1 <= 3) || /* Phial, Star, Arkenstone */
+			  item->name1 == 7 || /* Planatir */
+			  item->name1 == 14 || /* Elfstone */
+			  item->name1 == 15)  /* Jewel */
+			 borg_skill[BI_LIGHT] ++;
 
         /* Immunity flags */
         /* if you are immune you automaticly resist */
@@ -735,9 +394,6 @@ static void borg_notice_aux1(void)
         borg_skill[BI_TOHIT] += item->to_h;
         borg_skill[BI_TODAM] += item->to_d;
     }
-
-	/* Some characters/races have special flags */
-	if (borg_class == CLASS_MAGE) borg_skill[BI_NO_MELEE] = TRUE;
 
     /* Update "stats" */
     for (i = 0; i < 6; i++)
@@ -926,7 +582,7 @@ static void borg_notice_aux1(void)
     {
         int str_index, dex_index;
         int div;
-		
+
         /* Enforce a minimum "weight" (tenth pounds) */
         div = ((item->weight < p_ptr->class->min_weight) ? p_ptr->class->min_weight : item->weight);
 
@@ -1031,7 +687,7 @@ static void borg_notice_aux1(void)
 	/* Fear from spell or effect or flag */
 	if (borg_skill[BI_ISAFRAID] || borg_skill[BI_CRSFEAR])
 	{
-		borg_skill[BI_TOHIT] -= 10;
+		borg_skill[BI_TOHIT] -= 20;
 		borg_skill[BI_ARMOR] += 8;
 		borg_skill[BI_DEV] = borg_skill[BI_DEV] * 95 / 100;
 	}
@@ -1076,21 +732,19 @@ static void borg_notice_aux1(void)
 			continue;
 
         /* Enchant all weapons (to hit) */
-        if ((borg_prayer_legal_fail(7, 2, 65) ||
+        if ((borg_prayer_legal_fail(7, 3, 65) ||
         	 borg_spell_legal_fail(7, 3, 65) ||
              amt_enchant_weapon >=1 ) )
         {
             if (item->to_h < borg_enchant_limit)
             {
                 my_need_enchant_to_h += (borg_enchant_limit - item->to_h);
-				if (item->to_h < 0 && my_need_enchant_to_h > 10) my_need_enchant_to_h = 1;
             }
 
             /* Enchant all weapons (to damage) */
             if (item->to_d < borg_enchant_limit)
             {
                 my_need_enchant_to_d += (borg_enchant_limit - item->to_d);
-				if (item->to_d < 0 && my_need_enchant_to_d > 10) my_need_enchant_to_d = 1;
             }
         }
         else /* I dont have the spell or *enchant* */
@@ -1098,14 +752,12 @@ static void borg_notice_aux1(void)
             if (item->to_h < 8)
             {
                 my_need_enchant_to_h += (8 - item->to_h);
-				if (item->to_h < 0 && my_need_enchant_to_h > 10) my_need_enchant_to_h = 1;
             }
 
             /* Enchant all weapons (to damage) */
             if (item->to_d < 8)
             {
                 my_need_enchant_to_d += (8 - item->to_d);
-				if (item->to_d < 0 && my_need_enchant_to_d > 10) my_need_enchant_to_d = 1;
             }
         }
     }
@@ -1122,7 +774,7 @@ static void borg_notice_aux1(void)
         if (!item->ident) continue;
 
         /* Note need for enchantment */
-        if ((borg_prayer_legal_fail(7, 3, 65) ||
+        if ((borg_prayer_legal_fail(7, 4, 65) ||
             borg_spell_legal_fail(7, 2, 65) ||
             amt_enchant_armor >=1 ))
         {
@@ -1153,25 +805,8 @@ static void borg_notice_aux1(void)
     /* Lite */
     if (item->tval == TV_LIGHT)
     {
-        /* Torches Bright -- extra radius two */
-        /* if (item->sval == SV_LIGHT_TORCH && item->timeout >= 1501) borg_skill[BI_CURLITE] = borg_skill[BI_CURLITE] + 2; */
-
-        /* Torches -- radius one */
-        if (item->sval == SV_LIGHT_TORCH) borg_skill[BI_CURLITE] = borg_skill[BI_CURLITE] + 1;
-
-		/* Torch of Brightness -- extra radius one */
-        /* if (item->sval == SV_LIGHT_TORCH &&
-			of_has(item->flags, OF_LIGHT) &&
-			item->timeout >= 1) borg_skill[BI_CURLITE] = borg_skill[BI_CURLITE] + 1; */
-
-        /* Lanterns -- radius two */
-        if (item->sval == SV_LIGHT_LANTERN && item->timeout >= 1) borg_skill[BI_CURLITE] = borg_skill[BI_CURLITE] + 2;
-
-        /* Artifact lites -- radius is pval (one of the pvals) */
-        if (item->sval >= SV_LIGHT_GALADRIEL)
-        {
-			borg_skill[BI_CURLITE] = borg_skill[BI_CURLITE] + (item->ident ? item->pval : 2);
-        }
+        if (of_has(item->flags, OF_LIGHT))
+            borg_skill[BI_CURLITE] = borg_skill[BI_CURLITE] + item->pval;
     }
 
 	/* Special way to handle See Inv */
@@ -1214,12 +849,12 @@ static void borg_notice_aux1(void)
 		if (my_ammo_power >= 3)
 		{
 
-			if ((borg_has_effect(EFF_FIREBRAND, TRUE, TRUE) ||
+			if ((borg_equips_artifact(EFF_FIREBRAND, INVEN_BOW) ||
 				 borg_spell_legal_fail(7, 5, 65)) &&
 			  item->iqty >=5 &&
 			  /* Skip artifacts and ego-items */
-			  /* !artifact_p(item) && */
-			  /* !ego_item_p(item) && */
+			  !item->name2 &&
+			  !item->name1 &&
 			  item->ident &&
 			  item->tval == my_ammo_tval)
 			  {
@@ -1230,7 +865,7 @@ static void borg_notice_aux1(void)
 			/* enchant missiles */
 			if (borg_skill[BI_CLEVEL] > 35)
 			{
-				if ((borg_spell_legal_fail(7, 3, 65) || borg_prayer_legal_fail(7, 2, 65))
+				if ((borg_spell_legal_fail(7, 3, 65) || borg_prayer_legal_fail(7, 3, 65))
 					&& item->iqty >= 5)
 				{
 					if (item->to_h < 10)
@@ -1338,18 +973,15 @@ static void borg_notice_aux2(void)
         item = &borg_items[i];
 
         /* Skip empty items */
-        if (!item->iqty || item->iqty == 255) continue;
+        if (!item->iqty) continue;
 
 		/* Does the borg need to get an ID for it? */
-		if (strstr(item->note, "magical") || strstr(item->note, "special") || strstr(item->note, "Quest") || 
-			strstr(item->note, "ego") ||streq(item->note, "splendid") ||streq(item->note, "excellent")) my_need_id ++;
-		
+		if (item->note && (strstr(item->note, "magical") || strstr(item->note, "special") ||
+			strstr(item->note, "ego") ||streq(item->note, "splendid") ||streq(item->note, "excellent"))) my_need_id ++;
+
         /* Hack -- skip un-aware items */
         if (!item->kind) continue;
 
-		/* Deep Magic Rings should be ID'd.  They dont get inscriptions like the above items. */
-		if (item->tval == TV_RING && borg_skill[BI_MAXDEPTH] >= 50 && !item->fully_identified) my_need_id++;
-			
 		/* count up the items on the borg (do not count artifacts  */
         /* that are not being wielded) */
         borg_has[item->kind] += item->iqty;
@@ -1449,23 +1081,14 @@ static void borg_notice_aux2(void)
                 case SV_POTION_LIFE:
                 borg_skill[BI_ALIFE] += item->iqty;
                 break;
-                case SV_POTION_RESTORE_MANA:
-                borg_skill[BI_AMANA] += item->iqty;
-                break;
                 case SV_POTION_CURE_CRITICAL:
                 borg_skill[BI_ACCW] += item->iqty;
-						amt_cure_blind += item->iqty;
-						amt_cure_confusion += item->iqty;
                 break;
                 case SV_POTION_CURE_SERIOUS:
                 borg_skill[BI_ACSW] += item->iqty;
-						amt_cure_blind += item->iqty;
-						amt_cure_confusion += item->iqty;
                 break;
                 case SV_POTION_CURE_LIGHT:
                 borg_skill[BI_ACLW] += item->iqty;
-						amt_cure_blind += item->iqty;
-						amt_cure_confusion += item->iqty;
                 break;
                 case SV_POTION_CURE_POISON:
                 borg_skill[BI_ACUREPOIS] += item->iqty;
@@ -1508,7 +1131,7 @@ static void borg_notice_aux2(void)
                 amt_inc_stat[A_CHR] += item->iqty;
                 break;
 
-				case SV_POTION_RES_STR:
+                case SV_POTION_RES_STR:
                 amt_fix_stat[A_STR] += item->iqty;
                 break;
                 case SV_POTION_RES_INT:
@@ -1526,8 +1149,7 @@ static void borg_notice_aux2(void)
                 case SV_POTION_RES_CHR:
                 amt_fix_stat[A_CHR] += item->iqty;
                 break;
-
-				case SV_POTION_RESTORE_EXP:
+                case SV_POTION_RESTORE_EXP:
                 amt_fix_exp += item->iqty;
                 break;
 
@@ -1601,7 +1223,7 @@ static void borg_notice_aux2(void)
 
                 case SV_SCROLL_TELEPORT_LEVEL:
                 borg_skill[BI_ATELEPORTLVL] += item->iqty;
-               	if (!borg_munchkin_start || borg_skill[BI_MAXCLEVEL] > borg_munchkin_level) borg_skill[BI_ATELEPORT] += item->iqty;
+                borg_skill[BI_ATELEPORT] += 1;
                 break;
 
 				case SV_SCROLL_MASS_BANISHMENT:
@@ -1614,11 +1236,12 @@ static void borg_notice_aux2(void)
             /* Rods */
             case TV_ROD:
 
+
             /* Analyze */
             switch (item->sval)
             {
                 case SV_ROD_IDENTIFY:
-				if (borg_activate_failure(item->tval, item->sval) < 500)	
+				if (borg_activate_failure(item->tval, item->sval) < 500)
                 {
                     borg_skill[BI_AID] += item->iqty * 100;
                 }
@@ -1630,7 +1253,7 @@ static void borg_notice_aux2(void)
 
                 case SV_ROD_RECALL:
                 /* Don't count on it if I suck at activations */
-				if (borg_activate_failure(item->tval, item->sval) < 500)	
+				if (borg_activate_failure(item->tval, item->sval) < 500)
                 {
                     borg_skill[BI_RECALL] += item->iqty * 100;
                 }
@@ -1655,12 +1278,19 @@ static void borg_notice_aux2(void)
                 break;
 
                 case SV_ROD_ILLUMINATION:
-					/* Heavy to carry, fast recharge.  Only carry a couple */
-					if (item->iqty <= 2)borg_skill[BI_ALITE] += item->iqty * 100;
+                borg_skill[BI_ALITE] += item->iqty * 100;
                 break;
 
                 case SV_ROD_SPEED:
+                /* Don't count on it if I suck at activations */
+				if (borg_activate_failure(item->tval, item->sval) < 500)
+                {
+                    borg_skill[BI_ASPEED] += item->iqty * 100;
+                }
+                else
+                {
                     borg_skill[BI_ASPEED] += item->iqty;
+                }
                 break;
 
                 case SV_ROD_MAPPING:
@@ -1670,7 +1300,7 @@ static void borg_notice_aux2(void)
                 case SV_ROD_HEALING:
                 /* only +2 per rod because of long charge time. */
                 /* Don't count on it if I suck at activations */
-				if (borg_activate_failure(item->tval, item->sval) < 500)	
+				if (borg_activate_failure(item->tval, item->sval) < 500)
                 {
                     borg_skill[BI_AHEAL] += item->iqty * 3;
                 }
@@ -1681,19 +1311,12 @@ static void borg_notice_aux2(void)
                 break;
 
 				case SV_ROD_LIGHT:
-				{
-					if (item->iqty <= 5) borg_skill[BI_AROD2] += item->iqty;
-					else borg_skill[BI_AROD2] += 5;
-					break;
-				}
 				case SV_ROD_FIRE_BOLT:
 				case SV_ROD_ELEC_BOLT:
 				case SV_ROD_COLD_BOLT:
 				case SV_ROD_ACID_BOLT:
 				{
-					if (item->iqty + borg_skill[BI_AROD1] <= 5) borg_skill[BI_AROD1] += item->iqty;
-					else borg_skill[BI_AROD1] += 5;
-					borg_skill[BI_NSRANGED] ++;
+					borg_skill[BI_AROD1] += item->iqty;
 					break;
 				}
 				case SV_ROD_DRAIN_LIFE:
@@ -1702,14 +1325,7 @@ static void borg_notice_aux2(void)
 				case SV_ROD_COLD_BALL:
 				case SV_ROD_ACID_BALL:
 				{
-					if (item->iqty + borg_skill[BI_AROD2] <= 10) borg_skill[BI_AROD2] += item->iqty;
-					else borg_skill[BI_AROD2] += 10;
-					borg_skill[BI_NSRANGED] ++;
-					break;
-				}
-				case SV_ROD_TELEPORT_OTHER:
-				{
-					borg_skill[BI_ATPORTOTHER] += item->iqty;
+					borg_skill[BI_AROD2] += item->iqty;
 					break;
 				}
 
@@ -1724,37 +1340,27 @@ static void borg_notice_aux2(void)
 				if (item->sval == SV_WAND_TELEPORT_AWAY)
 				{
 					borg_skill[BI_ATPORTOTHER] += item->pval;
-					if (item->pval) borg_skill[BI_NSRANGED] ++;
 				}
 
 				if (item->sval == SV_WAND_STINKING_CLOUD &&
 					borg_skill[BI_MAXDEPTH] < 30)
 				{
 					amt_cool_wand += item->pval;
-					if (item->pval) borg_skill[BI_NSRANGED] ++;
 				}
 
 				if (item->sval == SV_WAND_MAGIC_MISSILE &&
 					borg_skill[BI_MAXDEPTH] < 30)
 				{
 					amt_cool_wand += item->pval;
-					if (item->pval) borg_skill[BI_NSRANGED] ++;
 				}
 
 				if (item->sval == SV_WAND_ANNIHILATION)
 				{
 					amt_cool_wand += item->pval;
-					if (item->pval) borg_skill[BI_NSRANGED] ++;
 				}
 
 				break;
 
-				if (item->sval == SV_WAND_STONE_TO_MUD)
-				{
-					borg_skill[BI_ASTONE2MUD] += item->pval;
-				}
-
-				break;
 
 			/* Staffs */
             case TV_STAFF:
@@ -1769,16 +1375,19 @@ static void borg_notice_aux2(void)
                 break;
 
                 case SV_STAFF_TELEPORTATION:
-					borg_skill[BI_AESCAPE] += (item->iqty);
-					if (borg_activate_failure(item->tval, item->sval) < 500)	
+				if (borg_skill[BI_MAXDEPTH] <= 95)
+				{
+						borg_skill[BI_AESCAPE] += (item->iqty);
+					if (borg_activate_failure(item->tval, item->sval) < 500)
 					{
 						borg_skill[BI_AESCAPE] += item->pval;
 					}
-			        break;
+				}
+                break;
 
                 case SV_STAFF_SPEED:
-	                if (borg_skill[BI_MAXDEPTH] <= 95) borg_skill[BI_ASPEED] += item->pval;
-		            break;
+                if (borg_skill[BI_MAXDEPTH] <= 95) borg_skill[BI_ASPEED] += item->pval;
+                break;
 
                 case SV_STAFF_HEALING:
                 borg_skill[BI_AHEAL] += item->pval;
@@ -1809,10 +1418,10 @@ static void borg_notice_aux2(void)
             case TV_FLASK:
 
             /* Use as fuel if we equip a lantern */
-            if (borg_items[INVEN_LIGHT].sval == SV_LIGHT_LANTERN) borg_skill[BI_AFUEL] += (item->iqty * 2);
+            if (borg_items[INVEN_LIGHT].sval == SV_LIGHT_LANTERN) borg_skill[BI_AFUEL] += item->iqty;
 
             /* Count as Missiles */
-            if (borg_skill[BI_CLEVEL] < 15 && item->iqty < 10) borg_skill[BI_AMISSILES] += item->iqty;
+            if (borg_skill[BI_CLEVEL] < 15 ) borg_skill[BI_AMISSILES] += item->iqty;
             break;
 
 
@@ -1863,19 +1472,18 @@ static void borg_notice_aux2(void)
 
             /* Count plain missiles */
             if (!item->name2) borg_skill[BI_AMISSILES] += item->iqty;
-			borg_skill[BI_NSRANGED] ++;
 
 			/* Only enchant ammo if we have a good shooter,
 			 * otherwise, store the enchants in the home.
 			 */
 			if (my_ammo_power < 3) break;
 
-            if ((borg_has_effect(EFF_FIREBRAND, TRUE, TRUE) ||
+            if ((borg_equips_artifact(EFF_FIREBRAND, INVEN_BOW) ||
                  borg_spell_legal_fail(7, 5, 65)) &&
               item->iqty >=5 &&
               /* Skip artifacts and ego-items */
-              /* !artifact_p(item) && */
-              /* !ego_item_p(item) && */
+              !item->name1 &&
+              !item->name2 &&
               item->ident &&
               item->tval == my_ammo_tval)
               {
@@ -1886,7 +1494,7 @@ static void borg_notice_aux2(void)
             /* enchant missiles */
             if (borg_skill[BI_CLEVEL] > 35)
             {
-                if ((borg_spell_legal_fail(7, 3, 65) || borg_prayer_legal_fail(7, 2, 65))
+                if ((borg_spell_legal_fail(7, 3, 65) || borg_prayer_legal_fail(7, 3, 65))
                     && item->iqty >= 5)
                 {
                     if (item->to_h < 10)
@@ -1945,7 +1553,7 @@ static void borg_notice_aux2(void)
 
     /* Handle "identify" -> infinite identifies */
     if (borg_spell_legal(2, 5) || borg_prayer_legal(5, 2) ||
-        borg_has_effect(EFF_IDENTIFY, TRUE, TRUE))
+        borg_equips_artifact(EFF_IDENTIFY, INVEN_WIELD))
     {
         borg_skill[BI_AID] += 1000;
     }
@@ -1971,7 +1579,7 @@ static void borg_notice_aux2(void)
 
     /* Handle "detection" */
     if (borg_prayer_legal(5, 1) ||
-    borg_has_effect(EFF_DETECT_ALL, TRUE, TRUE))
+    borg_equips_artifact(EFF_DETECT_ALL, INVEN_HEAD))
     {
         borg_skill[BI_ADETDOOR] = 1000;
         borg_skill[BI_ADETTRAP] = 1000;
@@ -1980,15 +1588,15 @@ static void borg_notice_aux2(void)
     }
 
     /* Handle "See Invisible" in a special way. */
-    if (borg_prayer_legal(2, 3) ||
-        borg_spell_legal(2, 6))
+    if (borg_prayer_legal(2, 3)/* ||
+        borg_spell_legal(2, 6)*/)
     {
 		borg_skill[BI_DINV] = TRUE;
     }
 
     /* Handle "magic mapping" */
     if (borg_prayer_legal(2, 6) ||
-    borg_has_effect(EFF_MAPPING, TRUE, TRUE))
+    borg_equips_artifact(EFF_MAPPING, INVEN_LIGHT))
     {
         borg_skill[BI_ADETDOOR] = 1000;
         borg_skill[BI_ADETTRAP] = 1000;
@@ -1997,8 +1605,8 @@ static void borg_notice_aux2(void)
 
     /* Handle "call lite" */
     if (borg_prayer_legal(0, 4) ||
-    	borg_has_effect(EFF_ILLUMINATION, TRUE, TRUE) ||
-    	borg_has_effect(EFF_CLAIRVOYANCE, TRUE, TRUE) ||
+    	borg_equips_artifact(EFF_ILLUMINATION, INVEN_LIGHT) ||
+    	borg_equips_artifact(EFF_CLAIRVOYANCE, INVEN_LIGHT) ||
     	borg_spell_legal(0, 3))
     {
         borg_skill[BI_ALITE] += 1000;
@@ -2006,7 +1614,7 @@ static void borg_notice_aux2(void)
 
     /* Handle "protection from evil" */
     if (borg_prayer_legal(2, 4) ||
-    borg_has_effect(EFF_PROTEVIL, TRUE, TRUE))
+    borg_equips_artifact(EFF_PROTEVIL, INVEN_HEAD))
     {
         borg_skill[BI_APFE] += 1000;
     }
@@ -2027,7 +1635,7 @@ static void borg_notice_aux2(void)
 
     /* Handle "enchant weapon" */
     if (borg_spell_legal_fail(7, 3, 65) ||
-        borg_prayer_legal_fail(7, 2, 65))
+        borg_prayer_legal_fail(7, 3, 65))
     {
         amt_enchant_to_h += 1000;
         amt_enchant_to_d += 1000;
@@ -2035,7 +1643,7 @@ static void borg_notice_aux2(void)
     }
 
     /* Handle "Brand Weapon (bolts)" */
-    if (borg_has_effect(EFF_FIREBRAND, TRUE, TRUE) ||
+    if (borg_equips_artifact(EFF_FIREBRAND, INVEN_BOW) ||
         borg_spell_legal_fail(7, 5, 65))
     {
         amt_brand_weapon += 1000;
@@ -2043,7 +1651,7 @@ static void borg_notice_aux2(void)
 
     /* Handle "enchant armor" */
     if (borg_spell_legal_fail(7, 2, 65) ||
-        borg_prayer_legal_fail(7, 3, 65))
+        borg_prayer_legal_fail(7, 4, 65))
     {
         amt_enchant_to_a += 1000;
         amt_enchant_armor +=1000;
@@ -2051,7 +1659,7 @@ static void borg_notice_aux2(void)
 
     /* Handle Diggers (stone to mud) */
     if (borg_spell_legal_fail(2, 2, 40) ||
-    	borg_has_effect(EFF_STONE_TO_MUD, TRUE, TRUE) ||
+    	borg_equips_artifact(EFF_STONE_TO_MUD, INVEN_WIELD) ||
 		borg_equips_ring(SV_RING_DELVING))
     {
         amt_digger += 1;
@@ -2063,7 +1671,7 @@ static void borg_notice_aux2(void)
     {
         borg_skill[BI_RECALL] += 1000;
     }
-	if (borg_has_effect(EFF_RECALL, TRUE, FALSE))
+	if (borg_equips_artifact(EFF_RECALL, INVEN_WIELD))
 	{
 		borg_skill[BI_RECALL] += 1;
 	}
@@ -2080,7 +1688,7 @@ static void borg_notice_aux2(void)
     {
         borg_skill[BI_APHASE] += 1000;
     }
-	if (borg_has_effect(EFF_TELE_PHASE, TRUE, FALSE))
+	if (borg_equips_artifact(EFF_TELE_PHASE, INVEN_WIELD))
 	{
 		borg_skill[BI_APHASE] += 1;
 	}
@@ -2092,7 +1700,7 @@ static void borg_notice_aux2(void)
     {
         borg_skill[BI_ATELEPORT] += 1000;
     }
-	if (borg_has_effect(EFF_TELE_LONG, TRUE, FALSE))
+	if (borg_equips_artifact(EFF_TELE_LONG, INVEN_RIGHT))
 	{
 		borg_skill[BI_AESCAPE] += 1;
         borg_skill[BI_ATELEPORT] += 1;
@@ -2111,29 +1719,23 @@ static void borg_notice_aux2(void)
     }
 
     /* speed spells HASTE*/
-    if (borg_spell_legal(3, 2 ))
+    if ( borg_spell_legal( 3, 2 ) ||
+         borg_equips_artifact(EFF_HASTE1, INVEN_RIGHT) ||
+         borg_equips_artifact(EFF_HASTE2, INVEN_RIGHT))
     {
         borg_skill[BI_ASPEED] += 1000;
     }
-	/* Activatable equipment HASTE */
-	else if ((borg_has_effect(EFF_HASTE1, TRUE, TRUE)  || borg_has_effect(EFF_HASTE2, TRUE, TRUE) ||
-		borg_has_effect(EFF_HASTE, TRUE, TRUE)) &&
-		(!borg_has[borg_lookup_kind(TV_ROD, SV_ROD_SPEED)]))
-	{
-        borg_skill[BI_ASPEED] += 100;
-	}
 
-	/* Handle "Cure Serious Wounds" */
-    if (borg_has_effect(EFF_CURE_SERIOUS, TRUE, TRUE))
+    /* Handle "cure light wounds" */
+    if (borg_equips_artifact(EFF_CURE_SERIOUS, INVEN_WIELD))
     {
         borg_skill[BI_ACSW] += 1000;
     }
 
 
     /* Handle "heal" */
-    if (borg_has_effect(EFF_HEAL1,TRUE, TRUE) ||
-        borg_has_effect(EFF_HEAL2,TRUE, TRUE) ||
-        borg_has_effect(EFF_HEAL3,TRUE, TRUE) ||
+    if (borg_equips_artifact(EFF_HEAL1,INVEN_BODY) ||
+        borg_equips_artifact(EFF_HEAL2,INVEN_HEAD) ||
         borg_prayer_legal(3, 2) ||
         borg_prayer_legal(6, 2))
     {
@@ -2141,20 +1743,20 @@ static void borg_notice_aux2(void)
     }
 
     /* Handle "fix exp" */
-    if (borg_has_effect(EFF_RESTORE_LIFE, TRUE, TRUE))
+    if (borg_equips_artifact(EFF_RESTORE_LIFE, INVEN_OUTER))
     {
         amt_fix_exp += 1000;
     }
 
 	/* Handle "Remembrance" -- is just as good as Hold Life */
 	if (borg_prayer_legal(6, 4) ||
-	    borg_has_effect(EFF_RESTORE_LIFE, TRUE, TRUE))
+	    borg_equips_artifact(EFF_RESTORE_LIFE, INVEN_WIELD))
 	{
 		borg_skill[BI_HLIFE] = TRUE;
 	}
 
     /* Handle "recharge" */
-    if (borg_has_effect(EFF_RECHARGE, TRUE, TRUE) ||
+    if (borg_equips_artifact(EFF_RECHARGE, INVEN_OUTER) ||
         borg_spell_legal(7,4) ||
         borg_prayer_legal(7,1) ||
         borg_spell_legal(2, 1))
@@ -2162,23 +1764,11 @@ static void borg_notice_aux2(void)
         borg_skill[BI_ARECHARGE] += 1000;
     }
 
-	/* Stone to Mud spell */
-	if (borg_has_effect(EFF_STONE_TO_MUD, TRUE, TRUE) ||
-		borg_spell_legal(2, 2))
-	{
-		borg_skill[BI_ASTONE2MUD] += 1000;
-	}
-
     /*** Process the Needs ***/
 
-    /* No need for fuel if noes not use fuel */
+    /* No need for fuel if we know it doesn't need it */
     if (of_has(borg_items[INVEN_LIGHT].flags, OF_NO_FUEL))
         borg_skill[BI_AFUEL] += 1000;
-
-	/* Resist Poison from a reliable source.  This frees up an inventory slot */
-	if (borg_has_effect(EFF_RESIST_POIS, TRUE, TRUE) ||
-		borg_has_effect(EFF_RESIST_ALL, TRUE, TRUE) ||
-		borg_spell_legal_fail(4, 2, 35)) borg_skill[BI_RPOIS] += 1;
 
     /* No need to *buy* stat increase potions */
     if (my_stat_cur[A_STR] >= (18+100) + 10 * op_ptr->opt[OPT_birth_maximize] *
@@ -2230,7 +1820,7 @@ static void borg_notice_aux2(void)
 /*
  * Helper function -- notice the player swap weapon
  */
-void borg_notice_swap_weapon(void)
+void borg_notice_weapon_swap(void)
 {
     int i;
     int b_i = 0;
@@ -2239,17 +1829,9 @@ void borg_notice_swap_weapon(void)
     s32b b_v = 0L;
 
     int dam, damage;
-	int b_damage;
-	int s_damage;
-
-	int swap_blows;
-
-	borg_item *item;
+    borg_item *item;
 
     weapon_swap =0;
-
-	/* What is our base damage?  We should not carry a swap weapon if it's only use is worse damage. */
-	b_damage = (borg_items[INVEN_WIELD].dd * borg_items[INVEN_WIELD].ds) + borg_items[INVEN_WIELD].to_d + borg_items[INVEN_WIELD].to_h;
 
     /*** Process the inventory ***/
     for (i = 0; i < INVEN_MAX_PACK; i++)
@@ -2258,9 +1840,8 @@ void borg_notice_swap_weapon(void)
 
         /* reset counter */
         v= -1L;
-        dam = 0;
-        damage = 0;
-		swap_blows = 1;
+        dam =0;
+        damage =0;
 
         /* Skip empty items */
         if (!item->iqty) continue;
@@ -2270,6 +1851,10 @@ void borg_notice_swap_weapon(void)
 
 		/* Skip non-wearable items */
 		if (borg_slot(item->tval, item->sval) == -1) continue;
+
+		/* Dont carry swaps until dlevel 50.  They are heavy.
+           Unless the item is a digger, then carry it */
+        if (borg_skill[BI_MAXDEPTH] < 50 && item->tval !=TV_DIGGING) continue;
 
         /* priest weapon penalty for non-blessed edged weapons */
         if (player_has(PF_BLESS_WEAPON) &&
@@ -2334,7 +1919,6 @@ void borg_notice_swap_weapon(void)
         weapon_swap_resist_nexus = FALSE;
         weapon_swap_resist_blind = FALSE;
         weapon_swap_resist_neth = FALSE;
-		weapon_swap_extra_blows = 0;
         decurse_weapon_swap =-1;
 
         /* Analyze the item */
@@ -2439,16 +2023,14 @@ void borg_notice_swap_weapon(void)
             if (of_has(item->flags, OF_RES_NETHR)) weapon_swap_resist_neth = TRUE;
             if (item->cursed) decurse_weapon_swap = 0;
             if (of_has(item->flags, OF_HEAVY_CURSE)) decurse_weapon_swap = 1;
-			if (of_has(item->flags, OF_BLOWS)) weapon_swap_extra_blows += item->pval;
 
 			/* Sustain flags */
 
-            /* calculating the damage value of the swap weapon. */
-			damage = (item->dd * (item->ds) *25L);
-			s_damage = (item->dd * item->ds) + item->to_d + item->to_h;
+            /* calculating the value of the swap weapon. */
+            damage = (item->dd * (item->ds) *25L);
 
             /* Reward "damage" and increased blows per round*/
-            v += damage * (swap_blows);
+            v += damage * (borg_skill[BI_BLOWS]+1);
 
             /* Reward "bonus to hit" */
             v += ((borg_skill[BI_TOHIT] + item->to_h)*100L);
@@ -2459,13 +2041,13 @@ void borg_notice_swap_weapon(void)
             dam = damage * borg_skill[BI_BLOWS];
 
             /* assume 2x base damage for x% of creatures */
-            dam = damage * 2 * swap_blows;
+            dam = damage * 2 * borg_skill[BI_BLOWS];
             /* rewared SAnimal if no electric brand */
             if (!borg_skill[BI_WS_ANIMAL] && !borg_skill[BI_WB_ELEC] && weapon_swap_slay_animal) v += (dam*2) /2;
             if (!borg_skill[BI_WS_EVIL] && weapon_swap_slay_evil) v +=  (dam*7) /2;
 
             /* assume 3x base damage for x% of creatures */
-            dam = damage *3* swap_blows;
+            dam = damage *3*borg_skill[BI_BLOWS];
 
             /* half of the reward now for SOrc and STroll*/
             if (!borg_skill[BI_WS_ORC] && weapon_swap_slay_orc) v += (dam*1) /2;
@@ -2485,13 +2067,10 @@ void borg_notice_swap_weapon(void)
             if (!borg_skill[BI_WS_TROLL] && !borg_skill[BI_WS_EVIL] && weapon_swap_slay_troll) v += (dam*1) /2;
 
             /* assume 5x base damage for x% of creatures */
-            dam = damage  * 5 * swap_blows;
+            dam = damage  * 5 * borg_skill[BI_BLOWS];
             if (!borg_skill[BI_WK_UNDEAD] && weapon_swap_kill_undead) v += (dam*5) /2;
             if (!borg_skill[BI_WK_DEMON] && weapon_swap_kill_demon) v += (dam*5) /2;
             if (!borg_skill[BI_WK_DRAGON] && weapon_swap_kill_dragon) v += (dam*5) /2;
-
-			/* Certain classes do not fight well and carry weapon for its attributes */
-			if (borg_skill[BI_NO_MELEE]) v = 0;
 
             /* reward the Tunnel factor when low level */
             if (borg_skill[BI_MAXDEPTH] <= 40 && borg_skill[BI_MAXDEPTH] >= 25 && borg_gold < 100000 && weapon_swap_digger) v += (weapon_swap_digger * 3500L) + 1000L;
@@ -2502,7 +2081,7 @@ void borg_notice_swap_weapon(void)
             if (weapon_swap_teleport) v -= 100000L;
             if (decurse_weapon_swap != -1) v -= 5000L;
             if (!borg_skill[BI_REG] && weapon_swap_regenerate) v += 2000L;
-            if (!borg_skill[BI_ESP] && weapon_swap_telepathy) v += 10000L;
+            if (!borg_skill[BI_ESP] && weapon_swap_telepathy) v += 5000L;
             if (!borg_skill[BI_LIGHT] && weapon_swap_LIGHT) v += 2000L;
             if (!borg_skill[BI_SINV] && weapon_swap_see_invis) v += 50000L;
             if (!borg_skill[BI_FEATH] && weapon_swap_ffall) v += 10L;
@@ -2540,7 +2119,7 @@ void borg_notice_swap_weapon(void)
                 (!borg_skill[BI_IFIRE] && weapon_swap_immune_fire)))
             {
                /* If Tarraseque is alive */
-               if (borg_race_death[IDX_TARRASQUE] == 0)
+               if (borg_race_death[539] == 0)
                {
                    if (!borg_skill[BI_ICOLD] && weapon_swap_immune_cold) v  += 90000L;
                    if (!borg_skill[BI_IFIRE] && weapon_swap_immune_fire) v  += 90000L;
@@ -2563,23 +2142,12 @@ void borg_notice_swap_weapon(void)
                 weapon_swap_resist_disen) v += 100000L;
 
             /* some artifacts would make good back ups for their activation */
-			v += borg_bonus_activation(i, TRUE);
-
-			/* Be wary of very heavy items */
-			v -= item->weight * 50;
-
-			/* skip usless ones */
-            if (v <= 5000) continue;
-
-			/* Not if user doesnt want us to have swaps */
-			if (!borg_uses_swaps && borg_skill[BI_MAXDEPTH] < 50 && item->tval !=TV_DIGGING)
-			{
-				/* Carry certain artifacts */
-				/* if (!item->name1 && !strstr(item->note, "special") && item->tval != TV_DIGGING) */ continue;
-			}
 
 
-			/* collect the best one */
+            /* skip usless ones */
+            if (v <= 1000) continue;
+
+            /* collect the best one */
             if (v < b_v) continue;
 
             /* track it */
@@ -2656,21 +2224,19 @@ void borg_notice_swap_weapon(void)
     enchant_weapon_swap_to_d = 0;
 
     /* Enchant swap weapons (to hit) */
-    if ((borg_prayer_legal_fail(7, 2, 65) ||
+    if ((borg_prayer_legal_fail(7, 3, 65) ||
          borg_spell_legal_fail(7, 3, 65) ||
          amt_enchant_weapon >=1 ) && item->tval != TV_DIGGING)
     {
         if (item->to_h < 10)
         {
             enchant_weapon_swap_to_h += (10 - item->to_h);
-			if (item->to_h < 0 && enchant_weapon_swap_to_h > 10) enchant_weapon_swap_to_h = 1;
         }
 
         /* Enchant my swap (to damage) */
         if (item->to_d < 10)
         {
             enchant_weapon_swap_to_d += (10 - item->to_d);
-			if (item->to_d < 0 && enchant_weapon_swap_to_d > 10) enchant_weapon_swap_to_d = 1;
         }
     }
     else if (item->tval != TV_DIGGING)
@@ -2678,14 +2244,12 @@ void borg_notice_swap_weapon(void)
         if (item->to_h < 8)
         {
             enchant_weapon_swap_to_h += (8 - item->to_h);
-			if (item->to_h < 0 && enchant_weapon_swap_to_h > 8) enchant_weapon_swap_to_h = 1;
         }
 
         /* Enchant my swap (to damage) */
         if (item->to_d < 8)
         {
             enchant_weapon_swap_to_d += (8 - item->to_d);
-			if (item->to_d < 0 && enchant_weapon_swap_to_d > 10) enchant_weapon_swap_to_d = 1;
         }
     }
 
@@ -2771,7 +2335,7 @@ void borg_notice_swap_weapon(void)
 /*
  * Helper function -- notice the player swap armour
  */
-void borg_notice_swap_armour(void)
+void borg_notice_armour_swap(void)
 {
     int i;
     int b_i = 0;
@@ -2782,9 +2346,11 @@ void borg_notice_swap_armour(void)
     borg_item *item;
 
     armour_swap = 0;
-	int swap_blows = 1;
 
-	/*** Process the inventory ***/
+    /* borg option to not use them */
+    if (!borg_uses_swaps) return;
+
+    /*** Process the inventory ***/
     for (i = 0; i < INVEN_MAX_PACK; i++)
     {
         item = &borg_items[i];
@@ -2802,6 +2368,9 @@ void borg_notice_swap_armour(void)
 
 		/* Skip non-wearable items */
 		if (borg_slot(item->tval, item->sval) == -1) continue;
+
+		/* Dont carry swaps until dlevel 50.  They are heavy */
+        if (borg_skill[BI_MAXDEPTH] < 50) continue;
 
         /* Require "known" (or average, good, etc) */
         if (!item->ident &&
@@ -2837,7 +2406,6 @@ void borg_notice_swap_armour(void)
         armour_swap_slow_digest = FALSE;
         armour_swap_aggravate = FALSE;
         armour_swap_teleport = FALSE;
-		armour_swap_fear = FALSE;
         armour_swap_regenerate = FALSE;
         armour_swap_telepathy = FALSE;
         armour_swap_LIGHT = FALSE;
@@ -2910,7 +2478,6 @@ void borg_notice_swap_armour(void)
             /* Various flags */
             if (of_has(item->flags, OF_SLOW_DIGEST)) armour_swap_slow_digest = TRUE;
             if (of_has(item->flags, OF_AGGRAVATE)) armour_swap_aggravate = TRUE;
-            if (of_has(item->flags, OF_AFRAID)) armour_swap_fear = TRUE;
             if (of_has(item->flags, OF_TELEPORT)) armour_swap_teleport = TRUE;
             if (of_has(item->flags, OF_REGEN)) armour_swap_regenerate = TRUE;
             if (of_has(item->flags, OF_TELEPATHY)) armour_swap_telepathy = TRUE;
@@ -2964,26 +2531,27 @@ void borg_notice_swap_armour(void)
 
             /* Sustain flags */
 
-            /* calculating the value of the swap weapon.
-			 * Armor does not have a damage value, but we add support for future possibility of slays added to armor.
-			 */
-			damage = borg_items[INVEN_WIELD].dd * borg_items[INVEN_WIELD].ds;
+            /* calculating the value of the swap weapon. */
+            damage = (item->dd * item->ds *35L);
 
-			/* Reward "bonus to hit" */
-            v += ((borg_skill[BI_TOHIT] + item->to_h)*10L);
+            /* Reward "damage" and increased blows per round*/
+            v += damage * (borg_skill[BI_BLOWS]+1);
+
+            /* Reward "bonus to hit" */
+            v += ((borg_skill[BI_TOHIT] + item->to_h)*100L);
 
             /* Reward "bonus to dam" */
-            v += ((borg_skill[BI_TODAM] + item->to_d)*5L);
+            v += ((borg_skill[BI_TODAM] + item->to_d)*35L);
 
-            dam = damage * swap_blows;
+            dam = damage * borg_skill[BI_BLOWS];
 
             /* assume 2x base damage for x% of creatures */
-            dam = damage * 2 * swap_blows;
+            dam = damage * 2 * borg_skill[BI_BLOWS];
 
             if (!borg_skill[BI_WS_ANIMAL] && !borg_skill[BI_WB_ELEC] && armour_swap_slay_animal) v += (dam*2) /2;
             if (!borg_skill[BI_WS_EVIL] && armour_swap_slay_evil) v +=  (dam*7) /2;
             /* assume 3x base damage for x% of creatures */
-            dam = damage *3* swap_blows;
+            dam = damage *3*borg_skill[BI_BLOWS];
 
             if (!borg_skill[BI_WS_UNDEAD] && armour_swap_slay_undead) v += (dam*5) /2;
             if (!borg_skill[BI_WS_DEMON] && armour_swap_slay_demon) v += (dam*3) /2;
@@ -3002,24 +2570,17 @@ void borg_notice_swap_armour(void)
             if (!borg_skill[BI_WS_TROLL] && !borg_skill[BI_WS_EVIL] && armour_swap_slay_troll) v += (dam*1) /2;
 
             /* assume 5x base damage for x% of creatures */
-            dam = damage  * 5 * swap_blows;
+            dam = damage  * 5 * borg_skill[BI_BLOWS];
             if (!borg_skill[BI_WK_UNDEAD] && armour_swap_kill_undead) v += (dam*5) /2;
             if (!borg_skill[BI_WK_DEMON] && armour_swap_kill_demon) v += (dam*3) /2;
             if (!borg_skill[BI_WK_DRAGON] && armour_swap_kill_dragon) v += (dam*5) /2;
 
-			/* Certain classes do not fight well and carry swap for its attributes */
-			if (borg_skill[BI_NO_MELEE]) v = 0;
 
-	        if (of_has(item->flags, OF_SPEED)) v += item->pval * 1000;
             if (!borg_skill[BI_SDIG] && armour_swap_slow_digest) v += 10L;
-            if (armour_swap_aggravate) v -= 4000L;
+            if (armour_swap_aggravate) v -= 8000L;
             if (armour_swap_teleport) v -= 100000L;
-			if (armour_swap_fear) v -= 80000;
-#if 0
-			if (decurse_armour_swap == 0 && ) v -= 5000L;
-            if (decurse_armour_swap == 1) v -= 5000L;
-#endif
-			if (!borg_skill[BI_REG] && armour_swap_regenerate) v += 2000L;
+            if (decurse_armour_swap != -1) v -= 5000L;
+            if (!borg_skill[BI_REG] && armour_swap_regenerate) v += 2000L;
             if (!borg_skill[BI_ESP] && armour_swap_telepathy) v += 5000L;
             if (!borg_skill[BI_LIGHT] && armour_swap_LIGHT) v += 2000L;
             if (!borg_skill[BI_SINV] && armour_swap_see_invis) v += 50000L;
@@ -3056,7 +2617,7 @@ void borg_notice_swap_armour(void)
                 (!borg_skill[BI_IFIRE] && armour_swap_immune_fire)))
             {
                /* If Tarraseque is alive */
-               if (borg_race_death[IDX_TARRASQUE] == 0)
+               if (borg_race_death[539] == 0)
                {
                   if (!borg_skill[BI_ICOLD] && armour_swap_immune_cold) v  += 90000L;
                   if (!borg_skill[BI_IFIRE] && armour_swap_immune_fire) v  += 90000L;
@@ -3082,10 +2643,7 @@ void borg_notice_swap_armour(void)
                 !weapon_swap_resist_disen &&
                 armour_swap_resist_disen) v += 100000L;
 
-            /* some artifacts would make good back ups for their activation.
-			 * and dragonscale armors do not activate for the cool effects, only breath 
-			 */
-			if (borg_items[i].tval != TV_DRAG_ARMOR) v += borg_bonus_activation(i, TRUE);
+            /* some artifacts would make good back ups for their activation */
 
             }
 
@@ -3095,14 +2653,7 @@ void borg_notice_swap_armour(void)
             /* collect the best one */
             if ((b_i >=0) && (v < b_v)) continue;
 
-			/* borg option to not use them, or too heavy */
-			if (!borg_uses_swaps || borg_skill[BI_MAXDEPTH] < 50)
-			{				
-				/* Carry certain artifacts */
-				/* if (!item->name1 && !strstr(item->note, "special")) */ continue;
-			}
-
-			/* track it */
+            /* track it */
             b_i = i;
             b_v = v;
             armour_swap_value = v;
@@ -3250,7 +2801,7 @@ void borg_notice_swap_armour(void)
 
         /* Hack -- enchant the swap equipment (armor) */
         /* Note need for enchantment */
-        if ((borg_prayer_legal_fail(7, 3, 65) ||
+        if ((borg_prayer_legal_fail(7, 4, 65) ||
              borg_spell_legal_fail(7, 2, 65) ||
              amt_enchant_armor >=1 ))
         {
@@ -3271,9 +2822,8 @@ void borg_notice_swap_armour(void)
 
 /*
  * Analyze the equipment and inventory
- * fake_gear is used when it is not his real equipment, but considering moving an item into the equip.
  */
-void borg_notice(bool notice_swap, bool do_inven_equip)
+void borg_notice(bool notice_swap)
 {
 	int inven_weight;
 	int carry_capacity;
@@ -3287,13 +2837,6 @@ void borg_notice(bool notice_swap, bool do_inven_equip)
      * all the non inventory skills.
      */
     borg_update_frame();
-
-	/* Cheat in some info if requested */
-	if (do_inven_equip)
-	{
-		borg_cheat_inven(notice_swap);
-		borg_cheat_equip(notice_swap);
-	}
 
 	/* The borg needs to update his base stat points */
 	for (i =0; i < 6; i++)
@@ -3317,8 +2860,8 @@ void borg_notice(bool notice_swap, bool do_inven_equip)
     /* Notice and locate my swap weapon */
     if (notice_swap)
     {
-        borg_notice_swap_weapon();
-        borg_notice_swap_armour();
+        borg_notice_weapon_swap();
+        borg_notice_armour_swap();
     }
     borg_skill[BI_SRACID] = borg_skill[BI_RACID]
                             || armour_swap_resist_acid
@@ -3333,13 +2876,13 @@ void borg_notice(bool notice_swap, bool do_inven_equip)
                             || armour_swap_resist_fire
                             || weapon_swap_resist_fire
                             || borg_spell_legal_fail(4, 3, 15) /* Res FECAP */
-							|| borg_prayer_legal_fail(1, 6, 15) /* Res FC */
+							|| borg_prayer_legal_fail(1, 7, 15) /* Res FC */
 							|| borg_spell_legal_fail(4, 1, 15); /* Res F */
 	borg_skill[BI_SRCOLD] = borg_skill[BI_RCOLD]
                             || armour_swap_resist_cold
                             || weapon_swap_resist_cold
                             || borg_spell_legal_fail(4, 3, 15) /* Res FECAP */
-							|| borg_prayer_legal_fail(1, 6, 15) /* Res FC */
+							|| borg_prayer_legal_fail(1, 7, 15) /* Res FC */
 							|| borg_spell_legal_fail(4, 0, 15); /* Res C */
     borg_skill[BI_SRPOIS] = borg_skill[BI_RPOIS]
                             || armour_swap_resist_pois
@@ -3395,11 +2938,7 @@ void borg_notice(bool notice_swap, bool do_inven_equip)
     carry_capacity = adj_str_wgt[my_stat_ind[A_STR]] * 100;
 
     /* Apply "encumbrance" from weight */
-    if (inven_weight > carry_capacity/2)
-	{
-		borg_skill[BI_SPEED] -= ((inven_weight - (carry_capacity/2)) / (carry_capacity / 10));
-		borg_skill[BI_ISENCUMB] = inven_weight - carry_capacity/2;
-	}
+    if (inven_weight > carry_capacity/2) borg_skill[BI_SPEED] -= ((inven_weight - (carry_capacity/2)) / (carry_capacity / 10));
 
 }
 
@@ -3435,7 +2974,6 @@ static void borg_notice_home_aux1(borg_item *in_item, bool no_items)
     num_berserk = 0;
     num_pot_rheat = 0;
     num_pot_rcold = 0;
-	num_pot_rpois = 0;
     num_speed = 0;
 	num_detonate = 0;
 
@@ -3506,7 +3044,6 @@ static void borg_notice_home_aux1(borg_item *in_item, bool no_items)
     if (!in_item && !no_items) num_ezheal_true = 0;
     if (!in_item && !no_items) num_heal_true = 0;
     if (!in_item && !no_items) num_life_true = 0;
-    if (!in_item && !no_items) num_mana_true = 0;
 
 	/* Mushrooms */
 	num_mush_second_sight = 0;		/* esp */
@@ -3579,7 +3116,7 @@ static void borg_notice_home_dupe(borg_item *item, bool check_sval, int i)
     for (x = 0; x < i; x++)
     {
         if (x < STORE_INVEN_MAX)
-            item2 = &borg_shops[STORE_HOME].ware[x];
+            item2 = &borg_shops[7].ware[x];
         else
             /* Check what the borg has on as well.*/
             item2 = &borg_items[((x-STORE_INVEN_MAX)+INVEN_WIELD)];
@@ -3616,7 +3153,7 @@ static void borg_notice_home_aux2(borg_item *in_item, bool no_items)
 
     borg_item *item;
 
-    borg_shop *shop = &borg_shops[STORE_HOME];
+    borg_shop *shop = &borg_shops[7];
     bitflag f[OF_SIZE];
 
     /*** Process the inventory ***/
@@ -4065,10 +3602,6 @@ static void borg_notice_home_aux2(borg_item *in_item, bool no_items)
                 num_pot_rcold += item->iqty;
                 break;
 
-				case SV_POTION_RESIST_POIS:
-                num_pot_rpois += item->iqty;
-                break;
-
                 case SV_POTION_RES_STR:
                 num_fix_stat[A_STR] += item->iqty;
                 break;
@@ -4099,7 +3632,6 @@ static void borg_notice_home_aux2(borg_item *in_item, bool no_items)
 
                 case SV_POTION_RESTORE_MANA:
                 num_mana += item->iqty;
-                if (!in_item && !no_items) num_mana_true += item->iqty;
                 break;
 
                 case SV_POTION_HEALING:
@@ -4272,7 +3804,7 @@ static void borg_notice_home_aux2(borg_item *in_item, bool no_items)
 
     /* Handle "enchant weapon" */
     if (borg_spell_legal_fail(7, 3, 65) ||
-        borg_prayer_legal_fail(7, 2, 65))
+        borg_prayer_legal_fail(7, 3, 65))
     {
         num_enchant_to_h += 1000;
         num_enchant_to_d += 1000;
@@ -4395,7 +3927,7 @@ void borg_notice_home(borg_item *in_item, bool no_items)
 /*
  * Helper function -- calculate "power" of equipment
  */
-extern s32b borg_power_aux1(void)
+static s32b borg_power_aux1(void)
 {
     int         hold;
     int         damage, dam;
@@ -4428,6 +3960,7 @@ extern s32b borg_power_aux1(void)
     /* Calculate "average" damage per "normal" blow  */
     /* and assume we can enchant up to +8 if borg_skill[BI_CLEVEL] > 25 */
     damage = (item->dd * item->ds * 20L);
+
 
     /* Reward "damage" and increased blows per round*/
     value += damage * (borg_skill[BI_BLOWS]+1);
@@ -4491,16 +4024,8 @@ extern s32b borg_power_aux1(void)
     /* assume 5x base damage for x% of creatures */
     dam = damage  * 5 * borg_skill[BI_BLOWS];
     if (borg_skill[BI_WK_UNDEAD]) value += (dam * 5) / 2;
-    if (borg_skill[BI_WK_DEMON])
-	{
-		value += (dam * 5) / 2;
-		if ((borg_fighting_unique || borg_fighting_questor) && borg_fighting_demon) value += 25000 + (dam *5);
-	}
-    if (borg_skill[BI_WK_DRAGON])
-	{
-		value += (dam * 5) / 2;
-		if ((borg_fighting_unique || borg_fighting_questor) && borg_fighting_dragon) value += 25000 + (dam *5);
-	}
+    if (borg_skill[BI_WK_DEMON]) value += (dam * 5) / 2;
+    if (borg_skill[BI_WK_DRAGON]) value += (dam * 5) / 2;
     /* extra damage for some */
     if (borg_worships_damage)
     {
@@ -4515,10 +4040,9 @@ extern s32b borg_power_aux1(void)
 
     /* HACK -- Borg worships num_blow, even on broken swords. */
     /* kind 47 is a broken sword usually 1d2 in damage */
-	/* No_melee guys can tolerate the broken sword if it has nice high resists */
-	if (!borg_skill[BI_NO_MELEE] && (item->kind == K_BROKEN_A || item->kind == K_BROKEN_B ||item->kind == K_BROKEN_C )) value -=90000L;
-    if (borg_skill[BI_NO_MELEE] && (item->kind == K_BROKEN_A || item->kind == K_BROKEN_B ||item->kind == K_BROKEN_C )) value -=3000L;
-	
+    /* if (item->kind == 47 || item->kind == 30 ||item->kind == 390 ) value -=90000L; */
+
+
 	/* We want low level borgs to have high blows (dagger, whips) */
 	if (borg_skill[BI_CLEVEL] <= 10) value += borg_skill[BI_BLOWS] * 45000L;
 
@@ -4554,7 +4078,7 @@ extern s32b borg_power_aux1(void)
 	if (borg_skill[BI_CLEVEL] < 15) value += (borg_skill[BI_SHOTS] * damage * 200L);
 
 
-    /* slings force you to carry heavy ammo.  Penalty for that unless you have lots of str  */
+    /* slings force you to carry heavy ammo.  Penalty for that unles you have lots of str  */
     if (item->sval == SV_SLING &&
         !item->name1 &&
         my_stat_ind[A_STR] < 9)
@@ -4579,24 +4103,12 @@ extern s32b borg_power_aux1(void)
     /* Prefer bows */
     if (player_has(PF_EXTRA_SHOT) && my_ammo_tval == TV_ARROW) value += 30000L;
 
-	/*
-	 * Fudge the damage a bit in order to influence weapon selection.
-	 * We don't want Mages selecting a weapon based on damage when they
-	 * ought to select it based on special powers (resists, See Invis).
-	 *
-	 * We want Warriors to pay a bit more attention to weapon damage 
-	 * since that is their main capacity to stay alive.
-	 */
-	if (borg_skill[BI_NO_MELEE]) value = value * 3 / 10;
-	if (borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE) value = value * 17 / 10;
-
-
-	/* Hack -- It is hard to hold a heavy weapon */
+    /* Hack -- It is hard to hold a heavy weapon */
     if (hold < item->weight / 10) value -= 500000L;
 
 
 
-    /***  Analyze armour  ***/
+    /***  Analyze dragon armour  ***/
 
     /* Examine current armor */
     item = &borg_items[INVEN_BODY];
@@ -4628,6 +4140,19 @@ extern s32b borg_power_aux1(void)
           }
       }
 
+	/*** Examine the Rings for special types ***/
+	for (i = INVEN_LEFT; i <= INVEN_RIGHT; i++)
+	{
+	    /* Obtain the item */
+		item = &borg_items[i];
+
+		/* Reward the [Elemental] protection rings for their activation */
+		if (item->kind == RING_FLAMES)	value += 25000;
+		if (item->kind == RING_ACID)	value += 10000;
+		if (item->kind == RING_ICE)		value += 15000;
+		if (item->kind == RING_LIGHTNING)	value += 10000;
+	}
+
     /*** Reward various things ***/
 
     /* Hack -- Reward light radius */
@@ -4645,74 +4170,53 @@ extern s32b borg_power_aux1(void)
         if (borg_skill[BI_SPEED] >= 150)
             value += (((borg_skill[BI_SPEED] - 120) * 1500L) + 185000L);
 
-        else if (borg_skill[BI_SPEED] >= 145 && borg_skill[BI_SPEED] <= 149)
+        if (borg_skill[BI_SPEED] >= 145 && borg_skill[BI_SPEED] <= 149)
             value += (((borg_skill[BI_SPEED] - 120) * 1500L) + 180000L);
 
-        else if (borg_skill[BI_SPEED] >= 140 && borg_skill[BI_SPEED] <= 144)
+        if (borg_skill[BI_SPEED] >= 140 && borg_skill[BI_SPEED] <= 144)
             value += (((borg_skill[BI_SPEED] - 120) * 1500L) + 175000L);
 
-        else if (borg_skill[BI_SPEED] >= 135 && borg_skill[BI_SPEED] <= 139)
+        if (borg_skill[BI_SPEED] >= 135 && borg_skill[BI_SPEED] <= 139)
             value += (((borg_skill[BI_SPEED] - 120) * 1500L) + 175000L);
 
-        else if (borg_skill[BI_SPEED] >= 130 && borg_skill[BI_SPEED] <= 134)
+        if (borg_skill[BI_SPEED] >= 130 && borg_skill[BI_SPEED] <= 134)
             value += (((borg_skill[BI_SPEED] - 120) * 1500L) + 160000L);
 
-        else if (borg_skill[BI_SPEED] >= 125 && borg_skill[BI_SPEED] <= 129)
+        if (borg_skill[BI_SPEED] >= 125 && borg_skill[BI_SPEED] <= 129)
             value += (((borg_skill[BI_SPEED] - 110) * 1500L) + 135000L);
 
-        else if (borg_skill[BI_SPEED] >= 120 && borg_skill[BI_SPEED] <= 124)
+        if (borg_skill[BI_SPEED] >= 120 && borg_skill[BI_SPEED] <= 124)
             value += (((borg_skill[BI_SPEED] - 110) * 1500L) + 110000L);
 
-        else if (borg_skill[BI_SPEED] >= 115 && borg_skill[BI_SPEED] <= 119)
+        if (borg_skill[BI_SPEED] >= 115 && borg_skill[BI_SPEED] <= 119)
             value += (((borg_skill[BI_SPEED] - 110) * 1500L) +  85000L);
 
-        else if (borg_skill[BI_SPEED] >= 110 && borg_skill[BI_SPEED] <= 114)
+        if (borg_skill[BI_SPEED] >= 110 && borg_skill[BI_SPEED] <= 114)
             value += (((borg_skill[BI_SPEED] - 110) * 1500L) +  65000L);
         else
             value += (((borg_skill[BI_SPEED] -110) *2500L));
     }
-	/* Borg has a limited supply of speed boosting items */
-    else if (borg_skill[BI_ASPEED] <= 30)
+    else
     {
         if (borg_skill[BI_SPEED] >= 140)
             value += (((borg_skill[BI_SPEED] - 120) * 1000L) + 175000L);
 
-        else if (borg_skill[BI_SPEED] >= 135 && borg_skill[BI_SPEED] <= 139)
+        if (borg_skill[BI_SPEED] >= 135 && borg_skill[BI_SPEED] <= 139)
             value += (((borg_skill[BI_SPEED] - 120) * 1000L) + 165000L);
 
-        else if (borg_skill[BI_SPEED] >= 130 && borg_skill[BI_SPEED] <= 134)
+        if (borg_skill[BI_SPEED] >= 130 && borg_skill[BI_SPEED] <= 134)
             value += (((borg_skill[BI_SPEED] - 120) * 1000L) + 150000L);
 
-        else if (borg_skill[BI_SPEED] >= 125 && borg_skill[BI_SPEED] <= 129)
+        if (borg_skill[BI_SPEED] >= 125 && borg_skill[BI_SPEED] <= 129)
             value += (((borg_skill[BI_SPEED] - 110) * 1000L) + 125000L);
 
-        else if (borg_skill[BI_SPEED] >= 120 && borg_skill[BI_SPEED] <= 124)
+        if (borg_skill[BI_SPEED] >= 120 && borg_skill[BI_SPEED] <= 124)
             value += (((borg_skill[BI_SPEED] - 110) * 1000L) + 100000L);
 
-        else if (borg_skill[BI_SPEED] >= 115 && borg_skill[BI_SPEED] <= 119)
+        if (borg_skill[BI_SPEED] >= 115 && borg_skill[BI_SPEED] <= 119)
             value += (((borg_skill[BI_SPEED] - 110) * 1000L) +  75000L);
 
-        else if (borg_skill[BI_SPEED] >= 110 && borg_skill[BI_SPEED] <= 114)
-            value += (((borg_skill[BI_SPEED] - 110) * 1000L) +  55000L);
-        else
-            value += (((borg_skill[BI_SPEED] -110) *2500L));
-    }
-	/* Borg has cheap and reliable methods of boosting speed */
-    else
-    {
-        if (borg_skill[BI_SPEED] >= 130)
-            value += (((borg_skill[BI_SPEED] - 110) * 1000L) + 175000L);
-
-        else if (borg_skill[BI_SPEED] >= 125 && borg_skill[BI_SPEED] <= 129)
-            value += (((borg_skill[BI_SPEED] - 110) * 1000L) + 125000L);
-
-        else if (borg_skill[BI_SPEED] >= 120 && borg_skill[BI_SPEED] <= 124)
-            value += (((borg_skill[BI_SPEED] - 110) * 1000L) + 100000L);
-
-        else if (borg_skill[BI_SPEED] >= 115 && borg_skill[BI_SPEED] <= 119)
-            value += (((borg_skill[BI_SPEED] - 110) * 1000L) +  75000L);
-
-        else if (borg_skill[BI_SPEED] >= 110 && borg_skill[BI_SPEED] <= 114)
+        if (borg_skill[BI_SPEED] >= 110 && borg_skill[BI_SPEED] <= 114)
             value += (((borg_skill[BI_SPEED] - 110) * 1000L) +  55000L);
         else
             value += (((borg_skill[BI_SPEED] -110) *2500L));
@@ -4739,14 +4243,14 @@ extern s32b borg_power_aux1(void)
         }
 
         /* bonus for fail rate */
-        value += adj_mag_stat[my_stat_ind[A_INT]] * 100L;
+        value += adj_mag_stat[my_stat_ind[A_INT]] * 5010L;
 
         /* mage should try to get min fail to 0 */
         if (player_has(PF_ZERO_FAIL))
         {
             /* other fail rates */
             if (adj_mag_fail[my_stat_ind[A_INT]] < 1)
-                value += 30000L;
+                value += 90000L;
         }
     }
 
@@ -4760,16 +4264,16 @@ extern s32b borg_power_aux1(void)
         value += ((adj_mag_mana[my_stat_ind[A_WIS]] * borg_skill[BI_CLEVEL]) / 2)  * 150L;
 
         /* bonus for fail rate */
-        value += adj_mag_stat[my_stat_ind[A_WIS]] * 50L;
+        value += adj_mag_stat[my_stat_ind[A_WIS]] * 3000L;
 
         /* priest should try to get min fail to 0 */
         if (player_has(PF_ZERO_FAIL))
         {
             /* Bonus for priests to in order to keep Holy Word fail rate down */
-            if (borg_prayer_legal(3, 5)) value += my_stat_ind[A_WIS] * 1000L;
+            if (borg_prayer_legal(3, 5)) value += my_stat_ind[A_WIS] * 35000L;
 
             if (adj_mag_fail[my_stat_ind[A_WIS]] < 1)
-                value += 20000L;
+                value += 70000L;
         }
 
     }
@@ -4892,10 +4396,10 @@ extern s32b borg_power_aux1(void)
     if (borg_skill[BI_ESP]) value    += 80000L;
 
     /* Immunity flags */
-    if (borg_skill[BI_ICOLD]) value  += 50000L;
+    if (borg_skill[BI_ICOLD]) value  += 65000L;
     if (borg_skill[BI_IELEC]) value  += 40000L;
     if (borg_skill[BI_IFIRE]) value  += 80000L;
-    if (borg_skill[BI_IACID]) value  += 60000L;
+    if (borg_skill[BI_IACID]) value  += 50000L;
 
     /* Resistance flags */
     if (borg_skill[BI_RCOLD]) value  += 3000L;
@@ -4921,11 +4425,7 @@ extern s32b borg_power_aux1(void)
     if (borg_skill[BI_RDIS]) value += 5000L;
     if (borg_skill[BI_RSHRD]) value += 100L;
     if (borg_skill[BI_RNXUS]) value += 100L;
-    if (borg_skill[BI_RBLIND] && 
-		(borg_class == CLASS_MAGE || borg_class == CLASS_PRIEST)) value += 5000L;
-    if (borg_skill[BI_RBLIND] && 
-		(borg_class != CLASS_MAGE && borg_class != CLASS_PRIEST &&
-		 !borg_skill[BI_ESP])) value += 2000L;
+    if (borg_skill[BI_RBLIND]) value += 5000L;
     if (borg_skill[BI_RNTHR]) value  += 5500L;
     if (borg_skill[BI_RFEAR]) value  += 2000L;
 
@@ -4976,12 +4476,8 @@ extern s32b borg_power_aux1(void)
     if (borg_skill[BI_RSND]  && (borg_skill[BI_MAXDEPTH]+1 >= 50)) value += 100000L;
 
     /*  Mega-Hack -- resists & Telepathy (level 55) */
-    if (borg_skill[BI_RBLIND] && (borg_skill[BI_MAXDEPTH]+1 >= 55) && 
-		(borg_class == CLASS_MAGE || borg_class == CLASS_PRIEST)) value += 100000L;
-    if (borg_skill[BI_RBLIND] && (borg_skill[BI_MAXDEPTH]+1 >= 55) && 
-		borg_class != CLASS_MAGE && !borg_class != CLASS_PRIEST &&
-		!borg_skill[BI_ESP]) value += 15000L;
-    if (borg_skill[BI_ESP] && (borg_skill[BI_MAXDEPTH]+1 >= 55)) value += 900000L;
+    if (borg_skill[BI_RBLIND] && (borg_skill[BI_MAXDEPTH]+1 >= 55)) value += 100000L;
+    if (borg_skill[BI_ESP] && (borg_skill[BI_MAXDEPTH]+1 >= 55)) value += 100000L;
     if (borg_skill[BI_RNTHR]  && (borg_skill[BI_MAXDEPTH]+1 >= 60)) value += 55000L;
 
 
@@ -5000,8 +4496,8 @@ extern s32b borg_power_aux1(void)
      */
     if (borg_skill[BI_RNTHR] && (borg_skill[BI_MAXDEPTH]+1 >= 80)) value += 15000L;
     if (borg_skill[BI_RDARK] && (borg_skill[BI_MAXDEPTH]+1 >= 80)) value += 25000L;
-    if ((borg_skill[BI_SPEED] >= 140 || (borg_skill[BI_SPEED] >= 130 && borg_skill[BI_ASPEED] >= 100)) &&
-		(borg_skill[BI_MAXDEPTH]+1 >=80) && borg_class == CLASS_WARRIOR) value += 100000L;
+    if ((borg_skill[BI_SPEED] >= 140) && (borg_skill[BI_MAXDEPTH]+1 >=80) &&
+        borg_class == CLASS_WARRIOR)                value += 100000L;
 
 
     /*** Reward powerful armor ***/
@@ -5013,19 +4509,12 @@ extern s32b borg_power_aux1(void)
         if (borg_skill[BI_ARMOR] >= 15 && borg_skill[BI_ARMOR] < 75) value += ((borg_skill[BI_ARMOR]) * 2000L) + 28250L;
         if (borg_skill[BI_ARMOR] >= 75) value += ((borg_skill[BI_ARMOR]) * 1500L) + 73750L;
     }
-    else if (!borg_skill[BI_NO_MELEE])
+    else
     {
         if (borg_skill[BI_ARMOR] < 15)   value += ((borg_skill[BI_ARMOR]) * 2000L);
         if (borg_skill[BI_ARMOR] >= 15 &&
             borg_skill[BI_ARMOR] < 75)   value += ((borg_skill[BI_ARMOR]) * 500L) + 28350L;
         if (borg_skill[BI_ARMOR] >= 75) value += ((borg_skill[BI_ARMOR]) * 100L) + 73750L;
-    }
-    else if (borg_skill[BI_NO_MELEE])
-    {
-        if (borg_skill[BI_ARMOR] < 15)   value += ((borg_skill[BI_ARMOR]) * 2000L);
-        if (borg_skill[BI_ARMOR] >= 15 &&
-            borg_skill[BI_ARMOR] < 75)   value += ((borg_skill[BI_ARMOR]) * 500L) + 14175L;
-        if (borg_skill[BI_ARMOR] >= 75) value += ((borg_skill[BI_ARMOR]) * 100L) + 44175L;
     }
 
 
@@ -5034,21 +4523,21 @@ extern s32b borg_power_aux1(void)
 	 */
 	if (amt_ego ||
 	    ((e_info[borg_items[INVEN_OUTER].name2].xtra == OBJECT_XTRA_TYPE_RESIST ||
-	     e_info[borg_items[INVEN_OUTER].name2].xtra == OBJECT_XTRA_TYPE_POWER)) &&
-	     !borg_items[INVEN_OUTER].fully_identified) value += 999999L;
+	     e_info[borg_items[INVEN_OUTER].name2].xtra == OBJECT_XTRA_TYPE_POWER) &&
+	     !borg_items[INVEN_OUTER].fully_identified)) value += 999999L;
 
     /*** Penalize various things ***/
 
     /* Penalize various flags */
-    if (borg_skill[BI_CRSTELE]) value -= 9000000L;
-    if (borg_skill[BI_CRSAGRV] && borg_skill[BI_CDEPTH] == 100 && borg_skill[BI_KING] <= 0) value -= 100L;
-    else if (borg_skill[BI_CRSAGRV]) value -= 100000L;
-	/* Impair HP, is not too big a deal.  The ring grants us Cure Serious Wounds.  Well worth it */
-	if (borg_skill[BI_CRSHPIMP]) value -=100;
+    if (borg_skill[BI_CRSTELE]) value -= 100000L;
+    if (borg_class == CLASS_MAGE && borg_skill[BI_CRSAGRV]) value -= 800000L;
+    else if (borg_skill[BI_CRSAGRV]) value -= 800000L;
+	if (borg_skill[BI_CRSHPIMP]) value -=35000;
+	if (borg_class != CLASS_WARRIOR && borg_skill[BI_CRSMPIMP]) value -=15000;
 	if ((borg_class == CLASS_MAGE || borg_class == CLASS_PRIEST) &&
-		borg_skill[BI_CRSMPIMP]) value -=1500;
-    if (!borg_skill[BI_NO_MELEE] && borg_skill[BI_CRSFEAR]) value -= 9900000L;
-	else if (borg_skill[BI_NO_MELEE] && borg_skill[BI_CRSFEAR]) value -= 50000L;
+		borg_skill[BI_CRSMPIMP]) value -=15000;
+    if (borg_skill[BI_CRSFEAR]) value -= 400000L;
+    if (borg_skill[BI_CRSFEAR] && borg_class != CLASS_MAGE) value -= 200000L;
 	if (borg_skill[BI_CRSFVULN]) value -=30000;
 	if (borg_skill[BI_CRSEVULN]) value -=30000;
 	if (borg_skill[BI_CRSCVULN]) value -=30000;
@@ -5058,8 +4547,8 @@ extern s32b borg_power_aux1(void)
     /*** Penalize armor weight ***/
     if (my_stat_ind[A_STR] < 15)
     {
-        if (borg_items[INVEN_BODY].weight > 175)
-            value -= (borg_items[INVEN_BODY].weight - 175) * 20;
+        if (borg_items[INVEN_BODY].weight > 200)
+            value -= (borg_items[INVEN_BODY].weight - 200) * 15;
         if (borg_items[INVEN_HEAD].weight > 30)
             value -= 250;
         if (borg_items[INVEN_ARM].weight > 10)
@@ -5067,19 +4556,8 @@ extern s32b borg_power_aux1(void)
         if (borg_items[INVEN_FEET].weight > 50)
             value -= 250;
     }
-	else
-	{
-		if (borg_items[INVEN_BODY].weight > 200)
-			value -= (borg_items[INVEN_BODY].weight - 200) * 10;
-		if (borg_items[INVEN_HEAD].weight > 30)
-			value -= 125;
-		if (borg_items[INVEN_ARM].weight > 10)
-			value -= 125;
-		if (borg_items[INVEN_FEET].weight > 50)
-			value -= 125;
-	}
-	
-	/* Compute the total armor weight */
+
+    /* Compute the total armor weight */
     cur_wgt += borg_items[INVEN_BODY].weight;
     cur_wgt += borg_items[INVEN_HEAD].weight;
     cur_wgt += borg_items[INVEN_ARM].weight;
@@ -5094,18 +4572,16 @@ extern s32b borg_power_aux1(void)
     if (p_ptr->class->spell_book && ((cur_wgt - max_wgt) / 10) > 0)
     {
         /* Mega-Hack -- Penalize heavy armor which hurts mana */
-        if (borg_skill[BI_MAXCLEVEL] >= 47)
+        if (borg_skill[BI_MAXSP] >= 300 && borg_skill[BI_MAXSP] <= 350)
             value -= (((cur_wgt - max_wgt) / 10) * 400L);
-        if (borg_skill[BI_MAXCLEVEL] >= 37 && borg_skill[BI_MAXCLEVEL] <= 46)
+        if (borg_skill[BI_MAXSP] >= 200 && borg_skill[BI_MAXSP] <= 299)
             value -= (((cur_wgt - max_wgt) / 10) * 800L);
-        if (borg_skill[BI_MAXCLEVEL] >= 26 && borg_skill[BI_MAXCLEVEL] <= 36)
+        if (borg_skill[BI_MAXSP] >= 100 && borg_skill[BI_MAXSP] <= 199)
             value -= (((cur_wgt - max_wgt) / 10) * 1600L);
-        if (borg_skill[BI_MAXCLEVEL] >= 1 && borg_skill[BI_MAXCLEVEL] <= 25)
+        if (borg_skill[BI_MAXSP] >= 1 && borg_skill[BI_MAXSP] <= 99)
             value -= (((cur_wgt - max_wgt) / 10) * 3200L);
     }
-	
-	/* Penalize total weight */
-	value -= borg_skill[BI_ISENCUMB] * 65; 
+
 
     /*** Penalize bad magic ***/
 
@@ -5169,7 +4645,7 @@ extern s32b borg_power_aux1(void)
     }
 #endif
 
-    /* Reward for activatable Artifacts in equipment */
+    /* Reward for activatable Artifacts in inventory */
     for (i = INVEN_WIELD; i < INVEN_TOTAL; i++)
     {
         int multibonus = 0;
@@ -5199,14 +4675,216 @@ extern s32b borg_power_aux1(void)
 			    of_has(item->flags, OF_SUST_CON)));
 
         if (multibonus >= 2) value += 3000 * multibonus;
-	
-		/* Add value if the item has a cool activation effect */
-		value += borg_bonus_activation(i, FALSE);
-	}
 
-	return (value);
+        /* This needs to be changed */
+        switch (item->activation)
+        {
+        /* Artifact -- Narthanc- fire bolt 9d8*/
+        /* Artifact -- Paurhach- fire bolt 9d8 */
+        case EFF_FIRE_BOLT:
+        value +=(500+(9*(8+1)/2));
+        break;
+
+        /* Artifact -- Nimthanc- frost bolt 6d8*/
+        /* Artifact -- Paurnimmen- frost bolt 6d8 */
+        case EFF_COLD_BOLT:
+        value +=(500+(6*(8+1)/2));
+        break;
+
+        /* Artifact -- Dethanc- electric bolt 4d8*/
+        /* Artifact -- Pauraegen- lightning bolt 4d8 */
+        case EFF_ELEC_BOLT:
+        value +=(500+(4*(8+1)/2));
+        break;
+
+
+        /* Artifact -- Rilia- poison gas 12*/
+        case EFF_STINKING_CLOUD:
+        value +=(500+(24));
+        break;
+
+        /* Artifact -- Belangil- frost ball 48*/
+        case EFF_COLD_BALL50:
+        value +=(500+(96));
+        break;
+
+
+        /* Artifact -- Arunruth- frost bolt 12d8*/
+        case EFF_COLD_BOLT2:
+        value +=(500+(12*(8+1)/2));
+        break;
+
+
+        /* Artifact -- Ringil- frost ball 100*/
+        /* Artifact -- Aeglos- frost ball 100*/
+        case EFF_COLD_BALL100:
+        value +=(500+(200));
+        /* extra boost for speed */
+        if (!op_ptr->opt[OPT_birth_randarts] &&
+            !op_ptr->opt[OPT_birth_randarts])
+            value +=25000L;
+        break;
+
+
+        /* Artifact -- Anduril- fire ball 72*/
+        /* Artifact -- Firestar- fire ball 72 */
+        case EFF_FIRE_BALL:
+        value +=(500+(144));
+        break;
+
+		/* Artifact -- NARYA- FIRE BALL 120 */
+        case EFF_FIRE_BALL2:
+        value +=(500+(240));
+        break;
+
+        /* Artifact -- Theoden- drain Life 120*/
+        case EFF_DRAIN_LIFE2:
+        value +=(500+120);
+        break;
+
+
+        /* Artifact -- Totila- confusion */
+        case EFF_CONFUSE2:
+        value +=(500+(200));
+        break;
+
+        /* Artifact -- TURMIL- drain life 90 */
+        case EFF_DRAIN_LIFE1:
+        value +=(500+90);
+        break;
+
+
+        /* Artifact -- Razorback- spikes 150 */
+        /* Artifact -- FINGOLFIN- MISSILE 150 (bonus for TH TD)*/
+        case EFF_ARROW:
+        value +=(500+(300));
+        break;
+
+
+        /* Artifact -- Cammithrim- Magic Missile 2d6 */
+        case EFF_MISSILE:
+        value +=(500+(2*(6+1)/2));
+        break;
+
+        /* Artifact -- PaurNEN- ACID bolt 5d8 */
+        case EFF_ACID_BOLT:
+        value +=(500+(5*(8+1)/2));
+        break;
+
+        /* Artifact -- INGWE- DISPEL EVIL X5 */
+        case EFF_DISPEL_EVIL:
+        value +=(500+(10 + (borg_skill[BI_CLEVEL]*5)/2));
+        break;
+
+
+        /* Artifact -- NENYA- COLD BALL 200 */
+        case EFF_COLD_BALL2:
+        value +=(500+(400));
+        break;
+
+        /* Artifact -- VILYA- ELEC BALL 250 */
+        case EFF_ELEC_BALL2:
+        value +=(500+(500));
+        break;
+
+        /* Artifact -- POWER One Ring-*/
+        case EFF_BIZARRE:
+        value +=(999999);
+        break;
+
+        /* Artifact -- Ulmo- tele way */
+        case EFF_TELE_OTHER:
+        if (borg_class == CLASS_MAGE)
+        {
+            value +=500;
+        }
+        else
+            value +=(500+(500));
+        break;
+
+        /* Artifact -- Colluin - bladturner Resistance */
+        case EFF_RESIST_ALL:
+        value +=(500+(150));
+        /* extra bonus for the non spell guys */
+        if (borg_class == CLASS_WARRIOR || borg_class == CLASS_ROGUE ||
+            borg_class == CLASS_PALADIN) value +=25000;
+        break;
+
+        /* Artifact -- Holcolleth -- Sleep II */
+        case EFF_SLEEPII:
+        if ((borg_class == CLASS_MAGE) || (borg_class == CLASS_PRIEST) )
+        {
+            value +=500;
+        }
+        else
+            value +=(500+(200));
+        break;
+
+        /* Artifact -- Thingol recharge */
+        case EFF_RECHARGE:
+        if (borg_class == CLASS_MAGE)
+        {
+            value +=500;
+        }
+        else
+            value +=(500+(100));
+        break;
+
+        /* Artifact -- Holehenth detection */
+
+        /* Artifact -- Dal fear and poison */
+        case EFF_REM_FEAR_POIS:
+        if (borg_class == CLASS_MAGE || borg_class == CLASS_PRIEST)
+        {
+            value +=500;
+        }
+        else
+            value +=(500+(200));
+        break;
+
+        /* Artifact -- Carlammas PFE*/
+
+        /* Artifact -- Lotharang- cure light */
+
+        /* Artifact -- Eriril id */
+
+        /* Artifact -- Cubragol brand bolts, bonus for speed */
+        case EFF_FIREBRAND:
+        value +=(500+(300));
+        /* extra boost for speed */
+        if (!op_ptr->opt[OPT_birth_randarts] &&
+            !op_ptr->opt[OPT_birth_randarts])
+            value +=25000L;
+        break;
+
+        /* Artifact -- Avavir WoR */
+
+        /* Artifact -- Taratol, feanor, tulkas speed */
+
+        /* Artifact -- Soulkeeper, Gondor heal */
+
+        /* Artifact -- Belegonnon   phase */
+
+        /* Artifact -- Colannon teleport */
+
+        /* Artifact -- Luthien RLL */
+
+        /* Artifact -- Phial */
+
+        /* Artifact -- Star */
+        case EFF_MAPPING:
+        value +=(1200);
+        break;
+
+        /* Artifact -- Arkstone */
+        }
+
+    }
+
+
+    /* Result */
+    return (value);
 }
-
 
 
 
@@ -5232,10 +4910,10 @@ static s32b borg_power_aux2(void)
 
     /* Reward fuel */
     k = 0;
-    for (; k < 6 && k < borg_skill[BI_AFUEL]; k++) value += 5000L;
+    for (; k < 6 && k < borg_skill[BI_AFUEL]; k++) value += 60000L;
     if (borg_skill[BI_STR] >= 15)
     {
-		for (; k < 8 && k < borg_skill[BI_AFUEL]; k++) value += 500L - (k * 50);
+		for (; k < 10 && k < borg_skill[BI_AFUEL]; k++) value += 6000L - (k * 100);
 	}
 
     /* Reward Food */
@@ -5268,7 +4946,7 @@ static s32b borg_power_aux2(void)
     if (borg_skill[BI_ISPOISONED] && amt_slow_poison) value +=5000;
 
 	/* collect Resistance pots if not immune -- All Classes */
-    if (!borg_skill[BI_IPOIS])
+    if (!borg_skill[BI_IPOIS] && borg_skill[BI_ACUREPOIS] <= 20)
 	{
 		/* Not if munchkin starting */
 		if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
@@ -5293,50 +4971,39 @@ static s32b borg_power_aux2(void)
 		else
 		{
 			/* collect pots if not immune */
-			if (!borg_skill[BI_IFIRE] && !borg_equips_ring(SV_RING_FIRE))
+			if (!borg_skill[BI_IFIRE])
 			{
-				for (; k <  5 && k < borg_skill[BI_ARESHEAT]; k++) value += 500L;
+				for (; k <  4 && k < borg_skill[BI_ARESHEAT]; k++) value += 500L;
 			}
 			k = 0;
 			/* collect pots if not immune */
-			if (!borg_skill[BI_ICOLD] && !borg_equips_ring(SV_RING_ICE))
+			if (!borg_skill[BI_ICOLD])
 			{
-				for (; k <  5 && k < borg_skill[BI_ARESCOLD]; k++) value += 500L;
+				for (; k <  4 && k < borg_skill[BI_ARESCOLD]; k++) value += 500L;
 			}
 			/* collect pots if not immune */
-			if (!borg_skill[BI_IPOIS] /* && !borg_skill[BI_SRPOIS] */)
+			if (!borg_skill[BI_IPOIS])
 			{
-				for (; k <  5 && k < borg_skill[BI_ARESPOIS]; k++) value += 500L;
+				for (; k <  4 && k < borg_skill[BI_ARESPOIS]; k++) value += 500L;
 			}
 		}
     }
 
-#if 0
     /* Reward ident */
     k = 0;
-	if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
+	if (borg_skill[BI_CLEVEL] >= 10)
 	{
-		/* Do not carry these until later */
-	}
-	else
-	{
-		k = 0;
-		if (borg_skill[BI_CLEVEL] >= 10)
+		for (; k < 5 && k < borg_skill[BI_AID]; k++) value += 6000L;
+		if (borg_skill[BI_STR] >= 15)
 		{
-			for (; k < 5 && k < borg_skill[BI_AID]; k++) value += 6000L;
-			if (borg_skill[BI_STR] >= 15)
-			{
-				for (; k < 15 && k < borg_skill[BI_AID]; k++) value += 600L;
-			}
+			for (; k < 15 && k < borg_skill[BI_AID]; k++) value += 600L;
 		}
 	}
-#endif
-
 	/* Reward ID if I am carrying a {magical} or {excellent} item */
 	if (my_need_id)
 	{
 		k = 0;
-		for (; k <= my_need_id && k < borg_skill[BI_AID]; k++) value += 6000L;
+		for (; k < my_need_id && k < borg_skill[BI_AID]; k++) value += 6000L;
 	}
 
     /*  Reward PFE  carry lots of these*/
@@ -5353,18 +5020,20 @@ static s32b borg_power_aux2(void)
 	}
     /*  Reward Glyph- Rune of Protection-  carry lots of these*/
     k = 0;
-	if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
-	{
-		/* Do not carry these until later */
-	}
-	else
-	{
-		/* Only carry in shallow depth, deep monsters overcome the glyph */
-		if (borg_skill[BI_MAXDEPTH] <= 80)
-		{
-			k = 0;
-			for (; k < 10 && k < borg_skill[BI_AGLYPH]; k++) value += 2500L;
-		}
+    for (; k < 10 && k < borg_skill[BI_AGLYPH]; k++) value += 10000L;
+    for (; k < 25 && k < borg_skill[BI_AGLYPH]; k++) value += 2000L;
+    if (borg_skill[BI_MAXDEPTH] >= 100)
+    {
+        k = 0;
+        for (; k < 10 && k < borg_skill[BI_AGLYPH]; k++) value += 2500L;
+        for (; k < 75 && k < borg_skill[BI_AGLYPH]; k++) value += 2500L;
+    }
+
+	/* Reward Scroll of Mass Genocide, only when fighting Morgoth */
+    if (borg_skill[BI_MAXDEPTH] >= 100)
+    {
+        k = 0;
+        for (; k < 99 && k < borg_skill[BI_AMASSBAN]; k++) value += 2500L;
 	}
 
     /* Reward recall */
@@ -5372,7 +5041,7 @@ static s32b borg_power_aux2(void)
 	if (borg_skill[BI_CLEVEL] > 7)
 	{
 		/* Not if munchkin starting */
-		if (borg_munchkin_start && borg_skill[BI_MAXDEPTH] < 8)
+		if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
 		{
 			/* Do not carry these until later */
 		}
@@ -5385,11 +5054,13 @@ static s32b borg_power_aux2(void)
 			}
 			/* Deep borgs need the rod to avoid low mana traps */
 			if (borg_skill[BI_MAXDEPTH] >= 50 && borg_has[ROD_RECALL]) value +=12000;
-			if (borg_skill[BI_MAXDEPTH] >= 50 && borg_has[ROD_RECALL] >=2) value +=12000;
 		}
 	}
 
 	/* Reward phase */
+    k = 1;
+    /* first phase door is very important */
+    if (borg_skill[BI_APHASE]) value += 50000;
 	/* Not if munchkin starting */
 	if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
 	{
@@ -5397,9 +5068,6 @@ static s32b borg_power_aux2(void)
 	}
 	else
 	{
-		k = 1;
-		/* first phase door is very important */
-		if (borg_skill[BI_APHASE]) value += 50000;
 		for (; k < 8 && k < borg_skill[BI_APHASE]; k++) value += 500L;
 		if (borg_skill[BI_STR] >= 15)
 		{
@@ -5425,11 +5093,11 @@ static s32b borg_power_aux2(void)
 
     /* Reward teleport scroll*/
     k = 0;
-	if (borg_skill[BI_CLEVEL] >=3 && borg_has[borg_lookup_kind(TV_SCROLL, SV_SCROLL_TELEPORT_LEVEL)] == 0)
+	if (borg_skill[BI_CLEVEL] >=3)
 	{
-		if (borg_skill[BI_ATELEPORT] ) value += 10000L;
+		if (borg_skill[BI_ATELEPORT]) value += 10000L;
 	}
-	if (borg_skill[BI_CLEVEL] >= 7 && borg_has[borg_lookup_kind(TV_SCROLL, SV_SCROLL_TELEPORT_LEVEL)] == 0)
+	if (borg_skill[BI_CLEVEL] >= 7)
 	{
 		for (; k < 3 && k < borg_skill[BI_ATELEPORT]; k++) value += 10000L;
 	}
@@ -5440,16 +5108,9 @@ static s32b borg_power_aux2(void)
 
     /* Reward Teleport Level scrolls */
     k = 0;
-	if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
+	if (borg_skill[BI_CLEVEL] >= 15)
 	{
-		/* Do not carry these until later */
-	}
-	else
-	{
-		if (borg_skill[BI_CLEVEL] >= 15)
-		{
-			for (; k <  5 && k < borg_skill[BI_ATELEPORTLVL]; k++) value += 5000L;
-		}
+		for (; k <  5 && k < borg_skill[BI_ATELEPORTLVL]; k++) value += 5000L;
 	}
 
 
@@ -5459,17 +5120,43 @@ static s32b borg_power_aux2(void)
         k = 0;
         for (; k < 15 && k < borg_skill[BI_AHEAL]; k++) value += 8000L;
 
+        k = 0; /* carry a couple for emergency. Store the rest. */
+		if (borg_skill[BI_MAXDEPTH] >= 46)
+		{
+			if (borg_scumming_pots)
+			{
+				for (; k < 1 && k < borg_skill[BI_AEZHEAL]; k++) value +=10000L;
+			}
+			else
+			{
+				for (; k < 2 && k < borg_skill[BI_AEZHEAL]; k++) value +=10000L;
+			}
+		}
+
         /* These guys need to carry the rods more, town runs low on supply. */
         k = 0;
-        for (; k < 10 && k < borg_has[ROD_HEAL]; k++) value +=20000L;
+        for (; k < 6 && k < borg_has[ROD_HEAL]; k++) value +=20000L;
     }
     else if (borg_class == CLASS_RANGER || borg_class == CLASS_PALADIN ||
         borg_class == CLASS_MAGE)
     {
         k = 0;
-        for (; k < 10 && k < borg_skill[BI_AHEAL]; k++) value += 6000L;
+        for (; k < 10 && k < borg_skill[BI_AHEAL]; k++) value += 4000L;
 
-        if (borg_class != CLASS_PALADIN)
+        k = 0; /* carry a couple for emergency. Store the rest. */
+		if (borg_skill[BI_MAXDEPTH] >= 46)
+		{
+			if (borg_scumming_pots)
+			{
+				for (; k < 1 && k < borg_skill[BI_AEZHEAL]; k++) value +=10000L;
+			}
+			else
+			{
+				for (; k < 2 && k < borg_skill[BI_AEZHEAL]; k++) value +=10000L;
+			}
+		}
+
+        if (borg_class == CLASS_PALADIN)
         {
             /* Reward heal potions */
             k = 0;
@@ -5478,7 +5165,7 @@ static s32b borg_power_aux2(void)
 
         /* These guys need to carry the rods more, town runs low on supply. */
         k = 0;
-        for (; k < 6 && k < borg_has[ROD_HEAL]; k++) value +=20000L;
+        for (; k < 4 && k < borg_has[ROD_HEAL]; k++) value +=20000L;
 
     }
     else if (borg_class == CLASS_PRIEST)
@@ -5494,11 +5181,20 @@ static s32b borg_power_aux2(void)
         }
         /* Reward heal potions */
         k = 0;
-        for (; k < 5 && k < borg_has[POTION_HEAL]; k++) value += 4000L;
+        for (; k < 5 && k < borg_has[POTION_HEAL]; k++) value += 2000L;
 
-		/* These guys need to carry the rods more, town runs low on supply. */
-        k = 0;
-        for (; k < 4 && k < borg_has[ROD_HEAL]; k++) value +=20000L;
+        k = 0; /* carry a couple for emergency. Store the rest. */
+		if (borg_skill[BI_MAXDEPTH] >= 46)
+		{
+			if (borg_scumming_pots)
+			{
+				for (; k < 1 && k < borg_skill[BI_AEZHEAL]; k++) value +=10000L;
+			}
+			else
+			{
+				for (; k < 2 && k < borg_skill[BI_AEZHEAL]; k++) value +=10000L;
+			}
+		}
     }
 
 
@@ -5506,21 +5202,20 @@ static s32b borg_power_aux2(void)
     if (borg_skill[BI_MAXDEPTH] >= 99)
     {
         /* Sauron is alive -- carry them all*/
-        if (borg_race_death[IDX_SAURON] == 0)
+        if (borg_race_death[546] == 0)
         {
             k = 0;
-            for (; k < MAX_STACK_SIZE && k < borg_has[POTION_HEAL]; k++) value += 8000L;
+            for (; k < 99 && k < borg_has[POTION_HEAL]; k++) value += 8000L;
             k = 0;
-            for (; k < MAX_STACK_SIZE && k < borg_skill[BI_AEZHEAL]; k++) value +=10000L;
+            for (; k < 99 && k < borg_skill[BI_AEZHEAL]; k++) value +=10000L;
             k = 0;
-            for (; k < MAX_STACK_SIZE && k < borg_skill[BI_ALIFE]; k++) value +=10000L;
-			k = 0;
-            for (; k < MAX_STACK_SIZE && k < borg_skill[BI_ASPEED]; k++) value += 8000L;
-            /* Restore Mana */
+            for (; k < 99 && k < borg_skill[BI_ASPEED]; k++) value += 8000L;
+            k = 0;
+            for (; k < 99 && k < borg_skill[BI_ALIFE]; k++) value +=10000L;
             k = 0;
             if (borg_class != CLASS_WARRIOR)
 			{
-				for (; k < MAX_STACK_SIZE && k < borg_skill[BI_AMANA]; k++) value += 5000L;
+				for (; k < 99 && k < borg_has[POTION_RES_MANA]; k++) value += 5000L;
 			}
             k = 0;
             for (; k < 40 && k < borg_has[SHROOM_STONESKIN]; k++) value += 5000L;
@@ -5530,13 +5225,12 @@ static s32b borg_power_aux2(void)
 
         }
         /* Sauron is dead -- store them unless I have enough */
-        if (borg_race_death[IDX_SAURON] != 0)
+        if (borg_race_death[546] != 0)
         {
             /* Must scum for more pots */
             if ((num_heal_true + borg_has[POTION_HEAL] + num_ezheal_true + borg_skill[BI_AEZHEAL] < 30) ||
                 (num_ezheal_true + borg_skill[BI_AEZHEAL] < 20) ||
-                (num_speed + borg_skill[BI_ASPEED] < 15) ||
-				(num_mana_true + borg_skill[BI_AMANA] < MAX_STACK_SIZE))
+                (num_speed + borg_skill[BI_ASPEED] < 15))
             {
                 /* leave pots at home so they dont shatter */
 				borg_scumming_pots = TRUE;
@@ -5545,26 +5239,26 @@ static s32b borg_power_aux2(void)
             else
             {
                 k = 0;
-                for (; k < MAX_STACK_SIZE && k < borg_has[POTION_HEAL]; k++) value += 8000L;
+                for (; k < 99 && k < borg_has[POTION_HEAL]; k++) value += 8000L;
                 k = 0;
-                for (; k < MAX_STACK_SIZE && k < borg_skill[BI_AEZHEAL]; k++) value +=10000L;
+                for (; k < 99 && k < borg_skill[BI_AEZHEAL]; k++) value +=10000L;
 				k = 0;
-				for (; k < MAX_STACK_SIZE && k < borg_skill[BI_ALIFE]; k++) value +=20000L;
+				for (; k < 99 && k < borg_skill[BI_ALIFE]; k++) value +=10000L;
                 k = 0;
-                for (; k < MAX_STACK_SIZE && k < borg_skill[BI_ASPEED]; k++) value +=8000L;
+                for (; k < 99 && k < borg_skill[BI_ASPEED]; k++) value +=8000L;
+				k = 0;
+				for (; k < 40 && k < borg_has[SHROOM_STONESKIN]; k++) value += 5000L;
                 k = 0;
 				if (borg_class != CLASS_WARRIOR)
 				{
-					for (; k < MAX_STACK_SIZE && k < borg_skill[BI_AMANA]; k++) value += 5000L;
+					for (; k < 99 && k < borg_has[POTION_RES_MANA]; k++) value += 5000L;
 				}
                 /* Shrooms of Restoring */
                 k = 0;
                 for (; k < 35 && k < amt_fix_stat[6]; k++) value += 5000L;
 				/* Reward Scroll of Mass Genocide, only when fighting Morgoth */
 				k = 0;
-				for (; k < MAX_STACK_SIZE && k < borg_skill[BI_AMASSBAN]; k++) value += 2500L;
-				k = 0;
-				for (; k < 40 && k < borg_has[SHROOM_STONESKIN]; k++) value += 5000L;
+				for (; k < 99 && k < borg_skill[BI_AMASSBAN]; k++) value += 2500L;
 
 				/* No need to store extras in home */
 				borg_scumming_pots = FALSE;
@@ -5576,73 +5270,50 @@ static s32b borg_power_aux2(void)
     if (borg_skill[BI_MAXSP] > 100)
     {
         k = 0;
-        for (; k < 2 && k < borg_skill[BI_AMANA]; k++) value += 4000L;
+        for (; k < 10 && k < borg_has[POTION_RES_MANA]; k++) value += 4000L;
         k = 0;
-        for (; k < MAX_STACK_SIZE && k < borg_skill[BI_ASTFMAGI]; k++) value += 4000L;
+        for (; k < 100 && k < borg_skill[BI_ASTFMAGI]; k++) value += 4000L;
     }
 
     /* Reward Cure Critical.  Heavy reward on first 5 */
-	if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
-	{
-		/* Do not carry these until later */
-	}
-	else
-	{
-		if (borg_skill[BI_CLEVEL] < 35 && borg_skill[BI_CLEVEL] > 10)
+    if (borg_skill[BI_CLEVEL] < 35 && borg_skill[BI_CLEVEL] > 10)
+    {
+        k = 0;
+        for (; k < 10 && k < borg_skill[BI_ACCW]; k++) value += 5000L;
+    }
+    else if (borg_skill[BI_CLEVEL] > 35)
+    {
+        /* Reward cure critical.  Later on in game. */
+        k = 0;
+        for (; k <  10 && k < borg_skill[BI_ACCW]; k++) value += 5000L;
+		if (borg_skill[BI_STR] > 15)
 		{
-			k = 0;
-			for (; k < 10 && k < borg_skill[BI_ACCW]; k++) value += 5000L;
+			for (; k < 15 && k < borg_skill[BI_ACCW]; k++) value += 500L;
 		}
-		else if (borg_skill[BI_CLEVEL] > 35)
-		{
-			/* Reward cure critical.  Later on in game. */
-			k = 0;
-			for (; k <  10 && k < borg_skill[BI_ACCW]; k++) value += 5000L;
-			if (borg_skill[BI_STR] > 15)
-			{
-				for (; k < 15 && k < borg_skill[BI_ACCW]; k++) value += 500L;
-			}
-		}
-	}
+    }
 
     /* Reward cure serious -- only reward serious if low on crits */
-	if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
-	{
-		/* Do not carry these until later */
-	}
-	else
-	{
-		if (borg_skill[BI_ACCW] < 5 && borg_skill[BI_MAXCLEVEL] > 10 && (borg_skill[BI_CLEVEL] < 35 || !borg_skill[BI_RCONF]))
+    if (borg_skill[BI_ACCW] < 5 && borg_skill[BI_MAXCLEVEL] > 10 && (borg_skill[BI_CLEVEL] < 35 || !borg_skill[BI_RCONF]))
+    {
+        k = 0;
+        for (; k <  7 && k < borg_skill[BI_ACSW]; k++) value += 50L;
+		if (borg_skill[BI_STR] > 15)
 		{
-			k = 0;
-			for (; k <  7 && k < borg_skill[BI_ACSW]; k++) value += 50L;
-			if (borg_skill[BI_STR] > 15)
-			{
-				for (; k < 10 && k < borg_skill[BI_ACSW]; k++) value += 5L;
-			}
+	        for (; k < 10 && k < borg_skill[BI_ACSW]; k++) value += 5L;
 		}
-	}
-	/* Reward the effect of CSW */
-	if (borg_skill[BI_ACSW] >= 1000) value += 5000;
+    }
 
     /* Reward cure light -- Low Level Characters */
-	if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
-	{
-		/* Do not carry these until later */
-	}
-	else
-	{
-		if ((borg_skill[BI_ACCW] + borg_skill[BI_ACSW] < 5) && borg_skill[BI_CLEVEL] < 8)
-		{
-			k = 0;
-			for (; k <  5 && k < borg_skill[BI_ACLW]; k++) value += 550L;
-		}
-	}
+    if ((borg_skill[BI_ACCW] + borg_skill[BI_ACSW] < 5) && borg_skill[BI_CLEVEL] < 8)
+    {
+        k = 0;
+        for (; k <  5 && k < borg_skill[BI_ACLW]; k++) value += 550L;
+    }
 
 	/* Reward Cures */
     if (!borg_skill[BI_RCONF])
     {
-		if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
+		if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < 10)
 		{
 			/* Do not carry these until later */
 		}
@@ -5677,39 +5348,38 @@ static s32b borg_power_aux2(void)
 		}
     }
     /*** Detection ***/
-	if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
-	{
-		/* Do not carry these until later */
-	}
-	else
-	{
-		/* Reward detect trap */
-		k = 0;
-		for (; k < 1 && k < borg_skill[BI_ADETTRAP]; k++) value += 4000L;
 
-		/* Reward detect door */
-		k = 0;
-		for (; k < 1 && k < borg_skill[BI_ADETDOOR]; k++) value += 2000L;
+    /* Reward detect trap */
+    k = 0;
+    for (; k < 1 && k < borg_skill[BI_ADETTRAP]; k++) value += 4000L;
 
-		/* Reward detect evil for non spell caster guys */
-		if (!borg_skill[BI_ESP] && !borg_prayer_legal(0, 0) &&
-			!borg_spell_legal(0, 1))
-		{
-			k = 0;
-			for (; k < 1 && k < borg_skill[BI_ADETEVIL]; k++) value += 1000L;
-		}
+    /* Reward detect door */
+    k = 0;
+    for (; k < 1 && k < borg_skill[BI_ADETDOOR]; k++) value += 2000L;
 
-		/* Reward magic mapping */
-		k = 0;
-		for (; k < 1 && k < borg_skill[BI_AMAGICMAP]; k++) value += 4000L;
-		if (borg_skill[BI_MAXDEPTH] >= 50 && borg_skill[BI_AMAGICMAP]) value += 6000;
-		if (borg_has[borg_lookup_kind(TV_ROD, SV_ROD_MAPPING)] >=2 && 
-			!borg_prayer_legal(2, 6)) value += 5000;
+    /* Reward detect evil for non spell caster guys */
+    if (!borg_skill[BI_ESP] && !borg_prayer_legal(0, 0) &&
+        !borg_spell_legal(0, 1))
+    {
+        k = 0;
+        for (; k < 1 && k < borg_skill[BI_ADETEVIL]; k++) value += 1000L;
+    }
 
-		/* Reward call lite */
-		k = 0;
-		for (; k < 1 && k < borg_skill[BI_ALITE]; k++) value += 1000L;
-	}
+    /* Reward magic mapping */
+    k = 0;
+    for (; k < 1 && k < borg_skill[BI_AMAGICMAP]; k++) value += 4000L;
+
+    /* Reward call lite */
+    k = 0;
+    for (; k < 1 && k < borg_skill[BI_ALITE]; k++) value += 1000L;
+
+    /* Genocide scrolls. Just scrolls, mainly used for Morgoth */
+    if (borg_skill[BI_MAXDEPTH] >= 100)
+    {
+        k = 0;
+        for (; k < 10 && k < borg_has[SCROLL_GENOCIDE]; k++) value += 10000L;
+        for (; k < 25 && k < borg_has[SCROLL_GENOCIDE]; k++) value += 2000L;
+    }
 
     /* Reward speed potions/rods/staves (but no staves deeper than depth 95) */
     k = 0;
@@ -5719,22 +5389,11 @@ static s32b borg_power_aux2(void)
 	}
 	else
 	{
-        for (; k < 10 && k < borg_skill[BI_ASPEED]; k++) value += 5000L;
+        for (; k < 20 && k < borg_skill[BI_ASPEED]; k++) value += 5000L;
 	}
 
     /* Reward Recharge ability */
-    k = 0;
-	if ((borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level) && 
-		(borg_has[WAND_MM] == 0 || borg_has[WAND_SCLOUD] == 0))
-	{
-			k = 0;
-			for (; k < 3 && k < borg_skill[BI_ARECHARGE]; k++) value += 10000L;
-	}
-	else
-	{
-		if (borg_skill[BI_ARECHARGE] && borg_skill[BI_MAXDEPTH] < 99) value += 5000L;
-	}
-
+	if (borg_skill[BI_ARECHARGE] && borg_skill[BI_MAXDEPTH] < 99) value += 5000L;
 
     /*** Missiles ***/
 
@@ -5742,34 +5401,23 @@ static s32b borg_power_aux2(void)
     if (borg_class == CLASS_RANGER || borg_class == CLASS_WARRIOR)
     {
         k = 0;
-        for (; k < MAX_STACK_SIZE - 1 && k < borg_skill[BI_AMISSILES]; k++) value += 1000L;
+        for (; k < 40 && k < borg_skill[BI_AMISSILES]; k++) value += 1000L;
 		if (borg_skill[BI_STR] > 15 && borg_skill[BI_STR] < 18)
 		{
-	        for (; k < (MAX_STACK_SIZE*2) - 2 && k < borg_skill[BI_AMISSILES]; k++) value += 100L;
+	        for (; k < 80 && k < borg_skill[BI_AMISSILES]; k++) value += 100L;
 		}
-		if (borg_skill[BI_STR] > 18 && borg_class != CLASS_WARRIOR)
+		if (borg_skill[BI_STR] > 18)
 		{
-	        for (; k < (MAX_STACK_SIZE*3) -3 && k < borg_skill[BI_AMISSILES]; k++) value += 80L;
+	        for (; k < 180 && k < borg_skill[BI_AMISSILES]; k++) value += 80L;
 		}
     }
-    else if (borg_skill[BI_NO_MELEE])
-    {
-        k = 0;
-		for (; k < 15 && k < borg_skill[BI_AMISSILES] && k < MAX_STACK_SIZE - 1; k++) value += 500L;
-		if (borg_skill[BI_STR] > 15)
-		{
-	        for (; k < 30 && k < borg_skill[BI_AMISSILES]; k++) value += 100L;
-		}
-		/* Don't carry too many */
-		if (borg_skill[BI_STR] <= 15 && borg_skill[BI_AMISSILES] > 15) value -= 1000L;
-	}
     else
     {
         k = 0;
-		for (; k < 20 && k < borg_skill[BI_AMISSILES] && k < MAX_STACK_SIZE - 1; k++) value += 1000L;
+		for (; k < 20 && k < borg_skill[BI_AMISSILES] && k < 99; k++) value += 1000L;
 		if (borg_skill[BI_STR] > 15)
 		{
-	        for (; k < MAX_STACK_SIZE - 1 && k < borg_skill[BI_AMISSILES]; k++) value += 100L;
+	        for (; k < 50 && k < borg_skill[BI_AMISSILES] && k < 99; k++) value += 100L;
 		}
 		/* Don't carry too many */
 		if (borg_skill[BI_STR] <= 15 && borg_skill[BI_AMISSILES] > 20) value -= 1000L;
@@ -5804,10 +5452,6 @@ static s32b borg_power_aux2(void)
     /* reward per charge */
     value += amt_cool_wand * 50L;
 
-	/* Stone to Mud ability */
-	k = 0;
-    for (; k < 25 && k < borg_skill[BI_ASTONE2MUD]; k++) value += 5000L;
-
     /* These staves are great but do not clutter inven with them */
     /*  -- Reward carrying a staff of holiness/power */
     if (amt_cool_staff) value += 2500L;
@@ -5816,20 +5460,9 @@ static s32b borg_power_aux2(void)
 
 	/* Rods of attacking are good too */
 	k = 0;
-	if (borg_skill[BI_MAXDEPTH] < 50) 
-	{
-		for (; k < 10 && k < borg_skill[BI_AROD1]; k++) value += 8000;
-	}
+	for (; k < 6 && k < borg_skill[BI_AROD1]; k++) value += 8000;
 	k = 0;
-	if (borg_skill[BI_MAXDEPTH] < 95 && borg_class == CLASS_WARRIOR)
-	for (; k < 10 && k < borg_skill[BI_AROD2]; k++) value += 12000;
-
-	/* Rods of Light Beam are useful all the time. */
-	k = 0;
-	if (borg_skill[BI_ARODLIGHT] < 5) 
-	{
-		for (; k < 10 && k < borg_skill[BI_ARODLIGHT]; k++) value += 8000;
-	}
+	for (; k < 6 && k < borg_skill[BI_AROD2]; k++) value += 12000;
 
 	/* Hack -- Reward add stat */
     if (amt_add_stat[A_STR]) value += 50000;
@@ -5875,27 +5508,21 @@ static s32b borg_power_aux2(void)
     if (amt_fix_exp) value += 50000;
 
     /*** Enchantment ***/
-	if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level)
-	{
-		/* Do not carry these until later */
-	}
-	else
-	{
-		/* Reward enchant armor */
-		if (amt_enchant_to_a < 100 && (my_need_enchant_to_a || enchant_armour_swap_to_a)) value += 2540L;
 
-		/* Reward enchant weapon to hit */
-		if (amt_enchant_to_h < 100 && (my_need_enchant_to_h || enchant_weapon_swap_to_h) && !borg_skill[BI_NO_MELEE]) value += 2540L;
+    /* Reward enchant armor */
+    if (amt_enchant_to_a < 1000 && my_need_enchant_to_a) value += 540L;
 
-		/* Reward enchant weapon to damage */
-		if (amt_enchant_to_d < 100 && (my_need_enchant_to_d || enchant_weapon_swap_to_d) && !borg_skill[BI_NO_MELEE]) value += 2700L;
+    /* Reward enchant weapon to hit */
+    if (amt_enchant_to_h < 1000 && my_need_enchant_to_h) value += 540L;
 
-		/* Reward *enchant weapon* to damage */
-		if (amt_enchant_weapon < 100 && !borg_skill[BI_NO_MELEE]) value += 5000L;
+    /* Reward enchant weapon to damage */
+    if (amt_enchant_to_d < 1000 && my_need_enchant_to_d) value += 500L;
 
-		/* Reward *enchant armour*  */
-		if (amt_enchant_armor) value += 5000L;
-	}
+    /* Reward *enchant weapon* to damage */
+    if (amt_enchant_weapon) value += 5000L;
+
+    /* Reward *enchant armour*  */
+    if (amt_enchant_armor) value += 5000L;
 
     /* Reward carrying a shovel if low level */
     if (borg_skill[BI_MAXDEPTH] <= 40 && borg_skill[BI_MAXDEPTH] >= 25 && borg_gold < 100000 && borg_items[INVEN_WIELD].tval != TV_DIGGING   &&
@@ -5913,51 +5540,35 @@ static s32b borg_power_aux2(void)
         /* The "hard" books */
         if (book >= 4)
         {
-            int what;
-
-			/* Scan the spells */
-            for (what = 0; what < 9; what++)
-            {
-                borg_magic *as = &borg_magics[book][what];
-
-                /* Track minimum level */
-                if (as->level > borg_skill[BI_MAXCLEVEL]) continue;
-
-				/* Track Mana req. */
-				if (as->power > borg_skill[BI_MAXSP]) continue;
-
-				/* Reward the book based on the spells I can cast */
-				value += 15000L;
-			}
+            /* Reward the book */
+            k = 0;
+            for (; k < 1 && k < amt_book[book]; k++) value += 300000L;
         }
 
         /* The "easy" books */
         else
         {
             int what, when = 99;
-			int mana = 999;
 
-			/* Scan the spells */
+            /* Scan the spells */
             for (what = 0; what < 9; what++)
             {
                 borg_magic *as = &borg_magics[book][what];
 
                 /* Track minimum level */
                 if (as->level < when) when = as->level;
-
-				/* Track Mana req. */
-				/* if (as->power < mana) mana = as->power; */
             }
 
             /* Hack -- Ignore "difficult" normal books */
             if ((when > 5) && (when >= borg_skill[BI_MAXCLEVEL] + 2)) continue;
-			/* if (mana > borg_skill[BI_MAXSP]) continue; */
 
             /* Reward the book */
             k = 0;
             for (; k < 1 && k < amt_book[book]; k++) value += 500000L;
             if (borg_skill[BI_STR] > 5)
                 for (; k < 2 && k < amt_book[book]; k++) value += 10000L;
+            if (borg_skill[BI_MAXDEPTH] > 50)
+                for (; k < 3 && k < amt_book[book]; k++) value += 2500L;
         }
     }
 
@@ -6000,7 +5611,7 @@ static s32b borg_power_aux2(void)
 		}
 		else
 		{
-			value -= ((inven_weight - (carry_capacity/2)) / (carry_capacity / 10) * 1000L);
+			value -= ((inven_weight - (carry_capacity/2)) / (carry_capacity / 10) *1000L);
 		}
 	}
 
@@ -6035,7 +5646,7 @@ s32b borg_power(void)
     for (i = 1; i <= borg_skill[BI_MAXDEPTH]+50; i++)
     {
         /* Dump fear code*/
-        if ((char *)NULL != borg_prep(i)) break;
+        if ((char *)NULL != borg_prepared(i)) break;
     }
    	value +=((i-1) * 40000L);
 
@@ -6213,7 +5824,7 @@ static s32b borg_power_home_aux1(void)
                 value += 9000L + (num_resist_pois - 2) * 40L;
 
     if (num_resist_conf == 1)
-        value += 4000L;
+        value += 2000L;
     else
         if (num_resist_conf == 2)
             value += 8000L;
@@ -6444,7 +6055,7 @@ static s32b borg_power_home_aux1(void)
         value -= (num_boots - 3) * 1000L;
 
 
-    if (!borg_skill[BI_NO_MELEE]) value += home_damage;
+    value += home_damage;
 
     /* if edged and priest, dump it   */
     value -= num_edged_weapon * 3000L;
@@ -6482,15 +6093,15 @@ static s32b borg_power_home_aux2(void)
 	}
 	else if (borg_skill[BI_MAXCLEVEL] < 35)
 	{
-		for (k = 0; k < MAX_STACK_SIZE && k < num_food; k++) value += 8000L - k*10L;
+		for (k = 0; k < 90 && k < num_food; k++) value += 8000L - k*10L;
 	}
 	else
 	{
-		for (k = 0; k < MAX_STACK_SIZE && k < num_food; k++) value += 8000L - k*10L;
+		for (k = 0; k < 90 && k < num_food; k++) value += 8000L - k*10L;
 	}
 	if (borg_skill[BI_MAXCLEVEL] > 35 && borg_class == CLASS_WARRIOR)
 	{
-		for (k = 0; k < MAX_STACK_SIZE && k < num_food; k++) value += 20000L - k*2L;
+		for (k = 0; k < 89 && k < num_food; k++) value += 8000L - k*2L;
 	}
 #if 0
     /* Collect fuel */
@@ -6510,87 +6121,82 @@ static s32b borg_power_home_aux2(void)
     /* Collect Molds as pets */
     for (k = 0; k < 10 && k < num_mold; k++) value += 10L - k;
 #endif
-
     /* Collect ident */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_ident; k++) value += 500L - k*10L;
+    for (k = 0; k < 50 && k < num_ident; k++) value += 2000L - k*10L;
 
     /* Collect enchantments armour */
 	if (borg_skill[BI_CLEVEL] < 45)
 	{
-    	for (k = 0; k < MAX_STACK_SIZE && k < num_enchant_to_a; k++) value += 500L - k*10L;
+    	for (k = 0; k < 90 && k < num_enchant_to_a; k++) value += 500L - k*10L;
 	}
     /* Collect enchantments to hit */
 	if (borg_skill[BI_CLEVEL] < 45)
     {
-    	for (k = 0; k < MAX_STACK_SIZE && k < num_enchant_to_h; k++) value += 500L - k*10L;
+    	for (k = 0; k < 90 && k < num_enchant_to_h; k++) value += 500L - k*10L;
 	}
     /* Collect enchantments to dam */
 	if (borg_skill[BI_CLEVEL] < 45)
     {
-		for (k = 0; k < MAX_STACK_SIZE && k < num_enchant_to_d; k++) value += 500L - k*10L;
+		for (k = 0; k < 90 && k < num_enchant_to_d; k++) value += 500L - k*10L;
 	}
 
     /* Collect pfe */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_pfe; k++) value += 500L - k*10L;
+    for (k = 0; k < 90 && k < num_pfe; k++) value += 500L - k*10L;
 
     /* Collect glyphs */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_glyph; k++) value += 500L - k*10L;
+    for (k = 0; k < 90 && k < num_glyph; k++) value += 500L - k*10L;
 
     /* Reward Genocide scrolls. Just scrolls, mainly used for Morgoth */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_genocide; k++) value += 500L - k*10L;
+    for (k = 0; k < 90 && k < num_genocide; k++) value += 500L - k*10L;
 
     /* Reward Mass Genocide scrolls. Just scrolls, mainly used for Morgoth */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_mass_genocide; k++) value += 500L;
+    for (k = 0; k < 90 && k < num_mass_genocide; k++) value += 500L;
 
     /* Collect Recharge ability */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_recharge; k++) value += 500L - k*10L;
+    for (k = 0; k < 90 && k < num_recharge; k++) value += 500L - k*10L;
 
     /* Reward Resistance Potions for Warriors */
-    if (borg_class == CLASS_WARRIOR)
+    if (borg_class == CLASS_WARRIOR && borg_skill[BI_MAXDEPTH] > 20 && borg_skill[BI_MAXDEPTH] < 80)
     {
         k = 0;
-        for (; k <  MAX_STACK_SIZE && k < num_pot_rheat; k++) value += 100L - k*10L;
-        for (; k <  MAX_STACK_SIZE && k < num_pot_rcold; k++) value +=  100L - k*10L;
-        for (; k <  MAX_STACK_SIZE && k < num_pot_rpois; k++) value +=  100L - k*10L;
+        for (; k <  90 && k < num_pot_rheat; k++) value += 100L - k*10L;
+        for (; k <  90 && k < num_pot_rcold; k++) value +=  100L - k*10L;
     }
 
     /* Collect recall */
-    if (!borg_equips_item(TV_ROD, SV_ROD_RECALL))
-	{
-		for (k = 0; k < MAX_STACK_SIZE && k < num_recall; k++) value += 1000L;
-	}
+    for (k = 0; k < 90 && k < num_recall; k++) value += 1000L;
 
     /* Collect escape  (staff of teleport) */
 	if (borg_skill[BI_MAXCLEVEL] < 40)
 	{
-	    for (k = 0; k < MAX_STACK_SIZE && k < num_escape; k++) value += 2000L - k*10L;
+	    for (k = 0; k < 85 && k < num_escape; k++) value += 2000L - k*10L;
 	}
 
     /* Collect a maximal number of staves in the home */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_tele_staves; k++) value -= 50000L;
+    for (k = 0; k < 90 && k < num_tele_staves; k++) value -= 50000L;
 
     /* Collect teleport */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_teleport; k++) value += 8000L;
+    for (k = 0; k < 85 && k < num_teleport; k++) value += 5000L;
 
     /* Collect phase */
 	if (borg_skill[BI_MAXCLEVEL] < 10)
 	{
-	    for (k = 0; k < MAX_STACK_SIZE && k < num_phase; k++) value += 5000L;
+	    for (k = 0; k < 90 && k < num_phase; k++) value += 5000L;
 	}
 
     /* Collect teleport level scrolls*/
     /* for (k = 0; k < 85 && k < num_teleport_level; k++) value += 5000L - k*8L; */
 
     /* Collect Speed */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_speed; k++) value += 5000L - k*10L;
+    /* for (k = 0; k < 85 && k < num_speed; k++) value += 5000L - k*10L; */
 
 	/* Collect Potions of Detonations */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_detonate; k++) value += 5000L;
+    for (k = 0; k < 85 && k < num_detonate; k++) value += 5000L;
 
     /* collect mana/ */
     if (borg_skill[BI_MAXSP] > 1)
     {
-        for (k = 0; k < MAX_STACK_SIZE && k < num_mana; k++) value += 5000L;
+        for (k = 0; k < 90 && k < num_mana; k++) value += 6000L - k*8L;
     }
 
     /* Level 1 priests are given a Potion of Healing.  It is better
@@ -6606,39 +6212,39 @@ static s32b borg_power_home_aux2(void)
     /*** Healing ***/
 
     /* Collect cure critical */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_cure_critical; k++) value += 1500L-k*10L;
+    for (k = 0; k < 90 && k < num_cure_critical; k++) value += 1500L-k*10L;
 
     /* Collect heal, *Heal*, Life */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_heal; k++) value += 3000L;
-    for (k = 0; k < MAX_STACK_SIZE && k < num_ezheal; k++) value += 8000L;
-    for (k = 0; k < MAX_STACK_SIZE && k < num_life; k++) value += 9000L;
+    for (k = 0; k < 90 && k < num_heal; k++) value += 3000L;
+    for (k = 0; k < 198 && k < num_ezheal; k++) value += 8000L;
+    for (k = 0; k < 198 && k < num_life; k++) value += 9000L;
 
 	/* junk cure serious if we have some in the home */
     if (borg_skill[BI_CLEVEL] > 35)    /* dont bother keeping them if high level */
-        for (k = 0; k < MAX_STACK_SIZE && k < num_cure_serious; k++) value -= 1500L-k*10L;
+        for (k = 0; k < 90 && k < num_cure_serious; k++) value -= 1500L-k*10L;
 
     /*** Various ***/
 
     /* Fixing Stats */
     if (borg_skill[BI_CLEVEL] == 50 && num_fix_exp) value -= 7500L;
     if (borg_skill[BI_CLEVEL] > 35 && borg_skill[BI_CLEVEL] <= 49)
-       for (k = 0; k < MAX_STACK_SIZE && k < num_fix_exp; k++) value += 1000L - k*10L;
+       for (k = 0; k < 70 && k < num_fix_exp; k++) value += 1000L - k*10L;
     else if (borg_skill[BI_CLEVEL] <= 35)
        for (k = 0; k < 5 && k < num_fix_exp; k++) value += 1000L - k*10L;
 
     /* Keep shrooms in the house */
 #if 0
-	for (k = 0; k < MAX_STACK_SIZE && k < num_fix_stat[6]; k++) value += 1000L;
-    for (k = 0; k < MAX_STACK_SIZE && k < num_mush_second_sight; k++) value += 1000L;
-    for (k = 0; k < MAX_STACK_SIZE && k < num_mush_fast_recovery; k++) value += 1000L;
-    for (k = 0; k < MAX_STACK_SIZE && k < num_mush_cure_mind; k++) value += 1000L;
-    for (k = 0; k < MAX_STACK_SIZE && k < num_mush_emergency; k++) value += 1000L;
-    /* for (k = 0; k < MAX_STACK_SIZE && k < num_mush_terror; k++) value += 1000L; */
-    for (k = 0; k < MAX_STACK_SIZE && k < num_mush_stoneskin; k++) value += 1000L;
-    for (k = 0; k < MAX_STACK_SIZE && k < num_mush_debility; k++) value += 1000L;
-    for (k = 0; k < MAX_STACK_SIZE && k < num_mush_sprinting; k++) value += 1000L;
-    /* for (k = 0; k < MAX_STACK_SIZE && k < num_mush_purging; k++) value += 1000L; */
-#endif 
+    for (k = 0; k < 90 && k < num_fix_stat[6]; k++) value += 5000L;
+    for (k = 0; k < 90 && k < num_mush_second_sight; k++) value += 5000L;
+    for (k = 0; k < 90 && k < num_mush_fast_recovery; k++) value += 5000L;
+    for (k = 0; k < 90 && k < num_mush_cure_mind; k++) value += 5000L;
+    for (k = 0; k < 90 && k < num_mush_emergency; k++) value += 5000L;
+    /* for (k = 0; k < 90 && k < num_mush_terror; k++) value += 5000L; */
+    for (k = 0; k < 90 && k < num_mush_stoneskin; k++) value += 5000L;
+    for (k = 0; k < 90 && k < num_mush_debility; k++) value += 5000L;
+    for (k = 0; k < 90 && k < num_mush_sprinting; k++) value += 5000L;
+    /* for (k = 0; k < 90 && k < num_mush_purging; k++) value += 5000L; */
+#endif
 
     /*** Hack -- books ***/
 
@@ -6714,7 +6320,7 @@ static int borg_danger_aux1(int i, bool full_damage)
     monster_race *r_ptr = &r_info[kill->r_idx];
 
     /* shields gives +50 to ac and deflects some missiles and balls*/
-    if (borg_shield || borg_stone)
+    if (borg_shield)
         ac += 50;
 
     /*  PFE gives a protection.  */
@@ -6729,9 +6335,6 @@ static int borg_danger_aux1(int i, bool full_damage)
 
     /* Mega-Hack -- unknown monsters */
     if (kill->r_idx >= z_info->r_max) return (1000);
-
-	/* Check to see if this monster is invisible.  Used in 'immediate threat' */
-	if (rf_has(r_ptr->flags, RF_INVISIBLE)) borg_threat_invis = TRUE;
 
     /* Analyze each physical attack */
     for (k = 0; k < 4; k++)
@@ -6763,7 +6366,7 @@ static int borg_danger_aux1(int i, bool full_damage)
             /* combat like the plauge */
             if (method == RBM_KICK)
             {
-                n += 100;
+                n += 400;
 			}
             power = 60;
             if ((pfe) && !borg_attacking)
@@ -6788,7 +6391,7 @@ static int borg_danger_aux1(int i, bool full_damage)
             power = 20;
             if (borg_skill[BI_RDIS]) break;
             /* Add fear for the effect */
-                z += 100;
+                z += 500;
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -6853,7 +6456,7 @@ static int borg_danger_aux1(int i, bool full_damage)
             if (borg_skill[BI_RACID]) z = (z + 2) / 3;
             if (borg_skill[BI_TRACID]) z = (z + 2) / 3;
             /* Add fear for the effect */
-			if (borg_skill[BI_MAXDEPTH] <= 75) z += 100; /* We dont want our armour corroded. */
+                z += 200; /* We dont want our armour corroded. */
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -6865,7 +6468,7 @@ static int borg_danger_aux1(int i, bool full_damage)
             if (borg_skill[BI_RELEC]) z = (z + 2) / 3;
             if (borg_skill[BI_TRELEC]) z = (z + 2) / 3;
             /* Add fear for the effect */
-			if (borg_skill[BI_MAXDEPTH] <= 75) z += 50; /* We dont want our rings zapped. */
+                z = z * 2;
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -6877,7 +6480,7 @@ static int borg_danger_aux1(int i, bool full_damage)
             if (borg_skill[BI_RFIRE]) z = (z + 2) / 3;
             if (borg_skill[BI_TRFIRE]) z = (z + 2) / 3;
             /* Add fear for the effect */
-			if (borg_skill[BI_MAXDEPTH] <= 75) z += 20; 
+                z = z * 2;
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -6889,7 +6492,7 @@ static int borg_danger_aux1(int i, bool full_damage)
             if (borg_skill[BI_RCOLD]) z = (z + 2) / 3;
             if (borg_skill[BI_TRCOLD]) z = (z + 2) / 3;
             /* Add fear for the effect */
-			if (borg_skill[BI_MAXDEPTH] <= 75) z += 50; 
+                z = z * 2;
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -6897,10 +6500,9 @@ static int borg_danger_aux1(int i, bool full_damage)
             case RBE_BLIND:
             z = (d_dice * d_side);
             power = 2;
-            if (borg_skill[BI_RBLIND] || amt_cure_blind >= 2) break;
+            if (borg_skill[BI_RBLIND]) break;
             /* Add fear for the effect */
                 z += 10;
-				borg_threat_blind = TRUE;
 			if (borg_class == CLASS_MAGE) z +=75;
             if ((pfe) && !borg_attacking)
                 z /= 2;
@@ -6909,10 +6511,9 @@ static int borg_danger_aux1(int i, bool full_damage)
             case RBE_CONFUSE:
             z = (d_dice * d_side);
             power = 10;
-            if (borg_skill[BI_RCONF] || amt_cure_confusion >= 2) break;
+            if (borg_skill[BI_RCONF]) break;
             /* Add fear for the effect */
                 z += 200;
-				borg_threat_conf = TRUE;
 			if (borg_class == CLASS_MAGE) z +=200;
             if ((pfe) && !borg_attacking)
                 z /= 2;
@@ -6933,7 +6534,6 @@ static int borg_danger_aux1(int i, bool full_damage)
             power = 2;
             if (borg_skill[BI_FRACT]) break;
             z += 200;
-				borg_threat_para = TRUE;
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -6943,10 +6543,10 @@ static int borg_danger_aux1(int i, bool full_damage)
             if (borg_skill[BI_SSTR]) break;
             if (borg_stat[A_STR] <= 3) break;
             if (borg_prayer_legal(6, 3)) break;
-            z += 100;
+            z += 150;
             /* extra scary to have str drain below 10 */
             if (borg_stat[A_STR] < 10)
-                z += 150;
+                z += 100;
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -6956,10 +6556,10 @@ static int borg_danger_aux1(int i, bool full_damage)
             if (borg_skill[BI_SDEX]) break;
             if (borg_stat[A_DEX] <= 3) break;
             if (borg_prayer_legal(6, 3)) break;
-            z += 100;
+            z += 150;
             /* extra scary to have drain below 10 */
             if (borg_stat[A_DEX] < 10)
-                z += 150;
+                z += 100;
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -6970,10 +6570,10 @@ static int borg_danger_aux1(int i, bool full_damage)
             if (borg_stat[A_CON] <= 3) break;
             if (borg_prayer_legal(6, 3)) break;
             /* Add fear for the effect */
-            z += 100;
+            z += 150;
             /* extra scary to have con drain below 8 */
             if (borg_stat[A_STR] < 8)
-                z += 150;
+                z += 100;
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -6983,10 +6583,10 @@ static int borg_danger_aux1(int i, bool full_damage)
             if (borg_skill[BI_SINT]) break;
             if (borg_stat[A_INT] <= 3) break;
             if (borg_prayer_legal(6, 3)) break;
-            z += 50;
+            z += 150;
             /* extra scary for spell caster */
             if (p_ptr->class->spell_book == TV_MAGIC_BOOK)
-                z += 150;
+                z += 50;
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -6996,10 +6596,10 @@ static int borg_danger_aux1(int i, bool full_damage)
             if (borg_skill[BI_SWIS]) break;
             if (borg_stat[A_WIS] <= 3) break;
             if (borg_prayer_legal(6, 3)) break;
-            z += 50;
+            z += 150;
             /* extra scary for pray'er */
             if (p_ptr->class->spell_book == TV_PRAYER_BOOK)
-                z += 150;
+                z += 50;
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -7009,7 +6609,7 @@ static int borg_danger_aux1(int i, bool full_damage)
             if (borg_skill[BI_SCHR]) break;
             if (borg_stat[A_CHR] <= 3) break;
             if (borg_prayer_legal(6, 3)) break;
-            z += 10;
+            z += 5;
             if ((pfe) && !borg_attacking)
                 z /= 2;
             break;
@@ -7022,6 +6622,7 @@ static int borg_danger_aux1(int i, bool full_damage)
 
             case RBE_SHATTER:
             z = (d_dice * d_side);
+            z -= (z * ((ac < 150) ? ac : 150) / 250);
             power = 60;
             /* Add fear for the effect */
                 z += 150;
@@ -7090,16 +6691,15 @@ static int borg_danger_aux1(int i, bool full_damage)
         /* hit you. */
         if (!full_damage)
         {
-			int t_ac = ac * 3 /4;
-            /* figure out chance that monster will hit you.
-			 * This is based on test_hit().
-			 */
-			if (t_ac <= 0) t_ac = 1;
-            chance  = (((((r_ptr->level * 100) * 3) + (power * 100)) / 2) / (t_ac));
+            /* figure out chance that monster will hit you. */
+            /* add a 50% bonus in to account for bad luck. */
+            if (borg_fighting_unique || (r_ptr->level + power) > 0)
+                chance  = 150 - (((ac * 300) / 4) / 1+((r_ptr->level + power) * 3));
+            else
+                chance = -1;
 
             /* always have a 5% chance of hitting. */
             if (chance < 5) chance = 5;
-			if (chance > 100) chance = 100;
 
 			/* Modify the damage by the chance of getting hit */
             z = (z * chance) / 100;
@@ -7132,9 +6732,9 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 
     int lev, hp, total_dam = 0, av;
 
-	bool		bolt = FALSE;
+	bool bolt = FALSE;
 
-	borg_kill *kill = &borg_kills[i];
+    borg_kill *kill = &borg_kills[i];
 
     borg_grid   *ag;
 
@@ -7179,10 +6779,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 	if (!kill->ranged_attack) return (0);
 
 
-	/* Check to see if this monster is invisible.  Used in 'immediate threat' */
-	if (rf_has(r_ptr->flags, RF_INVISIBLE)) borg_threat_invis = TRUE;
-
-	/* Extract the level */
+    /* Extract the level */
     lev = r_ptr->level;
 
     /* Extract hit-points */
@@ -7219,22 +6816,18 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 
             case 32+4:    /* RF4_ARROW_1 */
             z = (1 * 6);
-			bolt = TRUE;
             break;
 
             case 32+5:    /* RF4_ARROW_2 */
             z = (3 * 6);
-			bolt = TRUE;
             break;
 
             case 32+6:    /* RF4_ARROW_3 */
             z = (5 * 6);
-			bolt = TRUE;
             break;
 
             case 32+7:    /* RF4_ARROW_4 */
             z = (7 * 6);
-			bolt = TRUE;
             break;
 
             case 32+8:    /* RF4_BR_ACID */
@@ -7332,9 +6925,8 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 z = (z*2)/3;
                 break;
             }
-            if (borg_skill[BI_RBLIND] || amt_cure_blind >= 2) break;
-			borg_threat_blind = TRUE;
-			p += 20;
+            if (borg_skill[BI_RBLIND]) break;
+            p += 20;
 			if (borg_class == CLASS_MAGE) p +=20;
             break;
 
@@ -7345,9 +6937,8 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 z = 400;
             if (borg_skill[BI_RDARK]) z = (z*2)/ 3;
             if (borg_skill[BI_RDARK]) break;
-            if (borg_skill[BI_RBLIND] || amt_cure_blind >= 2) break;
+            if (borg_skill[BI_RBLIND]) break;
             p += 20;
-			borg_threat_blind = TRUE;
 			if (borg_class == CLASS_MAGE) p +=20;
             break;
 
@@ -7356,13 +6947,12 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             /* max damage */
             if (z > 400)
                 z = 400;
-            if (borg_skill[BI_RCONF] || amt_cure_confusion >= 2) z = z / 2;
-            if (borg_skill[BI_RCONF] || amt_cure_confusion >= 2) break;
+            if (borg_skill[BI_RCONF]) z = z / 2;
+            if (borg_skill[BI_RCONF]) break;
             /* if looking at full damage, things that are just annoying */
             /* do not count. */
             /* Add fear for the effect */
                 p += 300;
-			borg_threat_conf = TRUE;
 			if (borg_class == CLASS_MAGE) p +=200;
             break;
 
@@ -7477,8 +7067,9 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             if (z > 150)
                 z = 150;
             if (borg_skill[BI_RSND]) break;
-            /* The stun effect is scary */
-            p += 200;
+            /* Pump this up if you have goi so that the borg is sure */
+            /* to be made nervous */
+            p += 100;
             /* if already stunned be REALLY nervous about this */
             if (borg_skill[BI_ISSTUN])
                 z += 500;
@@ -7516,7 +7107,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 
             case 32+31:    /* RF4_BOULDER */
             z = (1 + lev / 7) * 12 / 2;
-			bolt = TRUE;
+            bolt = TRUE;
             break;
 
             case 64+0:    /* RF5_BA_ACID */
@@ -7590,10 +7181,10 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             if (borg_skill[BI_RSND]) break;
             /* if already stunned be REALLY nervous about this */
             if (borg_skill[BI_ISSTUN])
-                z += 500;
+                p += 500;
             if (borg_skill[BI_ISHEAVYSTUN])
-                z+= 1000;
-            if (borg_skill[BI_RCONF] || amt_cure_confusion >= 2) break;
+                p += 1000;
+            if (borg_skill[BI_RCONF]) break;
             /* if looking at full damage, things that are just annoying */
             /* do not count. */
             /* Add fear for the effect */
@@ -7611,12 +7202,11 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             z = (((lev * 5)) + (50));
             if (borg_skill[BI_RDARK]) z = (z*6)/9;
             if (borg_skill[BI_RDARK]) break;
-            if (borg_skill[BI_RBLIND] || amt_cure_blind >= 2) break;
+            if (borg_skill[BI_RBLIND]) break;
             /* if looking at full damage, things that are just annoying */
             /* do not count. */
             /* Add fear for the effect */
                 p += 20;
-			borg_threat_blind = TRUE;
 			if (borg_class == CLASS_MAGE) p +=20;
             break;
 
@@ -7680,9 +7270,9 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             break;
 
             case 64+16:    /* RF5_BO_ACID */
+            bolt = TRUE;
             if (borg_skill[BI_IACID]) break;
             z = ((7 * 8) + (lev / 3));
-			bolt = TRUE;
             if (borg_skill[BI_RACID]) z = (z + 2) / 3;
             if (borg_skill[BI_TRACID]) z = (z + 2) / 3;
             /* if looking at full damage, things that are just annoying */
@@ -7693,7 +7283,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 
             case 64+17:    /* RF5_BO_ELEC */
             if (borg_skill[BI_IELEC]) break;
-			bolt = TRUE;
+            bolt = TRUE;
             z = ((4 * 8) + (lev / 3));
             if (borg_skill[BI_RELEC]) z = (z + 2) / 3;
             if (borg_skill[BI_TRELEC]) z = (z + 2) / 3;
@@ -7705,7 +7295,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 
             case 64+18:    /* RF5_BO_FIRE */
             if (borg_skill[BI_IFIRE]) break;
-			bolt = TRUE;
+            bolt = TRUE;
             z = ((9 * 8) + (lev / 3));
             if (borg_skill[BI_RFIRE]) z = (z + 2) / 3;
             if (borg_skill[BI_TRFIRE]) z = (z + 2) / 3;
@@ -7717,7 +7307,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 
             case 64+19:    /* RF5_BO_COLD */
             if (borg_skill[BI_ICOLD]) break;
-			bolt = TRUE;
+            bolt = TRUE;
             z = ((6 * 8) + (lev / 3));
             if (borg_skill[BI_RCOLD]) z = (z + 2) / 3;
             if (borg_skill[BI_TRCOLD]) z = (z + 2) / 3;
@@ -7729,11 +7319,12 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 
             case 64+20:    /* RF5_BO_POIS */
             /* XXX XXX XXX */
+            bolt = TRUE;
             break;
 
             case 64+21:    /* RF5_BO_NETH */
+            bolt = TRUE;
             z = (50 + 30 + (5 * 5) + (lev * 3) / 2);
-			bolt = TRUE;
             if (borg_skill[BI_RNTHR]) z = (z*6)/8;
             if (borg_skill[BI_RNTHR]) break;
             /* if looking at full damage, things that are just annoying */
@@ -7743,15 +7334,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             break;
 
             case 64+22:    /* RF5_BO_WATE */
-			bolt = TRUE;
             z = ((10 * 10) + (lev));
+            bolt = TRUE;
             if (borg_skill[BI_RSND]) break;
             /* if already stunned be REALLY nervous about this */
             if (borg_skill[BI_ISSTUN])
-                z += 500;
+                p += 500;
             if (borg_skill[BI_ISHEAVYSTUN])
-                z += 1000;
-            if (borg_skill[BI_RCONF] || amt_cure_confusion >= 2) break;
+                p += 1000;
+            if (borg_skill[BI_RCONF]) break;
             /* if looking at full damage, things that are just annoying */
             /* do not count. */
             /* Add fear for the effect */
@@ -7760,15 +7351,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             break;
 
             case 64+23:    /* RF5_BO_MANA */
-			bolt = TRUE;
             z = ((lev * 7) / 2) + 50;
+            bolt = TRUE;
             /* Add fear for the effect */
                 p += 50;
             break;
 
             case 64+24:    /* RF5_BO_PLAS */
-			bolt = TRUE;
             z = (10 + (8 * 7) + (lev));
+            bolt = TRUE;
             if (borg_skill[BI_RSND]) break;
             /* if already stunned be REALLY nervous about this */
             if (borg_skill[BI_ISSTUN])
@@ -7778,8 +7369,8 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             break;
 
             case 64+25:    /* RF5_BO_ICEE */
-			bolt = TRUE;
             z = ((6 * 6) + (lev));
+            bolt = TRUE;
             /* if looking at full damage, things that are just annoying */
             /* do not count. */
             /* Add fear for the effect */
@@ -7794,7 +7385,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 
             case 64+26:    /* RF5_MISSILE */
             z = ((2 * 6) + (lev / 3));
-			bolt = TRUE;
+            bolt = TRUE;
             break;
 
             case 64+27:    /* RF5_SCARE */
@@ -7811,7 +7402,6 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             /* do not count. */
             /* Add fear for the effect */
                 p += 10;
-			borg_threat_blind = TRUE;
             break;
 
             case 64+29:    /* RF5_CONF */
@@ -7820,7 +7410,6 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             /* do not count. */
             /* Add fear for the effect */
                 p += 10;
-			borg_threat_conf = TRUE;
             break;
 
             case 64+30:    /* RF5_SLOW */
@@ -7830,14 +7419,12 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             /* do not count. */
             /* Add fear for the effect */
                 p += 5;
-			borg_threat_para = TRUE;
             break;
 
             case 64+31:    /* RF5_HOLD */
             if (borg_skill[BI_FRACT]) break;
             if (borg_skill[BI_SAV] >= 100) break;
             p += 150;
-			borg_threat_para = TRUE;
             break;
 
             case 96+0:    /* RF6_HASTE */
@@ -7966,7 +7553,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_SUMM | POSITION_BORE)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -7980,11 +7567,11 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 p = p / spot_safe;
             }
             else
-            {    p += (lev) * 2;
+            {    p += (lev) * 7;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
 
             break;
 
@@ -8014,7 +7601,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_SUMM | POSITION_BORE)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8024,15 +7611,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 p = p / spot_safe;
             }
             else if (glyph || borg_create_door || borg_fighting_unique)
-            {    p +=(lev) * 1;
+            {    p +=(lev) * 6;
                 p = p / spot_safe;
             }
             else
-            {    p += (lev) * 3;
+            {    p += (lev) * 12;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
 
@@ -8062,7 +7649,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_SUMM | POSITION_BORE)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8070,7 +7657,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             if (pfe || glyph || borg_create_door || borg_fighting_unique)
                 p +=0;
             else
-            {    p += (lev) * 1;
+            {    p += (lev) * 5;
                 p = p / spot_safe;
             }
             break;
@@ -8101,7 +7688,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_SUMM | POSITION_BORE)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8109,11 +7696,11 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             if (pfe || glyph || borg_create_door || borg_fighting_unique)
                 p +=0;
             else
-            {    p += (lev);
+            {    p += (lev) * 7;
                  p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+20:   /* RF6_S_ANIMAL */
@@ -8142,7 +7729,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_BORE | POSITION_SUMM)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8150,11 +7737,11 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             if (pfe || glyph || borg_create_door || borg_fighting_unique)
                 p +=0;
             else
-            {   p += (lev) * 1;
+            {   p += (lev) * 5;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+21:    /* RF6_S_SPIDER */
@@ -8183,7 +7770,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_BORE | POSITION_SUMM)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8191,11 +7778,11 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             if (pfe || glyph || borg_create_door || borg_fighting_unique)
                 p +=0;
             else
-            {   p += (lev) * 1;
+            {   p += (lev) * 5;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+22:    /* RF6_S_HOUND */
@@ -8224,7 +7811,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_BORE | POSITION_SUMM)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8232,11 +7819,11 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
             if (pfe || glyph || borg_create_door || borg_fighting_unique)
                 p +=0;
             else
-            {    p += (lev) * 1;
+            {    p += (lev) * 5;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+23:    /* RF6_S_HYDRA */
@@ -8265,7 +7852,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_BORE | POSITION_SUMM)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8275,15 +7862,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 p = p / spot_safe;
             }
             else if (glyph || borg_create_door || borg_fighting_unique)
-            {   p +=(lev) * 1;
+            {   p +=(lev) * 2;
                 p = p / spot_safe;
             }
             else
-            {   p += (lev) * 2;
+            {   p += (lev) * 5;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+24:    /* RF6_S_ANGEL */
@@ -8312,7 +7899,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_BORE | POSITION_SUMM)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8322,15 +7909,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 p = p / spot_safe;
             }
             else if (glyph || borg_create_door || borg_fighting_unique)
-            {    p +=(lev)* 1;
+            {    p +=(lev)* 3;
                 p = p / spot_safe;
             }
             else
-            {    p += (lev) * 2;
+            {    p += (lev) * 7;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+25:    /* RF6_S_DEMON */
@@ -8359,7 +7946,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_BORE | POSITION_SUMM)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8369,15 +7956,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 p = p / spot_safe;
             }
             else if (glyph || borg_create_door || borg_fighting_unique)
-            {    p +=(lev) * 1;
+            {    p +=(lev) * 3;
                 p = p / spot_safe;
             }
             else
-            {    p += (lev) * 2;
+            {    p += (lev) * 7;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+26:    /* RF6_S_UNDEAD */
@@ -8406,7 +7993,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_BORE | POSITION_SUMM)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8416,15 +8003,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 p = p / spot_safe;
             }
             else if (glyph || borg_create_door || borg_fighting_unique)
-            {    p +=(lev) * 1;
+            {    p +=(lev) * 3;
                 p = p / spot_safe;
             }
             else
-            {    p += (lev) * 2;
+            {    p += (lev) * 7;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+27:    /* RF6_S_DRAGON */
@@ -8453,7 +8040,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_SUMM | POSITION_BORE)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8463,15 +8050,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 p = p / spot_safe;
             }
             else if (glyph || borg_create_door || borg_fighting_unique)
-            {    p +=(lev) * 1;
+            {    p +=(lev) * 3;
                 p = p / spot_safe;
             }
             else
-            {    p += (lev) * 2;
+            {    p += (lev) * 7;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+28:    /* RF6_S_HI_UNDEAD */
@@ -8500,7 +8087,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_BORE | POSITION_SUMM)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8510,15 +8097,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 p = p / spot_safe;
             }
             else if (glyph || borg_create_door || borg_fighting_unique)
-            {    p +=(lev) * 2;
+            {    p +=(lev) * 6;
                 p = p / spot_safe;
             }
             else
-            {    p += (lev) * 3;
+            {    p += (lev) * 12;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+29:    /* RF6_S_HI_DRAGON */
@@ -8547,7 +8134,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_SUMM | POSITION_BORE)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8557,15 +8144,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 p = p / spot_safe;
             }
             else if (glyph || borg_create_door || borg_fighting_unique)
-            {    p +=(lev) * 1;
+            {    p +=(lev) * 6;
                 p = p / spot_safe;
             }
             else
-            {    p += (lev) * 3;
+            {    p += (lev) * 12;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+30:    /* RF6_S_WRAITH */
@@ -8594,7 +8181,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_SUMM | POSITION_BORE)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8604,15 +8191,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 p = p / spot_safe;
             }
             else if (glyph || borg_create_door || borg_fighting_unique)
-            {    p +=(lev) * 2;
+            {    p +=(lev) * 6;
                 p = p / spot_safe;
             }
             else
-            {    p += (lev) * 3;
+            {    p += (lev) * 12;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
 
             case 96+31:    /* RF6_S_UNIQUE */
@@ -8641,7 +8228,7 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
 						/* Just in case */
 						if (spot_safe == 0) spot_safe = 1;
 						if (spot_safe == 8) spot_safe = 100;
-						if (borg_position & (POSITION_SEA | POSITION_SUMM | POSITION_BORE)) spot_safe = 1000;
+						if (borg_morgoth_position || borg_as_position) spot_safe = 1000;
 					}
 
 				}
@@ -8651,15 +8238,15 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
                 p = p / spot_safe;
             }
             else if (glyph || borg_create_door)
-            {    p +=(lev) * 1;    /* slightly reduced danger for unique */
+            {    p +=(lev) * 3;    /* slightly reduced danger for unique */
                 p = p / spot_safe;
             }
             else
-            {    p += (lev) * 2;
+            {    p += (lev) * 6;
                 p = p / spot_safe;
             }
             /* reduce the fear if it is a unique */
-            if (kill->unique) p = p * 75/100;
+            if (rf_has(r_info->flags, RF_UNIQUE)) p = p * 75/100;
             break;
         }
 
@@ -8682,9 +8269,9 @@ static int borg_danger_aux2(int i, int y, int x, bool average, bool full_damage)
     }
 
 	/* Slightly decrease the danger if the borg is sitting in
-	 * a sea of runes or in an anti-summon corridor.
+	 * a sea of runes.
 	 */
-	if (borg_position & (POSITION_SEA | POSITION_SUMM | POSITION_BORE)) total_dam = total_dam * 7 / 10;
+	if (borg_morgoth_position || borg_as_position) total_dam = total_dam * 7 / 10;
 
     /* Average damage of all the spells & compare to most dangerous spell */
 	av = total_dam / kill->ranged_attack;
@@ -8771,23 +8358,12 @@ int borg_danger_aux(int y, int x, int c, int i, bool average, bool full_damage)
 
     int q=0, r, p, v1=0, v2=0, b_v2 = 0, b_v1 = 0;
 
-    int glyph =0;
-
     int fake_speed = borg_skill[BI_SPEED];
     int monster_speed = kill->speed;
-	int monster_moves = kill->moves;
     int t, e;
 
 	int ii;
     int chance;
-	bool v1_borg_threat_conf = FALSE;
-	bool v1_borg_threat_blind = FALSE;
-	bool v1_borg_threat_para = FALSE;
-	bool v1_borg_threat_invis = FALSE;
-	bool v2_borg_threat_conf = FALSE;
-	bool v2_borg_threat_blind = FALSE;
-	bool v2_borg_threat_para = FALSE;
-	bool v2_borg_threat_invis = FALSE;
 
     /* Paranoia */
     if (!kill->r_idx) return (0);
@@ -8798,7 +8374,7 @@ int borg_danger_aux(int y, int x, int c, int i, bool average, bool full_damage)
 	 */
 	if (borg_tp_other_n)
 	{
-		for (ii = 0; ii <= borg_tp_other_n; ii++)
+		for (ii = 1; ii <= borg_tp_other_n; ii++)
 		{
 			/* Is the current danger check same as a saved monster index? */
 			if (i == borg_tp_other_index[ii])
@@ -8823,7 +8399,7 @@ int borg_danger_aux(int y, int x, int c, int i, bool average, bool full_damage)
     if (d > 20) return (0);
 
     /* A very speedy borg will miscalculate danger of some monsters */
-    /* if (borg_skill[BI_SPEED] >=135) fake_speed = (borg_fighting_unique ? 120 : 125); */
+    if (borg_skill[BI_SPEED] >=135) fake_speed = (borg_fighting_unique ? 120 : 125);
 
     /* Consider the character haste and slow monster spells */
     if (borg_speed)
@@ -8847,13 +8423,6 @@ int borg_danger_aux(int y, int x, int c, int i, bool average, bool full_damage)
 
     /* Monster moves */
     q = c * ((t * e) / 10);
-
-	/* 
-	 * Generally we allow the full_damage to pass through.  But when the borg is wounded,
-	 * we need to force the full_damage so he is a bit more concerned.  Sometimes the monsters
-	 * will cast their spells intelligently.
-	 */
-	if (borg_skill[BI_CURHP] <= borg_skill[BI_MAXHP] / 3) full_damage = TRUE;
 
     /* allow partial hits when not caculating full possible damage */
     if (full_damage)
@@ -8883,26 +8452,7 @@ int borg_danger_aux(int y, int x, int c, int i, bool average, bool full_damage)
     /* Physical attacks */
     v1 = borg_danger_aux1(i, full_damage);
 
-	/* Slow spell in a hallway is nice. */
-	if (borg_slow_spell)
-	{
-        /* Check to see if I am in a hallway */
-        if ((borg_cave_floor_bold(y-1, x) && borg_cave_floor_bold(y+1, x) &&
-            !borg_cave_floor_bold(y, x-1) && !borg_cave_floor_bold(y, x+1) &&
-            !borg_cave_floor_bold(y+1, x-1) && !borg_cave_floor_bold(y+1, x+1) &&
-            !borg_cave_floor_bold(y-1, x-1) && !borg_cave_floor_bold(y-1, x+1)) ||
-			((borg_cave_floor_bold(y, x-1) && borg_cave_floor_bold(y, x+1) &&
-            !borg_cave_floor_bold(y-1, x) && !borg_cave_floor_bold(y+1, x) &&
-            !borg_cave_floor_bold(y+1, x-1) && !borg_cave_floor_bold(y+1, x+1) &&
-            !borg_cave_floor_bold(y-1, x-1) && !borg_cave_floor_bold(y-1, x+1))))
-        {
-            /* If a bit scared then use the slow spell so I can make a retreat */
-			if (borg_skill[BI_CURSP] < borg_skill[BI_MAXSP]/3 || 
-				borg_skill[BI_CURHP] < borg_skill[BI_MAXHP]/3) v1 = v1 / 2;
-        }
-	}
-
-	/* Hack -- Under Stressful Situation.
+    /* Hack -- Under Stressful Situation.
      */
     if (time_this_panel > 1200 || borg_t > 25000)
     {
@@ -8949,19 +8499,10 @@ int borg_danger_aux(int y, int x, int c, int i, bool average, bool full_damage)
     if (!kill->awake)
     {
         int inc = r_ptr->sleep + 5;
-		/* Reduce the fear if Borg is higher level */
+	/* Reduce the fear if Borg is higher level */
         if (borg_skill[BI_CLEVEL] >= 25 )
         {
              v1 = v1 / 2;
-        }
-        if (borg_skill[BI_CLEVEL] >= 45 )
-        {
-             v1 = v1 / 5;
-        }
-        else
-        {
-            /* low clevel weaklings should still fear alot*/
-            v1 = v1;
         }
 
 		/* Tweak danger based on the "alertness" of the monster */
@@ -9002,20 +8543,6 @@ int borg_danger_aux(int y, int x, int c, int i, bool average, bool full_damage)
 				borg_skill[BI_CURHP] < borg_skill[BI_MAXHP] / 2)
 			{
 				v1 = 0;
-			}
-			/* Sleep spell in a hallway is nice. */
-			else if ((borg_cave_floor_bold(y-1, x) && borg_cave_floor_bold(y+1, x) &&
-					!borg_cave_floor_bold(y, x-1) && !borg_cave_floor_bold(y, x+1) &&
-					!borg_cave_floor_bold(y+1, x-1) && !borg_cave_floor_bold(y+1, x+1) &&
-					!borg_cave_floor_bold(y-1, x-1) && !borg_cave_floor_bold(y-1, x+1)) ||
-					((borg_cave_floor_bold(y, x-1) && borg_cave_floor_bold(y, x+1) &&
-					!borg_cave_floor_bold(y-1, x) && !borg_cave_floor_bold(y+1, x) &&
-					!borg_cave_floor_bold(y+1, x-1) && !borg_cave_floor_bold(y+1, x+1) &&
-					!borg_cave_floor_bold(y-1, x-1) && !borg_cave_floor_bold(y-1, x+1))))
-			{
-				/* If a bit scared then use the slow spell so I can make a retreat */
-				if (borg_skill[BI_CURSP] < borg_skill[BI_MAXSP]/2 || 
-					borg_skill[BI_CURHP] < borg_skill[BI_MAXHP]/2) v1 = 0;
 			}
 			else
 			{
@@ -9136,27 +8663,6 @@ int borg_danger_aux(int y, int x, int c, int i, bool average, bool full_damage)
 		v1 = 0;
 	}
 
-	/* No possible threat of the 'immediate threat' of certain attack types. */
-	if (v1 == 0)
-	{
-		borg_threat_conf = FALSE;
-		borg_threat_blind = FALSE;
-		borg_threat_para = FALSE;
-		borg_threat_invis = FALSE;
-	}
-
-	/* Differentiate between the v1 and v2 immediate threats */
-	if (borg_threat_conf) v1_borg_threat_conf = TRUE;
-	if (borg_threat_blind) v1_borg_threat_blind = TRUE;
-	if (borg_threat_para) v1_borg_threat_para = TRUE;
-	if (borg_threat_invis) v1_borg_threat_invis = TRUE;
-
-	/* Reset the immediate threats which will be used in the v2 check */
-	borg_threat_conf = FALSE;
-	borg_threat_blind = FALSE;
-	borg_threat_para = FALSE;
-	borg_threat_invis = FALSE;
-
     /** Ranged Attacks **/
     v2 = borg_danger_aux2(i,y,x,average, full_damage);
 
@@ -9172,22 +8678,28 @@ int borg_danger_aux(int y, int x, int c, int i, bool average, bool full_damage)
         v2 = 0;
     }
 
+    /* Hack -- verify line of sight (both ways) for monsters who can only move 1 grid. */
+    if (q <= 10 && !borg_projectable(y9, x9, y, x) && !borg_projectable(y, x, y9, x9))
+    {
+        v2 = 0;
+    }
+
 	/* Hack -- verify line of sight (both ways) for monsters who can only move > 1 grid.
 	 * Some fast monsters can take a move action and range attack in the same round.
 	 * Basically, we see how many grids the monster can move and check LOS from each of
 	 * those grids to determine the relative danger.  We need to make sure that the monster
 	 * is not passing through walls unless he has that ability.
-     * Consider a fast monster who can move and cast a spell in the same round.
-	 * This is important for a borg looking for a safe grid from a ranged attacker.
-	 * If the attacker is fast then he might be able to move to a grid which does have LOS
-	 * to the grid the borg is considering.
-	 *
-	 * ##############
-	 * #.....#.#.1#D#   Grids marked 2 are threatened by the D currently.
-	 * #####.#..##@##	Grids marked 1 are safe currently, but the fast D will be able
-	 * #####.#..1221#	to move to the borg's grid after he moves and the D will be able
-	 * ##############	to use a ranged attack to grids 1, all in the same round.
-	 *					The borg should not consider grid 1 as safe.
+	     * Consider a fast monster who can move and cast a spell in the same round.
+		 * This is important for a borg looking for a safe grid from a ranged attacker.
+		 * If the attacker is fast then he might be able to move to a grid which does have LOS
+		 * to the grid the borg is considering.
+		 *
+		 * ##############
+		 * #.....#.#.1#D#   Grids marked 2 are threatened by the D currently.
+		 * #####.#..##@##	Grids marked 1 are safe currently, but the fast D will be able
+		 * #####.#..1221#	to move to the borg's grid after he moves and the D will be able
+		 * ##############	to use a ranged attack to grids 1, all in the same round.
+		 *					The borg should not consider grid 1 as safe.
 	*/
 	if (q >= 20)
 	{
@@ -9229,149 +8741,128 @@ int borg_danger_aux(int y, int x, int c, int i, bool average, bool full_damage)
 				/* legally on a wall of some sort, check for LOS*/
 			    if (rf_has(r_ptr->flags, RF_PASS_WALL))
 				{
-					if (borg_projectable(y_temp, x_temp, y, x)) b_v2 = v2 / (b_q / 10);
+					if (borg_projectable(y_temp, x_temp, y, x)) b_v2 = v2 * b_q / 10;
 				}
 				if (rf_has(r_ptr->flags, RF_KILL_WALL))
 				{
-					if (borg_projectable(y_temp, x_temp, y, x)) b_v2 = v2 / (b_q / 10);
+					if (borg_projectable(y_temp, x_temp, y, x)) b_v2 = v2 * b_q / 10;
 				}
 			}
 
 			/* Monster on a legal floor grid.  Can he see me? */
-			else if (borg_projectable(y_temp, x_temp, y, x)) b_v2 = v2 / (b_q / 10);
+			else if (borg_projectable(y_temp, x_temp, y, x)) b_v2 = v2 * b_q / 10;
 		}
 
 		/* Monster is not able to move and threaten me in the same round */
 		v2 = b_v2;
 	}
 
-	/* Hack -- Under Stressful Situation.
-     */
-    if (time_this_panel > 1200 || borg_t > 25000)
-    {
-        /* he might be stuck and could overflow */
-        v2 = v2 / 5;
-    }
-
-    /* multipliers yeild some trouble when I am weak */
-    if ((rf_has(r_ptr->flags, RF_MULTIPLY)) && (borg_skill[BI_CLEVEL] < 20))
-    {
-        v2 = v2 + (v2 *12/10);
-    }
-
-    /* Friends yeild some trouble when I am weak */
-    if ((rf_has(r_ptr->flags, RF_FRIENDS) || rf_has(r_ptr->flags, RF_ESCORTS)) &&
-        (borg_skill[BI_CLEVEL] < 20))
-    {
-        v2 = v2 + (v2 *12/10);
-    }
-
-    /* Reduce danger from sleeping monsters */
-    if (!kill->awake)
-    {
-        int inc = r_ptr->sleep + 5;
-		/* weaklings and should still fear */
-        if (borg_skill[BI_CLEVEL] >= 25 )
+		/* Hack -- Under Stressful Situation.
+         */
+        if (time_this_panel > 1200 || borg_t > 25000)
         {
-             v2 = v2 / 2;
-        }
-        else
-        {
-            /* only subract 50% of the danger */
-            v2 = v2;
+            /* he might be stuck and could overflow */
+            v2 = v2 / 5;
         }
 
-		/* Tweak danger based on the "alertness" of the monster */
-        /* increase the danger for light sleepers */
-        v2 = v2 + (v2*inc/100);
-	}
-
-    /* Reduce danger from sleeping monsters with the sleep 2 spell*/
-    if (borg_sleep_spell_ii)
-    {
-
-        if  ( (d == 1) &&
-              (kill->awake) &&
-              (!(rf_has(r_ptr->flags, RF_NO_SLEEP))) &&
-              (!(rf_has(r_ptr->flags, RF_UNIQUE))) &&
-              (kill->level <= ((borg_skill[BI_CLEVEL] < 15)  ? borg_skill[BI_CLEVEL] : (((borg_skill[BI_CLEVEL]-10)/4)*3) + 10) ))
+        /* multipliers yeild some trouble when I am weak */
+        if ((rf_has(r_ptr->flags, RF_MULTIPLY)) && (borg_skill[BI_CLEVEL] < 20))
         {
-              v2 = v2 / 3;
+            v2 = v2 + (v2 *12/10);
         }
-    }
 
-    /* Reduce danger from sleeping monsters with the sleep 1,3 spell*/
-    if (borg_sleep_spell)
-    {
-        v2 = v2 / (d+2);
-    }
-    /* Reduce danger from confused monsters */
-    if (kill->confused)
-    {
-       v2 = v2 / 2;
-    }
-    /* Reduce danger from stunnned monsters  */
-    if (kill->stunned)
-    {
-       v2 = v2 *10/13;
-    }
-    if (borg_confuse_spell)
-    {
-        v2 = v2 / 6;
-    }
+        /* Friends yeild some trouble when I am weak */
+        if ((rf_has(r_ptr->flags, RF_FRIENDS) || rf_has(r_ptr->flags, RF_ESCORTS)) &&
+            (borg_skill[BI_CLEVEL] < 20))
+        {
+            v2 = v2 + (v2 *12/10);
+        }
+
+        /* Reduce danger from sleeping monsters */
+        if (!kill->awake)
+        {
+            int inc = r_ptr->sleep + 5;
+	    /* weaklings and should still fear */
+            if (borg_skill[BI_CLEVEL] >= 25 )
+            {
+                 v2 = v2 / 2;
+            }
+
+			/* Tweak danger based on the "alertness" of the monster */
+            /* increase the danger for light sleepers */
+            v2 = v2 + (v2*inc/100);
+		}
+
+        /* Reduce danger from sleeping monsters with the sleep 2 spell*/
+        if (borg_sleep_spell_ii)
+        {
+
+            if  ( (d == 1) &&
+                  (kill->awake) &&
+                  (!(rf_has(r_ptr->flags, RF_NO_SLEEP))) &&
+                  (!(rf_has(r_ptr->flags, RF_UNIQUE))) &&
+                  (kill->level <= ((borg_skill[BI_CLEVEL] < 15)  ? borg_skill[BI_CLEVEL] : (((borg_skill[BI_CLEVEL]-10)/4)*3) + 10) ))
+            {
+                  v2 = v2 / 3;
+            }
+        }
+
+        /* Reduce danger from sleeping monsters with the sleep 1,3 spell*/
+        if (borg_sleep_spell)
+        {
+            v2 = v2 / (d+2);
+        }
+        /* Reduce danger from confused monsters */
+        if (kill->confused)
+        {
+           v2 = v2 / 2;
+        }
+        /* Reduce danger from stunnned monsters  */
+        if (kill->stunned)
+        {
+           v2 = v2 *10/13;
+        }
+        if (borg_confuse_spell)
+        {
+            v2 = v2 / 6;
+        }
 
 #if 0 /* They still cast spells, they are still dangerous */
-    /* Reduce danger from scared monsters */
-    if (borg_fear_mon_spell)
-    {
-        v2 = v2 * 8/10;
-    }
-    if (kill->afraid)
-    {
-        v2 = v2 * 8/10;
-    }
+        /* Reduce danger from scared monsters */
+        if (borg_fear_mon_spell)
+        {
+            v2 = v2 * 8/10;
+        }
+        if (kill->afraid)
+        {
+            v2 = v2 * 8/10;
+        }
 #endif
-    if (!full_damage)
-    {
-        /* reduce for frequency. */
-        chance = (r_ptr->freq_innate + r_ptr->freq_spell)/2;
-        if (chance < 11)
-            v2 = ((v2 * 4) / 10);
-        else
-        if (chance < 26)
-            v2 = ((v2 * 6) / 10);
-        else
-        if (chance < 51)
-            v2 = ((v2 * 8) / 10) ;
-    }
+        if (!full_damage)
+        {
+            /* reduce for frequency. */
+            chance = (r_ptr->freq_innate + r_ptr->freq_spell)/2;
+            if (chance < 11)
+                v2 = ((v2 * 4) / 10);
+            else
+            if (chance < 26)
+                v2 = ((v2 * 6) / 10);
+            else
+            if (chance < 51)
+                v2 = ((v2 * 8) / 10) ;
+        }
 
-    /* Danger */
-    if (v2)
-    {
-        /* Full power */
-        r = q;
+        /* Danger */
+        if (v2)
+        {
+            /* Full power */
+            r = q;
 
-        /* Total danger */
-        v2 = v2 * r / 10;
-    }
+            /* Total danger */
+            v2 = v2 * r / 10;
+        }
 
-	/* No possible threat of the 'immediate threat' of certain attack types. */
-	if (v2 == 0)
-	{
-		/* Seperate out the melee threats from the ranged ones */
-		if (borg_threat_conf) v2_borg_threat_conf = TRUE;
-		if (borg_threat_blind) v2_borg_threat_blind = TRUE;
-		if (borg_threat_para) v2_borg_threat_para = TRUE;
-		if (borg_threat_invis) v2_borg_threat_invis = TRUE;
-	}
-
-	/* Differentiate between the v1 and v2 immediate threats */
-	if (v1_borg_threat_conf || v2_borg_threat_conf) borg_threat_conf = TRUE;
-	if (v1_borg_threat_blind || v2_borg_threat_blind) borg_threat_blind = TRUE;
-	if (v1_borg_threat_para || v2_borg_threat_para) borg_threat_para = TRUE;
-	if (v1_borg_threat_invis || v2_borg_threat_invis) borg_threat_invis = TRUE;
-
-	/* Maximal danger */
+    /* Maximal danger */
     p = MAX(v1, v2);
 	if (p > 2000) p = 2000;
 
@@ -9406,7 +8897,7 @@ int borg_danger(int y, int x, int c, bool average, bool full_damage)
     int i, p=0;
 
     /* Base danger (from regional fear) but not within a vault.  Cheating the floor grid */
-	if (!(cave->info[y][x] & (CAVE_ICKY)) && borg_skill[BI_CDEPTH] <= 70)
+	if (!(cave->info[y][x] & (CAVE_ICKY)) && borg_skill[BI_CDEPTH] <= 80)
 	{
 		p += borg_fear_region[y/11][x/11] * c;
 	}
@@ -9419,16 +8910,12 @@ int borg_danger(int y, int x, int c, bool average, bool full_damage)
      * this panel for too long, or monster's in a vault.  The fear_monsters[][]
      * can induce some bouncy behavior.
      */
-    if (time_this_panel <= 200 && 
+    if (time_this_panel <= 200 &&
 		!(cave->info[y][x] & (CAVE_ICKY))) p += borg_fear_monsters[y][x] * c;
 
-	/* Reset our 'immediate threat' variables used in swap-considerations */
-	borg_threat_conf = FALSE;
-	borg_threat_blind = FALSE;
-	borg_threat_para = FALSE;
-	borg_threat_invis = FALSE;
+    full_damage = TRUE;
 
-	/* Examine all the monsters */
+    /* Examine all the monsters */
     for (i = 1; i < borg_kills_nxt; i++)
     {
         borg_kill *kill = &borg_kills[i];
@@ -9468,7 +8955,6 @@ char *borg_restock(int depth)
 
     /* Always spend time on a level unless 100*/
     if (borg_t - borg_began < 100 && borg_skill[BI_CDEPTH] != 100) return ((char *)NULL);
-	if (borg_depth & DEPTH_QUEST) return ((char *)NULL);
 
 
     /*** Level 1 ***/
@@ -9486,9 +8972,6 @@ char *borg_restock(int depth)
     if (depth <= 1) return ((char *)NULL);
 
     /*** Level 2 and 3 ***/
-
-    /* Must have good lite */
-    if (borg_skill[BI_CURLITE] < 2) return ("rs lite+1");
 
     /* Must have "fuel" */
     if (borg_skill[BI_AFUEL] < 2 && !borg_skill[BI_LIGHT]) return ("rs fuel+2");
@@ -9519,6 +9002,9 @@ char *borg_restock(int depth)
 
 
     /*** Level 10 - 19  ***/
+
+    /* Must have good light */
+    if (borg_skill[BI_CURLITE] < 2) return "rs light+1";
 
     /* Must have "cure" */
     if ((borg_skill[BI_MAXCLEVEL] < 30) && borg_skill[BI_ACLW] + borg_skill[BI_ACSW] + borg_skill[BI_ACCW] < 2) return ("rs cure");
@@ -9560,9 +9046,6 @@ char *borg_restock(int depth)
 
     /* Must have "Heal" */
     if (borg_skill[BI_AHEAL] + borg_has[ROD_HEAL] + borg_skill[BI_AEZHEAL] < 1) return ("rs heal");
-
-    /* Must have "cure" */
-    if (!borg_skill[BI_RCONF] && amt_cure_confusion) return ("RConf or Cures");
 
     /* Assume happy at level 99 */
     if (depth <= 99) return ((char *)NULL);
@@ -9609,11 +9092,8 @@ static char *borg_prepared_aux(int depth)
 
     /*** Essential Items for Level 2 ***/
 
-    /* Require lite (radius two) */
-    if (borg_skill[BI_CURLITE] < 2) return ("2 Lite");
-
     /* Require fuel */
-    if (borg_skill[BI_AFUEL] < 4 && !borg_skill[BI_LIGHT]) return ("4 Fuel");
+    if (borg_skill[BI_AFUEL] < 5 && !borg_skill[BI_LIGHT]) return ("5 Fuel");
 
     /* Require recall */
     /* if (borg_skill[BI_RECALL] < 1) return ("1 recall"); */
@@ -9667,10 +9147,6 @@ static char *borg_prepared_aux(int depth)
     /* Scrolls of Identify */
     if (amt_ident < 2 && (borg_skill[BI_CDEPTH])) return ("2 ident");
 #endif
-
-	/* Minimal stats */
-    if (borg_stat[A_STR] < 7 && borg_skill[BI_ISFIXSTR]) return ("Fix STR");
-
     /* Usually ready for level 3 and 4 */
     if (depth <= 4) return ((char *)NULL);
 
@@ -9727,11 +9203,11 @@ static char *borg_prepared_aux(int depth)
 
     /*** Essential Items for Level 10 to 19 ***/
 
-	/* Generally, allow munchkin borgs to recall down even if they seem unprepared */
-	if (borg_munchkin_start && borg_skill[BI_MAXCLEVEL] < borg_munchkin_level) return ((char *)NULL);
+    /* Require light (radius 2) */
+    if (borg_skill[BI_CURLITE] < 2) return "2 Light";
 
     /* Escape or Teleport */
-    if (borg_skill[BI_ATELEPORT] + borg_skill[BI_AESCAPE] < 2 && borg_skill[BI_MAXCLEVEL] < 25) return ("2 tele&esc");
+    if (borg_skill[BI_ATELEPORT] + borg_skill[BI_AESCAPE] < 2) return ("2 tele&esc");
 
     if (!borg_plays_risky)
     {
@@ -9765,7 +9241,7 @@ static char *borg_prepared_aux(int depth)
     if (amt_ident < 10) return ("ident10");
 #endif
     /* Potions of Cure Critical Wounds */
-    if ((borg_skill[BI_MAXCLEVEL] < 30) && (borg_skill[BI_ACCW] < 3 && (borg_skill[BI_ACLW] + borg_skill[BI_ACSW] <= 5))) return ("cure crit3");
+    if ((borg_skill[BI_MAXCLEVEL] < 30) && borg_skill[BI_ACCW] < 3) return ("cure crit3");
 
     /* See invisible */
     /* or telepathy */
@@ -9809,8 +9285,7 @@ static char *borg_prepared_aux(int depth)
     if (borg_stat[A_DEX] < 7) return ("low DEX");
     if (borg_stat[A_CON] < 7) return ("low CON");
 
-#if 0
-	if (!borg_plays_risky)
+    if (!borg_plays_risky)
     {
         /* class specific requirement */
         switch (borg_class)
@@ -9845,7 +9320,6 @@ static char *borg_prepared_aux(int depth)
                 break;
         }
     }
-#endif
 
     /* Ready for level 25 */
     if (depth <= 25) return ((char *)NULL);
@@ -9902,16 +9376,30 @@ static char *borg_prepared_aux(int depth)
 /*** Essential Items for Level 46 to 55 ***/
 
     /*  Must have +5 speed after level 46 */
-    if (borg_skill[BI_SPEED] < 115 && borg_skill[BI_ASPEED] < 100) return ("+5 speed");
+    if (borg_skill[BI_SPEED] < 115) return ("+5 speed");
 
     /* Potions of heal */
-    if (borg_skill[BI_AHEAL] < 1) return ("1heal");
+    if (borg_skill[BI_AHEAL] < 1 && (borg_skill[BI_AEZHEAL] < 1) ) return ("1heal");
 
     if (!borg_plays_risky)
     {
         /* Minimal hitpoints */
         if (borg_skill[BI_MAXHP] < 500) return ("HP 500");
     }
+
+    /* High stats XXX XXX XXX */
+    if (borg_stat[A_STR] < 18+40) return ("low STR");
+
+    if (p_ptr->class->spell_book == TV_MAGIC_BOOK)
+    {
+        if (borg_stat[A_INT] < 18+100) return ("low INT");
+    }
+    if (p_ptr->class->spell_book == TV_PRAYER_BOOK)
+    {
+        if (borg_stat[A_WIS] < 18+100) return ("low WIS");
+    }
+    if (borg_stat[A_DEX] < 18+60) return ("low DEX");
+    if (borg_stat[A_CON] < 18+60) return ("low CON");
 
     /* Hold Life */
     if ((!borg_skill[BI_HLIFE] && !weapon_swap_hold_life &&
@@ -9923,12 +9411,10 @@ static char *borg_prepared_aux(int depth)
 /*** Essential Items for Level 55 to 59 ***/
 
     /* Potions of heal */
-    if (borg_skill[BI_AHEAL] < 2) return ("2heal");
+    if (borg_skill[BI_AHEAL] < 2 && borg_skill[BI_AEZHEAL] < 1) return ("2heal");
 
     /* Resists */
-    if ((borg_class != CLASS_WARRIOR && !borg_skill[BI_SRBLIND]) ||
-		(borg_class == CLASS_WARRIOR && !borg_skill[BI_SRBLIND] &&
-		!borg_skill[BI_ESP])) return ("RBlind");
+    if (!borg_skill[BI_SRBLIND]) return ("RBlind");
 
     /* Must have resist nether */
 /*    if (!borg_plays_risky && !borg_skill[BI_SRNTHR]) return ("RNeth"); */
@@ -9956,15 +9442,14 @@ static char *borg_prepared_aux(int depth)
     if (depth <= 80) return ((char *)NULL);
 
 /*** Essential Items for Level 81-85 ***/
-
-	/* Minimal Speed */
-    if (borg_skill[BI_MAXDEPTH] <= 98 && borg_skill[BI_SPEED] < 130) return ("+20 Speed");
+    /* Minimal Speed */
+    if (borg_skill[BI_SPEED] < 130) return ("+20 Speed");
 
     /* Usually ready for level 81 to 85 */
     if (depth <= 85) return ((char *)NULL);
 
 
-/*** Essential Items for Level 86-95 ***/
+/*** Essential Items for Level 86-99 ***/
 
 
     /* Usually ready for level 86 to 99 */
@@ -9975,7 +9460,7 @@ static char *borg_prepared_aux(int depth)
     /* must have lots of restore mana to go after MORGOTH */
     if (!borg_skill[BI_KING])
     {
-        if ((borg_skill[BI_MAXSP] > 100) && (borg_skill[BI_AMANA] < 15)) return ("15ResMana");
+        if ((borg_skill[BI_MAXSP] > 100) && (borg_has[POTION_RES_MANA] < 15)) return ("10ResMana");
 
         /* must have lots of heal */
         if (borg_has[POTION_HEAL] < 5) return ("5Heal");
@@ -10012,18 +9497,18 @@ static char borg_prepared_buffer[MAX_REASON];
  * This now returns a string with the reason you are not prepared.
  *
  */
-char *borg_prep(int depth)
+char *borg_prepared(int depth)
 {
     char *reason;
 
     /* Town and First level */
     if (depth == 1) return ((char *)NULL);
 
-	/* Not prepared if I need to restock */
+    /* Not prepared if I need to restock */
     if ((reason = borg_restock(depth)))	return (reason);
 
 	/*** Require his Clevel to be greater than or equal to Depth */
-	if (borg_skill[BI_MAXCLEVEL] < depth && borg_skill[BI_MAXCLEVEL] < 45) return ("Clevel < depth");
+	if (borg_skill[BI_MAXCLEVEL] < depth && borg_skill[BI_MAXCLEVEL] < 50) return ("Clevel < depth");
 
 	/* Must meet minimal requirements */
 	if (depth <= 99)
@@ -10076,22 +9561,14 @@ char *borg_prep(int depth)
         if (num_ezheal_true + borg_skill[BI_AEZHEAL] >= 30 && /* Enough combined EZ_HEALS */
         	num_ezheal_true >=1 && borg_skill[BI_MAXDEPTH] >= 99) /* Still some sitting in the house */
         {
-       		strnfmt(borg_prepared_buffer, MAX_REASON, "Collect *Heal* from house (%d potions).", num_ezheal_true);
-       		return (borg_prepared_buffer);
-        }
-
-		/* Return to town to get your stock from the home*/
-        if (borg_skill[BI_MAXSP] >= 100 && num_mana_true + borg_skill[BI_AMANA] > MAX_STACK_SIZE && /* Enough combined  */
-        	num_mana_true >=1 && borg_skill[BI_MAXDEPTH] >= 99) /* Still some sitting in the house */
-        {
-       		strnfmt(borg_prepared_buffer, MAX_REASON, "Collect Mana from house (%d potions).", num_mana_true);
+       		strnfmt(borg_prepared_buffer, MAX_REASON, "Collect from house (%d potions).", num_ezheal_true);
        		return (borg_prepared_buffer);
         }
 	}
 
     /* Check to make sure the borg does not go below where 3 living */
     /* uniques are. */
-    if (borg_skill[BI_MAXDEPTH] <= 98 && depth <= 98)
+    if (borg_skill[BI_MAXDEPTH] <= 98)
     {
           monster_race *r_ptr = &r_info[borg_living_unique_index];
 
@@ -10102,17 +9579,13 @@ char *borg_prep(int depth)
 		/* Check for the dlevel of the unique */
 		if (depth < borg_unique_depth) return ((char *)NULL);
 
-		/* Do not check on Sauron the Sorcerer */
-		if (borg_living_unique_index == IDX_SAURON) return ((char *)NULL);
-
        	/* To avoid double calls to format() */
  	   	/* Reset our description for not diving */
        	strnfmt(borg_prepared_buffer, MAX_REASON, "Must kill %s.", r_ptr->name);
        	return (borg_prepared_buffer);
 
     }
-	/* Deep Dungeon */
-    else if (borg_skill[BI_MAXDEPTH] >= 98 && depth >= 98)
+    else if (borg_skill[BI_MAXDEPTH] >= 98 || depth >= 98)
       /* check to make sure the borg does not go to level 100 */
       /* unless all the uniques are dead. */
     {
@@ -10121,13 +9594,13 @@ char *borg_prep(int depth)
 		  /* Access the living unique obtained from borg_update() */
           r_ptr = &r_info[borg_living_unique_index];
 
-		/* -1 is unknown. */
-		borg_ready_morgoth = -1;
+			/* -1 is unknown. */
+			borg_ready_morgoth = -1;
 
-		if (borg_numb_live_unique < 1 ||
-              borg_living_unique_index == IDX_MORGOTH)
+          if (borg_numb_live_unique < 1 ||
+              borg_living_unique_index == 547) /* Morgoth */
           {
-            	borg_ready_morgoth = 1;
+            	if (depth >= 99) borg_ready_morgoth = 1;
             	return ((char *)NULL);
           }
 
@@ -10142,18 +9615,12 @@ char *borg_prep(int depth)
               return ((char *)NULL);
           }
 
-		/* Do not check on Sauron the Sorcerer */
-		if (borg_living_unique_index == IDX_SAURON) return ((char *)NULL);
-
-		/* To avoid double calls to format() */
+      	/* To avoid double calls to format() */
       	strnfmt(borg_prepared_buffer, MAX_REASON, "%s still alive!", r_ptr->name);
       	return (borg_prepared_buffer);
 
     }
-
-	/* Its ok from here */
-	return ((char *)NULL);
-
+    return (char *)NULL;
 }
 
 /*
@@ -10169,3 +9636,4 @@ void borg_init_4(void)
 #ifdef MACINTOSH
 static int HACK = 0;
 #endif
+#endif /* ALLOW_BORG */

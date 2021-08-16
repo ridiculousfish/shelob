@@ -29,8 +29,8 @@ extern bool borg_item_icky(borg_item *item);
  * Various functions
  */
 extern bool borg_use_things(void);
-extern bool borg_check_light(void);
-extern bool borg_check_light_only(void);
+extern bool borg_check_LIGHT(void);
+extern bool borg_check_LIGHT_only(void);
 
 extern bool borg_enchanting(void);
 extern bool borg_recharging(void);
@@ -40,10 +40,8 @@ extern bool borg_crush_slow(void);
 extern bool borg_test_stuff(void);
 extern bool borg_takeoff_stuff(void);
 extern bool borg_swap_rings(void);
-extern bool borg_tight_rings(void);
 extern bool borg_wear_rings(void);
 extern bool borg_wear_stuff(void);
-extern bool borg_wear_swap(void);
 extern bool borg_wear_quiver(void);
 extern bool borg_best_stuff(void);
 extern bool borg_play_magic(bool bored);

@@ -56,7 +56,7 @@ struct borg_item
 
     char *note;      /* Pointer to tail of 'desc' */
 
-    s16b kind;      /* Kind index */
+    u32b kind;      /* Kind index */
 
     bool ident;      /* True if item is identified */
 	bool aware;		/* Player is aware of the effects */
@@ -65,9 +65,7 @@ struct borg_item
 
     bool needs_I;   /* True if item needs to be 'I'd (AJG) */
 
-    bool quest;      /* dropped by unique */
-	bool swap;		/* was a swap at one time */
-	bool main;		/* is non-swap item */
+    bool xxxx;      /* Unused */
 
     byte tval;      /* Item type */
     byte sval;      /* Item sub-type */
@@ -212,11 +210,11 @@ extern int borg_wield_slot(borg_item *item);
 /*
  * Analyze an item, given a textual description
  */
-extern void borg_item_analyze(borg_item *item, object_type *real_item, char *desc, int location, bool fake_gear);
+extern void borg_item_analyze(borg_item *item, object_type *real_item, char *desc);
 
 
 /* look for a *id*'d item */
-extern void borg_object_star_id( void );
+extern bool borg_object_star_id( void );
 
 /* look for a *id*'d item */
 extern bool borg_object_star_id_aux(borg_item *borg_item, object_type *real_item);
@@ -226,8 +224,6 @@ extern bool borg_object_star_id_aux(borg_item *borg_item, object_type *real_item
  */
 extern void borg_send_inscribe(int i, char *str);
 extern void borg_send_deinscribe(int i);
-extern bool borg_inscribe_food(void);
-extern bool borg_needed_deinscribe(void);
 
 /*
  * Count the items of a given tval/sval
@@ -242,7 +238,12 @@ extern int borg_slot(int tval, int sval);
 /*
  * Item usage functions
  */
-extern bool borg_refuel_torch(void);
+enum borg_need {
+	BORG_NO_NEED,
+	BORG_MET_NEED,
+	BORG_UNMET_NEED,
+};
+extern enum borg_need borg_maintain_light(void);
 extern bool borg_refuel_lantern(void);
 
 /*
@@ -262,6 +263,7 @@ extern bool borg_aim_wand(int sval);
 extern bool borg_use_staff(int sval);
 extern bool borg_use_staff_fail(int sval);
 extern bool borg_equips_staff_fail(int sval);
+extern bool borg_inscribe_food(void);
 
 extern int borg_activate_failure(int tval, int sval);
 
@@ -276,8 +278,6 @@ extern bool borg_activate_item(int tval, int sval, bool target);
 extern bool borg_equips_item(int tval, int sval);
 extern bool borg_activate_ring(int ring_sval); /*  */
 extern bool borg_equips_ring(int ring_sval);  /*  */
-extern bool borg_has_effect(int effect, bool legal, bool infinite);
-extern bool borg_activate_effect(int effect, bool target);
 
 
 /*
@@ -290,6 +290,7 @@ extern bool borg_spell_fail(int book, int what, int allow_fail);
 extern bool borg_spell_okay_fail(int book, int what, int allow_fail );
 extern bool borg_spell_legal_fail(int book, int what, int allow_fail );
 extern int borg_spell_fail_rate(int book, int what);
+extern int borg_prayer_fail_rate(int book, int what);
 
 /*
  * Prayer functions
@@ -300,16 +301,15 @@ extern bool borg_prayer(int book, int what);
 extern bool borg_prayer_fail(int book, int what, int allow_fail);
 extern bool borg_prayer_okay_fail(int book, int what, int allow_fail );
 extern bool borg_prayer_legal_fail(int book, int what, int allow_fail );
-extern int borg_prayer_fail_rate(int book, int what);
 
 
 
 /*
  * Cheat/Parse the "equip" and "inven" screens.
  */
-extern void borg_cheat_equip(bool fake_gear);
-extern void borg_cheat_inven(bool fake_gear);
-extern void borg_cheat_store();
+extern void borg_cheat_equip(void);
+extern void borg_cheat_inven(void);
+extern void borg_cheat_store(void);
 
 /*
  * Cheat/Parse the "spell" screen
