@@ -121,11 +121,13 @@ namespace angband {
 
 
   const NBSP = "\xA0";
+  const CURSOR_CLASS = "angband-cursor";
 
   class Cell {
     public text: string = NBSP;
     public rgb: number = 0;
     public dirty: boolean = false;
+    public cursor: boolean = false;
     constructor(public element: HTMLTableDataCellElement) {
     }
 
@@ -150,12 +152,13 @@ namespace angband {
     }
 
     // Mark ourselves as having the cursor.
+    // \return true if dirty.
     public setHasCursor(flag: boolean) {
-      if (flag) {
-        this.element.classList.add("angband-cursor");
-      } else {
-        this.element.classList.remove("angband-cursor");
+      if (flag !== this.cursor) {
+        this.cursor = flag;
+        this.dirty = true;
       }
+      return this.dirty;
     }
 
 
@@ -164,6 +167,15 @@ namespace angband {
         this.dirty = false;
         this.element.style.color = this.rgbString();
         this.element.textContent = this.text;
+
+        let classList = this.element.classList;
+        if (this.cursor != classList.contains(CURSOR_CLASS)) {
+          if (this.cursor) {
+            classList.add(CURSOR_CLASS)
+          } else {
+            classList.remove(CURSOR_CLASS);
+          }
+        }
       }
     }
   }
@@ -225,7 +237,7 @@ namespace angband {
     // Clear the cursor. Note angband expects drawing a cell to clear the cursor in that cell.
     private clearCursor() {
       if (this.cursor !== null) {
-        this.cursor.setHasCursor(false);
+        if (this.cursor.setHasCursor(false)) this.setNeedsDisplay();
         this.cursor = null;
       }
     }
@@ -246,7 +258,7 @@ namespace angband {
       let { row, col } = msg;
       if (row < this.cells.length && col < this.cells[row].length) {
         this.cursor = this.cells[row][col];
-        this.cursor.setHasCursor(true);
+        if (this.cursor.setHasCursor(true)) this.setNeedsDisplay();
       }
     }
 
