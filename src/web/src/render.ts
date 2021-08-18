@@ -169,7 +169,7 @@ namespace angband {
         this.element.textContent = this.text;
 
         let classList = this.element.classList;
-        if (this.cursor != classList.contains(CURSOR_CLASS)) {
+        if (this.cursor !== classList.contains(CURSOR_CLASS)) {
           if (this.cursor) {
             classList.add(CURSOR_CLASS)
           } else {
@@ -221,6 +221,7 @@ namespace angband {
     private setNeedsDisplay() {
       if (this.displayRequest === undefined) {
         this.displayRequest = requestAnimationFrame(this.displayNow.bind(this));
+        //this.displayRequest = setTimeout(this.displayNow.bind(this), 1);
       }
     }
 
@@ -248,6 +249,8 @@ namespace angband {
       if (row >= this.cells.length || col >= this.cells[row].length) {
         throw (`Cell ${row}, ${col} out of bounds`);
       }
+      // The cursor is transient and is cleared by any screen update.
+      this.clearCursor();
       let text = (charCode === 0x20 ? NBSP : String.fromCharCode(charCode));
       if (this.cells[row][col].setTextAndColor(text, rgb)) this.setNeedsDisplay();
     }

@@ -15,7 +15,7 @@ WARNINGS = -W -Wall -Wextra -Wold-style-definition -Wdeclaration-after-statement
 		  -Wunreachable-code -Wno-unused-parameter -Wno-missing-field-initializers \
 		  -Wno-incompatible-pointer-types-discards-qualifiers
 CFLAGS = -Os -g $(WARNINGS) -DWASM=1
-LDFLAGS = -s ENVIRONMENT=worker -s ASYNCIFY -s  -s ASYNCIFY_ADVISE=1 -s ASYNCIFY_REMOVE="$(NO_ASYNCIFY_FUNCS)"
+LDFLAGS = -s ENVIRONMENT=worker -lidbfs.js -s ASYNCIFY -s  -s ASYNCIFY_ADVISE=1 -s ASYNCIFY_REMOVE="$(NO_ASYNCIFY_FUNCS)"
 INCLUDES = -I.
 LIBS =
 
