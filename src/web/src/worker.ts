@@ -18,6 +18,9 @@ namespace angband {
     // Callback to resolve the promise.
     eventPromiseCallback: (val: boolean) => void;
 
+    // Enqueued render events, to be sent in flushDrawing().
+    enqueuedRenderEvents: RenderEvent[] = [];
+
     // \return whether we have at least one event.
     hasEvent(): boolean { return this.eventQueue.length > 0; }
 
@@ -127,7 +130,7 @@ namespace angband {
         charCode,
         rgb,
       };
-      this.postMessage(msg);
+      this.enqueuedRenderEvents.push(msg);
     }
 
     // Wipe N cells at (row, column).
@@ -139,7 +142,7 @@ namespace angband {
         col,
         count,
       };
-      this.postMessage(msg);
+      this.enqueuedRenderEvents.push(msg);
     }
 
     // Clear the entire screen.
@@ -147,15 +150,21 @@ namespace angband {
       const msg: CLEAR_SCREEN_MSG = {
         name: "CLEAR_SCREEN"
       };
-      this.postMessage(msg);
+      this.enqueuedRenderEvents.push(msg);
     }
 
     // Flush all drawing to the screen. Note this can affect frame rates.
     public flushDrawing() {
-      const msg: FLUSH_DRAWING_MSG = {
+      const flush: FLUSH_DRAWING_MSG = {
         name: "FLUSH_DRAWING"
       };
-      this.postMessage(msg);
+      this.enqueuedRenderEvents.push(flush);
+      const batch: BATCH_RENDER_MSG = {
+        name: "BATCH_RENDER",
+        events: this.enqueuedRenderEvents,
+      };
+      this.enqueuedRenderEvents = [];
+      this.postMessage(batch);
     }
 
     // Move the cursor to a cell.
@@ -165,7 +174,7 @@ namespace angband {
         row,
         col,
       };
-      this.postMessage(msg);
+      this.enqueuedRenderEvents.push(msg);
     }
 
     // Wait for events, optionally blocking.

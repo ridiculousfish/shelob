@@ -218,8 +218,7 @@ static errr Term_xtra_emscripten(int n, int v) {
 
 		/* Flush the drawing buffer */
 		case TERM_XTRA_FRESH:
-			// Note this hurts frame rates, we could support this as a frame rate limiter.
-			//EM_ASM({ ANGBAND.flushDrawing(); });
+			EM_ASM({ ANGBAND.flushDrawing(); });
 			return 0;
 
 		/* Change the cursor visibility */

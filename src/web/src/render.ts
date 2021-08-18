@@ -221,7 +221,6 @@ namespace angband {
     private setNeedsDisplay() {
       if (this.displayRequest === undefined) {
         this.displayRequest = requestAnimationFrame(this.displayNow.bind(this));
-        //this.displayRequest = setTimeout(this.displayNow.bind(this), 1);
       }
     }
 
@@ -331,8 +330,7 @@ namespace angband {
     worker: Worker;
 
     // Called when we receive a message from our WebWorker.
-    onMessage(evt: MessageEvent) {
-      const msg = evt.data as RenderEvent;
+    onRenderEvent(msg: RenderEvent) {
       switch (msg.name) {
         case 'ERROR':
           // TODO: display this.
@@ -363,6 +361,12 @@ namespace angband {
           this.grid.flushDrawing(msg as FLUSH_DRAWING_MSG);
           break;
 
+        case 'BATCH_RENDER':
+          (msg as BATCH_RENDER_MSG).events.forEach((subevt) => {
+            this.onRenderEvent(subevt);
+          });
+          break;
+
         case 'PRINT':
           this.printOutput(msg as PRINT_MSG);
           break;
@@ -371,6 +375,11 @@ namespace angband {
           console.log("Unknown message: " + JSON.stringify(msg));
           break;
       }
+    }
+
+    // Called when we receive a message from our WebWorker.
+    onMessage(evt: MessageEvent) {
+      this.onRenderEvent(evt.data as RenderEvent);
     }
 
     // Called to send a message to our WebWorker.
