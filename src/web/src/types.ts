@@ -24,6 +24,17 @@ namespace angband {
     rgb: number,
   }
 
+  export interface SET_CELL_PICT_MSG {
+    name: "SET_CELL_PICT",
+    row: number,
+    col: number,
+    mode: number, // index into "graphics.txt"
+    pictRow: number, // foreground location
+    pictCol: number,
+    terrRow: number, // terrain location
+    terrCol: number,
+  }
+
   export interface SET_CURSOR_MSG {
     name: "SET_CURSOR",
     row: number,
@@ -51,7 +62,7 @@ namespace angband {
   }
 
   // List of messages sent from ThreadWorker to Render.
-  export type RenderEvent = ERROR_MSG | STATUS_MSG | PRINT_MSG | SET_CELL_MSG | SET_CURSOR_MSG | WIPE_CELLS_MSG | CLEAR_SCREEN_MSG | FLUSH_DRAWING_MSG | BATCH_RENDER_MSG;
+  export type RenderEvent = ERROR_MSG | STATUS_MSG | PRINT_MSG | SET_CELL_MSG | SET_CELL_PICT_MSG | SET_CURSOR_MSG | WIPE_CELLS_MSG | CLEAR_SCREEN_MSG | FLUSH_DRAWING_MSG | BATCH_RENDER_MSG;
 
   export interface KEY_EVENT_MSG {
     name: "KEY_EVENT",

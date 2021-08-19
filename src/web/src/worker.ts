@@ -138,6 +138,21 @@ namespace angband {
       this.enqueuedRenderEvents.push(msg);
     }
 
+    // Draw a picture in a cell. The 'mode' is an index into the "graphics.txt" document.
+    public setCellPict(row: number, col: number, mode: number, pictRow: number, pictCol: number, terrRow: number, terrCol: number) {
+      const msg: SET_CELL_PICT_MSG = {
+        name: "SET_CELL_PICT",
+        row,
+        col,
+        mode,
+        pictRow,
+        pictCol,
+        terrRow,
+        terrCol,
+      };
+      this.enqueuedRenderEvents.push(msg);
+    }
+
     // Wipe N cells at (row, column).
     public wipeCells(row: number, col: number, count: number) {
       if (count <= 0) return;

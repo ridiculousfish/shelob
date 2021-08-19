@@ -77,6 +77,7 @@ install: staging
 	mkdir -p $(BUILT_DIR)/assets/
 	cp $(ASSET_DATA) $(WASM) $(JS_STAGED) $(JS_GEN) $(BUILT_DIR)/assets/
 	cp $(filter-out */angband.html, $(STATIC_FILEPATHS)) $(BUILT_DIR)/assets/
+	cp -r $(STAGE_DIR)/graf $(BUILT_DIR)/assets/
 	@echo "Built $(BUILT_DIR)/"
 
 $(STAGE_DIR):
@@ -91,6 +92,11 @@ $(STAGE_DIR)/%.js: web/built/%.js | $(STAGE_DIR)
 
 .PHONY: staging
 staging: $(WASM) $(ASSET_DATA) $(JS_STAGED)
+	@ # Expose our graphics png files to the web server.
+	@mkdir -p $(STAGE_DIR)/graf/
+	@rm -Rf $(STAGE_DIR)/graf/*
+	@cp ../lib/xtra/graf/*.png $(STAGE_DIR)/graf/
+
 
 $(ASSET_DIR): $(wildcard ../lib/**/*) | $(STAGE_DIR)
 	@rm -Rf $(ASSET_DIR)
@@ -107,6 +113,7 @@ $(ASSET_DIR): $(wildcard ../lib/**/*) | $(STAGE_DIR)
 	@ #cp ../lib/xtra/font/*.fon $@/lib/xtra/font
 	@ #-cp ../lib/xtra/sound/*.wav $@/lib/xtra/sound
 	@-cp ../lib/xtra/graf/*.png $@/lib/xtra/graf
+	@-cp ../lib/xtra/graf/*.txt $@/lib/xtra/graf
 	@cp ../changes.txt ../readme.txt $@
 
 # Note: this requires GNU Make 4.3 or later.

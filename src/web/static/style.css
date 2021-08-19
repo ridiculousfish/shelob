@@ -128,19 +128,16 @@ body {
 	padding: 20px;
 	/* border: 1px solid #333; */
 	white-space: nowrap;
-	outline: none;
 	/* suppress focus ring */
+	outline: none;
+	background-repeat: no-repeat;
+	border-spacing: 0;
 }
 
 .angband-grid tr {}
 
 .angband-grid td {
 	background-color: black;
-	color: white;
-	text-align: left;
-	font-size: 18pt;
-	text-align: center;
-	height: 1.2em;
 }
 
 .angband-grid tr, .angband-grid td {
@@ -152,4 +149,46 @@ body {
 .angband-cursor {
 	-webkit-box-shadow: inset 0px 0px 0px 1.5px rgba(255, 229, 97, 0.75);
 	box-shadow: inset 0px 0px 0px 1.5px rgba(255, 229, 97, 0.75);
+}
+
+/* Elements inside our angband grid. */
+
+.angband-grid td div {
+	width: 100%;
+	min-height: 100%;
+	color: white;
+	text-align: left;
+	font-size: 18pt;
+	text-align: center;
+	height: 1.2em;
+	border: none;
+	padding: 0;
+	border-spacing: 0;
+}
+
+/* CSS supporting the built-in Angband image sprite sheets. */
+
+.angband-sprites-1 {
+	background-image: url("graf/8x8.png");
+	background-size: 8300% 9900%;
+}
+
+.angband-sprites-2 {
+	background-image: url("graf/16x16.png");
+	background-size: 3200% 6000%;
+}
+
+.angband-sprites-3 {
+	background-image: url("graf/32x32.png");
+	background-size: 12800% 3000%;
+}
+
+.angband-sprites-4 {
+	background-image: url("graf/8x16.png");
+	background-size: 3200% 6000%;
+}
+
+.angband-sprites-5 {
+	background-image: url("graf/64x64.png");
+	background-size: 12800% 3200%;
 }

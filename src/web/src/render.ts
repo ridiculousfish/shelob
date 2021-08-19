@@ -2,6 +2,65 @@
 
 namespace angband {
 
+  interface SpriteSheet {
+    num: number,
+    name: string,
+    css: string,
+    width: number, // width and height of a single cell
+    height: number,
+    columns: number,
+    rows: number,
+  };
+
+  // Graphics settings, copied from graphics.txt.
+  const SPRITE_SHEETS: SpriteSheet[] = [
+    {
+      num: 1,
+      name: "old",
+      css: 'angband-sprites-1',
+      width: 8,
+      height: 8,
+      columns: 83,
+      rows: 99,
+    },
+    {
+      num: 2,
+      name: "new",
+      css: 'angband-sprites-2',
+      width: 16,
+      height: 16,
+      columns: 32,
+      rows: 60,
+    },
+    {
+      num: 3,
+      name: "david",
+      css: 'angband-sprites-3',
+      width: 32,
+      height: 32,
+      columns: 128,
+      rows: 30,
+    },
+    {
+      num: 4,
+      name: "nomad",
+      css: 'angband-sprites-4',
+      width: 16,
+      height: 16,
+      columns: 32,
+      rows: 60,
+    },
+    {
+      num: 5,
+      name: "shock",
+      css: 'angband-sprites-5',
+      width: 64,
+      height: 64,
+      columns: 128,
+      rows: 32,
+    }
+  ];
+
   // List of key codes, copied from ui-event.h
   const KEY_CODE_MAPPING = {
     ARROW_DOWN: 0x80,
@@ -123,20 +182,74 @@ namespace angband {
   const NBSP = "\xA0";
   const CURSOR_CLASS = "angband-cursor";
 
+  interface SpriteLoc {
+    row: number;
+    col: number;
+  }
+
+  // Optional graphics data associated with a cell.
+  interface Pict {
+    sprites: SpriteSheet;
+    foreground: SpriteLoc;
+    terrain: SpriteLoc | undefined;
+  };
+
+  // \return a background-position string for a pict.
+  function spritePosition(sprites: SpriteSheet, loc: SpriteLoc): string {
+    const xpos = loc.col / (sprites.columns - 1);
+    const ypos = loc.row / (sprites.rows - 1);
+    return `${xpos * 100}% ${ypos * 100}%`;
+  }
+
+  /* Helper to efficiently update CSS classes as sprite sheets change. */
+  class SpriteClassUpdater {
+    private lastDrawn: SpriteSheet | undefined = undefined;
+    constructor(private element: HTMLElement) { }
+
+    public setSprites(sprites: SpriteSheet | undefined) {
+      if (sprites !== this.lastDrawn) {
+        let classes = this.element.classList;
+        if (this.lastDrawn) classes.remove(this.lastDrawn.css);
+        if (sprites) classes.add(sprites.css);
+        this.lastDrawn = sprites;
+      }
+    }
+  };
+
   class Cell {
     public text: string = NBSP;
     public rgb: number = 0;
+    public pict: Pict | undefined = undefined;
     public dirty: boolean = false;
     public cursor: boolean = false;
-    constructor(public element: HTMLTableDataCellElement) {
+    private lastDrawCursor: boolean = false;
+    private foregroundUpdater: SpriteClassUpdater;
+    private terrainUpdater: SpriteClassUpdater;
+
+    // A Cell has a div inside of a td table cell.
+    // The div draws on top of the td and is used for foreground pictures.
+    constructor(public element: HTMLDivElement, public datacell: HTMLTableDataCellElement) {
+      this.foregroundUpdater = new SpriteClassUpdater(element);
+      this.terrainUpdater = new SpriteClassUpdater(datacell);
     }
 
     // Set our text and color, perhaps marking us dirty.
     // \return if we are dirty.
     public setTextAndColor(text: string, rgb: number): boolean {
+      this.setPict(undefined);
       if (this.text !== text || this.rgb !== rgb) {
         this.text = text;
         this.rgb = rgb;
+        this.dirty = true;
+      }
+      return this.dirty;
+    }
+
+    // Set a picture, or null.
+    // \return if we are dirty.
+    public setPict(pict: Pict | undefined) {
+      if (this.pict !== pict) {
+        this.pict = pict;
         this.dirty = true;
       }
       return this.dirty;
@@ -163,19 +276,28 @@ namespace angband {
 
 
     public drawIfDirty() {
-      if (this.dirty) {
-        this.dirty = false;
+      if (!this.dirty) return;
+      this.dirty = false;
+      if (this.pict) {
+        const sprites = this.pict.sprites;
+        this.element.textContent = "";
+        this.element.style.backgroundPosition = spritePosition(sprites, this.pict.foreground);
+        if (this.pict.terrain) {
+          this.datacell.style.backgroundPosition = spritePosition(sprites, this.pict.terrain);
+        }
+        this.foregroundUpdater.setSprites(sprites);
+        this.terrainUpdater.setSprites(this.pict.terrain ? sprites : undefined);
+      } else {
         this.element.style.color = this.rgbString();
         this.element.textContent = this.text;
+        this.foregroundUpdater.setSprites(undefined);
+        this.terrainUpdater.setSprites(undefined);
+      }
 
-        let classList = this.element.classList;
-        if (this.cursor !== classList.contains(CURSOR_CLASS)) {
-          if (this.cursor) {
-            classList.add(CURSOR_CLASS)
-          } else {
-            classList.remove(CURSOR_CLASS);
-          }
-        }
+      if (this.cursor !== this.lastDrawCursor) {
+        let classes = this.element.classList;
+        this.cursor ? classes.add(CURSOR_CLASS) : classes.remove(CURSOR_CLASS);
+        this.lastDrawCursor = this.cursor;
       }
     }
   }
@@ -208,13 +330,25 @@ namespace angband {
         let rowlist = [];
         for (let col = 0; col < this.columns; col++) {
           let td = document.createElement("td");
-          td.textContent = NBSP;
           tr.appendChild(td);
-          rowlist.push(new Cell(td));
+
+          let div = document.createElement("div");
+          td.appendChild(div);
+          div.textContent = NBSP;
+          rowlist.push(new Cell(div, td));
         }
         this.cells.push(rowlist);
         this.element.appendChild(tr);
       }
+    }
+
+    // Get a cell, or throw.
+    getCell(msg: { row: number, col: number }): Cell {
+      let cell = undefined;
+      let row = this.cells[msg.row];
+      if (row) cell = row[msg.col];
+      if (!cell) throw (`Cell ${msg.row}, ${msg.col} out of bounds`);
+      return cell;
     }
 
     // Mark ourselves as needing display: we have dirty cells, wait and redraw them in batch.
@@ -244,14 +378,27 @@ namespace angband {
 
     // Set the cell at (row, col) to a character given by charCode, with the color rgb.
     public setCell(msg: SET_CELL_MSG) {
-      let { row, col, charCode, rgb } = msg;
-      if (row >= this.cells.length || col >= this.cells[row].length) {
-        throw (`Cell ${row}, ${col} out of bounds`);
-      }
+      let { charCode, rgb } = msg;
       // The cursor is transient and is cleared by any screen update.
       this.clearCursor();
       let text = (charCode === 0x20 ? NBSP : String.fromCharCode(charCode));
-      if (this.cells[row][col].setTextAndColor(text, rgb)) this.setNeedsDisplay();
+      if (this.getCell(msg).setTextAndColor(text, rgb)) this.setNeedsDisplay();
+    }
+
+    public setCellPict(msg: SET_CELL_PICT_MSG) {
+      // mode is 1-based.
+      const sprites: SpriteSheet = SPRITE_SHEETS[msg.mode - 1];
+      if (!sprites) return;
+
+      let { pictRow, pictCol, terrRow, terrCol } = msg;
+      let terrain: SpriteLoc | undefined = undefined;
+      if (terrRow >= 0) terrain = { row: terrRow, col: terrCol, };
+      let pict: Pict = {
+        sprites,
+        foreground: { row: pictRow, col: pictCol },
+        terrain,
+      };
+      if (this.getCell(msg).setPict(pict)) this.setNeedsDisplay();
     }
 
     // Set the cursor location.
@@ -259,20 +406,18 @@ namespace angband {
       this.clearCursor();
       let { row, col } = msg;
       if (row < this.cells.length && col < this.cells[row].length) {
-        this.cursor = this.cells[row][col];
+        this.cursor = this.getCell({ row, col });
         if (this.cursor.setHasCursor(true)) this.setNeedsDisplay();
       }
     }
 
     // Wipe (clear) some cells.
     public wipeCells(msg: WIPE_CELLS_MSG) {
+      this.clearCursor();
       let { row, col, count } = msg;
-      if (row >= this.cells.length || col + count > this.cells[row].length)
-        throw (`Cell ${row}, ${col} out of bounds`);
-      for (let i = 0; i < count; i++) {
-        let cell = this.cells[row][col + i];
+      for (let i = 0; i < msg.count; i++) {
+        let cell = this.getCell({ row: row + i, col });
         if (cell.setTextAndColor(NBSP, 0)) this.setNeedsDisplay();
-        if (cell === this.cursor) this.clearCursor();
       }
     }
 
@@ -349,6 +494,10 @@ namespace angband {
 
         case 'SET_CELL':
           this.grid.setCell(msg as SET_CELL_MSG);
+          break;
+
+        case 'SET_CELL_PICT':
+          this.grid.setCellPict(msg as SET_CELL_PICT_MSG);
           break;
 
         case 'SET_CURSOR':

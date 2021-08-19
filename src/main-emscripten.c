@@ -87,9 +87,7 @@ static void Term_init_emscripten(term *t) {
 
 static void Term_nuke_emscripten(term *t) {
 }
-/*
- * Place some text on the screen using an attribute
- */
+
 static errr Term_text_emscripten(int x, int y, int n, byte a, const wchar_t *s) {
 	uint32_t color = rgb_from_table_index(a);
 	for (int i=0; i < n; i++) {
@@ -100,6 +98,37 @@ static errr Term_text_emscripten(int x, int y, int n, byte a, const wchar_t *s) 
 			ANGBAND.setCell($0, $1, $2, $3);
 		}, row, col, c, color);
 		// TODO: "the high bit of the attribute indicates a reversed fg/bg"?
+	}
+	return 0;
+}
+
+static errr Term_pict_emscripten(int x, int y, int n, const byte *ap,
+                            const wchar_t *cp, const byte *tap,
+                            const wchar_t *tcp)
+{
+	int row = y;
+	int col = x;
+	for (int i = 0; i < n; i++)
+	{
+        byte a = *ap++;
+        wchar_t c = *cp++;        
+        byte ta = *tap++;
+        wchar_t tc = *tcp++;
+		if (use_graphics && (a & 0x80) && (c & 0x80))
+		{
+            /* Primary Row and Col */
+            int pict_row = ((byte)a & 0x7F);
+            int pict_col = ((byte)c & 0x7F);
+
+            /* Terrain Row and Col. alphablend is never set, so do something lame. */
+			int draw_terrain = (current_graphics_mode->grafID > 1);
+            int terr_row = draw_terrain ? ((byte)ta & 0x7F) : -1;
+            int terr_col = draw_terrain ? ((byte)tc & 0x7F) : -1;
+
+			EM_ASM({
+				ANGBAND.setCellPict($0, $1, $2, $3, $4, $5, $6);
+			}, row, col, current_graphics_mode->grafID, pict_row, pict_col, terr_row, terr_col);
+		}
 	}
 	return 0;
 }
@@ -259,15 +288,15 @@ static errr term_data_init_emscripten(term_data *td, int rows, int cols, int y, 
 	/* No need to flush individual rows. */
 	t->never_frosh = TRUE;
 
-	/* Special text! */
+	/* Yes to graphics. */
+	t->always_pict = FALSE;
 	t->higher_pict = TRUE;
 
 	/* Set some hooks */
 	t->init_hook = Term_init_emscripten;
 	t->nuke_hook = Term_nuke_emscripten;
-
-	/* Set some more hooks */
 	t->text_hook = Term_text_emscripten;
+	t->pict_hook = Term_pict_emscripten;
 	t->wipe_hook = Term_wipe_emscripten;
 	t->curs_hook = Term_curs_emscripten;
 	t->xtra_hook = Term_xtra_emscripten;
@@ -396,24 +425,26 @@ int main(int argc, char *argv[])
 	/* Get the file paths */
 	init_stuff();
 
+	/* load possible graphics modes */
+	init_graphics_modes("graphics.txt");
+
 	/* Our initializer */
 	init_emscripten();
 
 	/* Process the player name */
 	process_player_name(TRUE);
 
-	/* Catch nasty signals */
-	signals_init();
-
-	/* load possible graphics modes */
-	init_graphics_modes("graphics.txt");
-
 	/* Set up the command hook */
 	cmd_get_hook = default_get_cmd;
 
+	use_graphics = TRUE;
+	use_transparency = TRUE;
+	graphics_mode *mode = get_graphics_mode(5);
+	current_graphics_mode = mode;
+	ANGBAND_GRAF = mode->pref;
+
 	/* Set up the display handlers and things. */
 	init_display();
-
 
 	/* Play the game */
 	play_game();
