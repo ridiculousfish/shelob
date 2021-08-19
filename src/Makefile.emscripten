@@ -15,7 +15,7 @@ WARNINGS = -W -Wall -Wextra -Wold-style-definition -Wdeclaration-after-statement
 		  -Wunreachable-code -Wno-unused-parameter -Wno-missing-field-initializers \
 		  -Wno-incompatible-pointer-types-discards-qualifiers
 CFLAGS = -Os -g $(WARNINGS) -DWASM=1
-LDFLAGS = -s ENVIRONMENT=worker -lidbfs.js -s ASYNCIFY -s  -s ASYNCIFY_ADVISE=1 -s ASYNCIFY_REMOVE="$(NO_ASYNCIFY_FUNCS)"
+LDFLAGS = -s ENVIRONMENT=worker -lidbfs.js -s ASYNCIFY -s ASYNCIFY_REMOVE="$(NO_ASYNCIFY_FUNCS)" # -s ASYNCIFY_ADVISE=1
 INCLUDES = -I.
 LIBS =
 
@@ -103,9 +103,9 @@ $(ASSET_DIR): $(wildcard ../lib/**/*) | $(STAGE_DIR)
 	@cp ./borg/borg.txt $@/lib/user/
 	@cp ../lib/help/*.txt ../lib/help/*.hlp $@/lib/help
 	@cp ../lib/pref/*.prf $@/lib/pref
-	@cp ../lib/xtra/font/*.fon $@/lib/xtra/font
-	@echo attempting to install sound and graphics
-	@-cp ../lib/xtra/sound/*.wav $@/lib/xtra/sound
+	@ # Do not need fonts or sounds yet.
+	@ #cp ../lib/xtra/font/*.fon $@/lib/xtra/font
+	@ #-cp ../lib/xtra/sound/*.wav $@/lib/xtra/sound
 	@-cp ../lib/xtra/graf/*.png $@/lib/xtra/graf
 	@cp ../changes.txt ../readme.txt $@
 
