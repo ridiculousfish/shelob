@@ -9,6 +9,7 @@
   },
   "files": [
     "./src/render.ts",
+    "./src/settings.ts",
     "./src/worker.ts"
   ]
 }

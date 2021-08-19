@@ -295,32 +295,38 @@ namespace angband {
   }
 
   export class Status {
+    setProgressFraction(frac: number) {
+      if (!isFinite(frac)) frac = 0;
+      const length = this.progressRingElem.getTotalLength();
+      this.progressRingElem.style.strokeDashoffset = (length * (1.0 - frac)).toFixed(4);
+    }
+
     public setStatusText(text: string) {
       if (text === this.lastText) return;
       var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
       if (m) {
         text = m[1];
-        this.progressElement.value = parseInt(m[2]) * 100;
-        this.progressElement.max = parseInt(m[4]) * 100;
-        this.progressElement.hidden = false;
-        this.spinnerElement.hidden = false;
+        const circle = this.progressRingElem;
+        const curValue = parseInt(m[2]);
+        const maxValue = parseInt(m[4]);
+        this.setProgressFraction(curValue / maxValue);
+        this.progressGroupElem.hidden = false;
       } else {
-        this.progressElement.value = 0;
-        this.progressElement.max = 0;
-        this.progressElement.hidden = true;
-        if (!text) this.spinnerElement.style.display = 'none';
+        // Hide after a delay to allow the progress to complete.
+        this.setProgressFraction(1.0);
+        setTimeout(() => this.progressGroupElem.hidden = true, 400);
       }
-      this.statusElement.textContent = text;
+      this.statusTextElem.textContent = text;
       this.lastText = text;
     }
 
     // onerror handler.
     public globalReportError(evt: Event) {
       this.setStatusText('Exception thrown, see JavaScript console');
-      this.spinnerElement.style.display = 'none';
+      this.progressGroupElem.hidden = true;
     }
 
-    constructor(private statusElement: HTMLElement, private progressElement: HTMLProgressElement, private spinnerElement: HTMLElement) {
+    constructor(private progressGroupElem: HTMLElement, private progressRingElem: SVGCircleElement, private statusTextElem: HTMLElement) {
     }
 
     private lastText: string = "";
@@ -410,6 +416,15 @@ namespace angband {
       (stderr ? console.error : console.log)(text);
     }
 
+    // Wheee!
+    public setTurbo(turbo: boolean) {
+      this.postMessage({
+        name: "SET_TURBO",
+        value: turbo
+      });
+    }
+
+
     constructor(private grid: Grid, private status: Status, private printOutputElement: HTMLTextAreaElement) {
       this.grid.rebuildCells();
       this.worker = new Worker('assets/worker.js');
@@ -419,16 +434,21 @@ namespace angband {
 }
 
 const ANGBAND_UI: angband.UI = (function () {
-  function getElem<T extends HTMLElement>(id: string): T {
+  function getBaseElem(id: string): Element {
     let elem = document.getElementById(id);
     if (!elem) throw new Error("No element with id " + id);
-    return elem as T;
+    return elem;
   };
+
+  function getElem<T extends HTMLElement>(id: string): T {
+    return getBaseElem(id) as Element as T;
+  };
+
   let grid = new angband.Grid(getElem<HTMLTableElement>('main-angband-grid'));
   let status = new angband.Status(
-    getElem('main-angband-status'),
-    getElem('main-angband-progress'),
-    getElem('main-angband-spinner'));
+    getElem('angband-loadings'),
+    getBaseElem('progress-ring-circle') as SVGCircleElement,
+    getElem('angband-status-text'));
   window.onerror = status.globalReportError.bind(status);
 
   let printOutput = getElem<HTMLTextAreaElement>('output');

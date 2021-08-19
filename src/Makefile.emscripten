@@ -55,7 +55,7 @@ include Makefile.inc
 STAGE_DIR := ./stage
 BUILT_DIR := ./built
 
-JS_FILENAMES := render.js worker.js
+JS_FILENAMES := render.js settings.js worker.js
 TSC_PATHS := $(JS_FILENAMES:%.js=web/src/%.ts) web/src/types.ts
 JS_STAGED := $(JS_FILENAMES:%.js=$(STAGE_DIR)/%.js)
 

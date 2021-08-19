@@ -9,25 +9,32 @@
 </head>
 
 <body>
-  <div id="angband-progress-overlay">
-    <div id='main-angband-spinner' class="spinner"></div>
-    <div id='main-angband-status'>Downloading...</div>
-    <div>
-      <progress value="0" max="100" id="main-angband-progress" class="progress" hidden=1></progress>
-    </div>
+  <button class='controls-toggle' onMouseEnter='SETTINGS.setControlsShown(true)'
+    onClick='SETTINGS.setControlsShown(true)'>&#x2699;</button>
+  <div id='controls' onMouseLeave='SETTINGS.setControlsShown(false)' hidden="true">
+    <select name="font" id="font-select" onChange="SETTINGS.setFont(this.value)"></select>
+    <br />
+    <input id="bold" type="checkbox" onClick='SETTINGS.setBold(this.checked)'>
+    <label for="bold">Bold</label>
+    <br />
+    <input id="turbo" type="checkbox" onClick='ANGBAND_UI.setTurbo(this.checked)'>
+    <label for="turbo">Turbo</label>
   </div>
 
-  <span id='controls' style="display: none">
-    <span><input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer &nbsp;&nbsp;&nbsp;</span>
-    <span><input type="button" value="Fullscreen"
-        onclick="Module.requestFullscreen(document.getElementById('pointerLock').checked, 
-                                                                            document.getElementById('resize').checked)">
-    </span>
-  </span>
+  <div id="angband-progress-overlay">
+    <div id='angband-status-text'>Downloading...</div>
+    <div id="angband-loadings">
+      <svg id="progress-ring">
+        <circle id="progress-ring-circle" r="64" cx="60" cy="60" />
+      </svg>
+      <div id="progress-logo"></div>
+    </div>
+  </div>
 
   <table id="main-angband-grid" class="angband-grid" tabindex="0"></table>
   <textarea id="output" rows="8"></textarea>
   <script type="text/javascript" src="assets/render.js"></script>
+  <script type="text/javascript" src="assets/settings.js"></script>
 </body>
 
 </html>

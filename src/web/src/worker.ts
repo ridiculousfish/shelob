@@ -21,6 +21,9 @@ namespace angband {
     // Enqueued render events, to be sent in flushDrawing().
     enqueuedRenderEvents: RenderEvent[] = [];
 
+    // Whee!
+    public turbo: boolean = false;
+
     // \return whether we have at least one event.
     hasEvent(): boolean { return this.eventQueue.length > 0; }
 
@@ -67,6 +70,8 @@ namespace angband {
         case 'KEY_EVENT':
           this.gotEvent(evt as KEY_EVENT_MSG);
           break;
+        case 'SET_TURBO':
+          this.turbo = (msg.data as SET_TURBO_MSG).value;
         default:
           this.reportError("Unknown event name: " + evt.name);
           break;

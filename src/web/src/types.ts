@@ -60,6 +60,11 @@ namespace angband {
     modifiers: number,
   }
 
+  export interface SET_TURBO_MSG {
+    name: "SET_TURBO",
+    value: boolean,
+  }
+
   // Messages sent from Render to ThreadWorker.
-  export type WorkerEvent = KEY_EVENT_MSG;
+  export type WorkerEvent = KEY_EVENT_MSG | SET_TURBO_MSG;
 }

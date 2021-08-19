@@ -171,6 +171,13 @@ EM_JS(int, emscripten_has_event, (), {
 });
 
 /*
+ * Are we in turbo mode?
+ */
+EM_JS(int, emscripten_turbo, (), {
+	return ANGBAND.turbo;
+});
+
+/*
  * Check for Events, return 1 if we process any.
  */
 static int Term_xtra_emscripten_event(int wait)
@@ -237,7 +244,7 @@ static errr Term_xtra_emscripten(int n, int v) {
 
 		/* Delay */
 		case TERM_XTRA_DELAY:
-			emscripten_sleep(v);
+			if (v > 0 && ! emscripten_turbo()) emscripten_sleep(v);
 			return 0;
 
 		/* React to events */
