@@ -31,34 +31,12 @@
 #include "textui.h"
 #include "init.h"
 
+#ifdef USE_GRAPHICS
+#include "grafmode.h"
+#endif
+
 #include <stdint.h>
 #include <emscripten/emscripten.h>
-
-errr init_emscripten(int argc, char **argv);
-
-static const char * const help_emscripten = "emscripten mode";
-
-/*
- * List of the available modules in the order they are tried.
- */
-static const struct module modules[] =
-{
-	{ "emscripten", help_emscripten, init_emscripten },
-#ifdef USE_STATS
-	{ "stats", help_stats, init_stats },
-#endif /* USE_STATS */
-};
-
-static int init_sound_dummy(int argc, char *argv[]) {
-	return 0;
-}
-
-/*
- * List of sound modules in the order they should be tried.
- */
-static const struct module sound_modules[] =
-{	{ "none", "No sound", init_sound_dummy },
-};
 
 /*
  * A hook for "quit()".
@@ -153,6 +131,7 @@ static errr Term_wipe_emscripten(int x, int y, int n) {
  */
 static errr Term_xtra_emscripten_react(void) {
 	// This is an opportunity to react to settings from JS, e.g. switching to graphics mode.
+	printf("React!\n");
 	return 0;
 }
 
@@ -280,6 +259,9 @@ static errr term_data_init_emscripten(term_data *td, int rows, int cols, int y, 
 	/* No need to flush individual rows. */
 	t->never_frosh = TRUE;
 
+	/* Special text! */
+	t->higher_pict = TRUE;
+
 	/* Set some hooks */
 	t->init_hook = Term_init_emscripten;
 	t->nuke_hook = Term_nuke_emscripten;
@@ -300,7 +282,7 @@ static errr term_data_init_emscripten(term_data *td, int rows, int cols, int y, 
 	return (0);
 }
 
-errr init_emscripten(int argc, char **argv)
+errr init_emscripten()
 {
 	/* Make one term. */
 	int x = 0;
@@ -356,27 +338,6 @@ static void init_stuff(void)
 	init_file_paths(configpath, libpath, datapath);
 }
 
-
-
-/*
- * Handle a "-d<what>=<path>" option
- *
- * The "<what>" can be any string starting with the same letter as the
- * name of a subdirectory of the "lib" folder (i.e. "i" or "info").
- *
- * The "<path>" can be any legal path for the given system, and should
- * not end in any special path separator (i.e. "/tmp" or "~/.ang-info").
- */
-static void change_path(const char *info)
-{
-	if (!info || !info[0])
-		quit_fmt("Try '-d<path>'.", info);
-
-	string_free(ANGBAND_DIR_USER);
-	ANGBAND_DIR_USER = string_make(info);
-}
-
-
 static bool new_game;
 
 /*
@@ -407,43 +368,10 @@ static errr default_get_cmd(cmd_context context, bool wait)
 		return textui_get_cmd(context, wait);
 }
 
-static void debug_opt(const char *arg) {
-	if (streq(arg, "mem-poison-alloc"))
-		mem_flags |= MEM_POISON_ALLOC;
-	else if (streq(arg, "mem-poison-free"))
-		mem_flags |= MEM_POISON_FREE;
-	else {
-		puts("Debug flags:");
-		puts("  mem-poison-alloc: Poison all memory allocations");
-		puts("   mem-poison-free: Poison all freed memory");
-		exit(0);
-	}
-}
-
-/*
- * Simple "main" function for multiple platforms.
- *
- * Note the special "--" option which terminates the processing of
- * standard options.  All non-standard options (if any) are passed
- * directly to the "init_xxx()" function.
- */
 int main(int argc, char *argv[])
 {
-	int i;
-
-	bool done = FALSE;
-
-	const char *mstr = NULL;
-	const char *soundstr = NULL;
-
-	bool args = TRUE;
-
-
 	/* Save the "program name" XXX XXX XXX */
 	argv0 = argv[0];
-
-	/* Drop permissions */
-	safe_setuid_drop();
 
 	/* Mount our writable filesystem. Do this here instead in loader.ts to satisfy TypeScript, which doesn't know about FS. */
 	EM_ASM({
@@ -454,109 +382,10 @@ int main(int argc, char *argv[])
         });
 	});
 
-
-	/* Process the command line arguments */
-	for (i = 1; args && (i < argc); i++)
-	{
-		const char *arg = argv[i];
-
-		/* Require proper options */
-		if (*arg++ != '-') goto usage;
-
-		/* Analyze option */
-		switch (*arg++)
-		{
-			case 'n':
-				new_game = TRUE;
-				break;
-
-			case 'w':
-				arg_wizard = TRUE;
-				break;
-
-			case 'r':
-				arg_rebalance = TRUE;
-				break;
-
-			case 'g':
-				/* Default graphics tile */
-				/* in graphics.txt, 2 corresponds to adam bolt's tiles */
-				arg_graphics = 2; 
-				if (*arg) arg_graphics = atoi(arg);
-				break;
-
-			case 'u':
-				if (!*arg) goto usage;
-
-				/* Get the savefile name */
-				my_strcpy(op_ptr->full_name, arg, sizeof(op_ptr->full_name));
-				continue;
-
-			case 'm':
-				if (!*arg) goto usage;
-				mstr = arg;
-				continue;
-
-			case 's':
-				if (!*arg) goto usage;
-				soundstr = arg;
-				continue;
-
-			case 'd':
-				change_path(arg);
-				continue;
-
-			case 'x':
-				debug_opt(arg);
-				continue;
-
-			case '-':
-				argv[i] = argv[0];
-				argc = argc - i;
-				argv = argv + i;
-				args = FALSE;
-				break;
-
-			default:
-			usage:
-				puts("Usage: angband [options] [-- subopts]");
-				puts("  -n             Start a new character (WARNING: overwrites default savefile without -u)");
-				puts("  -w             Resurrect dead character (marks savefile)");
-				puts("  -r             Rebalance monsters");
-				puts("  -g             Request graphics mode");
-				puts("  -x<opt>        Debug options; see -xhelp");
-				puts("  -u<who>        Use your <who> savefile");
-				puts("  -d<path>       Store pref files and screendumps in <path>");
-				puts("  -s<mod>        Use sound module <sys>:");
-				for (i = 0; i < (int)N_ELEMENTS(sound_modules); i++)
-					printf("     %s   %s\n", sound_modules[i].name,
-					       sound_modules[i].help);
-				puts("  -m<sys>        Use module <sys>, where <sys> can be:");
-
-				/* Print the name and help for each available module */
-				for (i = 0; i < (int)N_ELEMENTS(modules); i++)
-					printf("     %s   %s\n",
-					       modules[i].name, modules[i].help);
-
-				/* Actually abort the process */
-				quit(NULL);
-		}
-		if (*arg) goto usage;
-	}
-
-	/* Hack -- Forget standard args */
-	if (args)
-	{
-		argc = 1;
-		argv[1] = NULL;
-	}
-
 	/* Install "quit" hook */
 	quit_aux = quit_hook;
 
-	/* If we were told which mode to use, then use it */
-	if (mstr)
-		ANGBAND_SYS = mstr;
+	ANGBAND_SYS = "emscripten";
 
 	if (setlocale(LC_CTYPE, "")) {
 		/* Require UTF-8 */
@@ -567,41 +396,24 @@ int main(int argc, char *argv[])
 	/* Get the file paths */
 	init_stuff();
 
-	/* Try the modules in the order specified by modules[] */
-	for (i = 0; i < (int)N_ELEMENTS(modules); i++)
-	{
-		/* User requested a specific module? */
-		if (!mstr || (streq(mstr, modules[i].name)))
-		{
-			ANGBAND_SYS = modules[i].name;
-			if (0 == modules[i].init(argc, argv))
-			{
-				done = TRUE;
-				break;
-			}
-		}
-	}
-
-	/* Make sure we have a display! */
-	if (!done) quit("Unable to prepare any 'display module'!");
+	/* Our initializer */
+	init_emscripten();
 
 	/* Process the player name */
 	process_player_name(TRUE);
 
-	/* Try the modules in the order specified by sound_modules[] */
-	for (i = 0; i < (int)N_ELEMENTS(sound_modules); i++)
-		if (!soundstr || streq(soundstr, sound_modules[i].name))
-			if (0 == sound_modules[i].init(argc, argv))
-				break;
-
 	/* Catch nasty signals */
 	signals_init();
+
+	/* load possible graphics modes */
+	init_graphics_modes("graphics.txt");
 
 	/* Set up the command hook */
 	cmd_get_hook = default_get_cmd;
 
 	/* Set up the display handlers and things. */
 	init_display();
+
 
 	/* Play the game */
 	play_game();
