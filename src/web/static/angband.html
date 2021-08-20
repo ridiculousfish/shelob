@@ -9,9 +9,10 @@
 </head>
 
 <body>
-  <button class='controls-toggle' onMouseEnter='SETTINGS.setControlsShown(true)'
-    onClick='SETTINGS.setControlsShown(true)'>&#x2699;</button>
-  <div id='controls' onMouseLeave='SETTINGS.setControlsShown(false)' hidden="true">
+  <button class='controls-toggle' onClick='SETTINGS.setControlsShown(true)'>&#x21E6;</button>
+  <div id='controls'>
+    <button class='controls-toggle' onClick='SETTINGS.setControlsShown(false)'>&#x21E8;</button>
+    <div class="spacer"></div>
     <select name="font" id="font-select" onChange="SETTINGS.setFont(this.value)"></select>
     <div class="spacer"></div>
     <input id="bold" type="checkbox" onClick='SETTINGS.setBold(this.checked)'>
@@ -29,6 +30,10 @@
       <option value="4">nomad (16x16)</option>
       <option value="5">shockbolt &#x26A1; (64x64)</option>
     </select>
+    <div class="footer">
+      <span class="shoutout">by&nbsp;<a href="https://ridiculousfish.com">ridiculous_fish</a>&nbsp;<a class="email"
+          href="mailto:angband@ridiculousfish.com">&#x2709;</a>
+    </div>
   </div>
 
   <div id="angband-progress-overlay">

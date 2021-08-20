@@ -64,8 +64,8 @@ body {
 	top: 0px;
 	right: 15px;
 	font-size: 18pt;
-	background-color: #333;
-	color: #F5F5F5;
+	background-color: #111;
+	color: #AAA;
 	border: none;
 	text-align: center;
 	border-bottom-right-radius: 15%;
@@ -85,7 +85,6 @@ body {
 	padding: 20px;
 	z-index: 100;
 	font-size: large;
-	transition: visibility 0s linear 300ms;
 	min-height: 100%;
 	line-height: 1.7em;
 }
@@ -112,6 +111,27 @@ body {
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
+}
+
+#controls .footer {
+	position: absolute;
+	bottom: 50px;
+	right: 0px;
+}
+
+.shoutout {
+	font-size: 11pt;
+	font-family: 'Menlo', 'Monaco', 'Courier', monospace;
+}
+
+.shoutout a:link, .shoutout a:visited {
+	color: #9cc2ff;
+}
+
+.shoutout .email, .shoutout .email:link, .shoutout .email:visited {
+	font-size: 18pt;
+	color: #CCC;
+	text-decoration: none;
 }
 
 #output {
