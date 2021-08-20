@@ -1,5 +1,5 @@
-/// <reference path='./types.ts' />
-/// <reference path='./font-type.ts' />
+/// <reference path='./types.d.ts' />
+/// <reference path='./font-type.d.ts' />
 
 namespace angband {
   let KNOWN_MONO_FONTS = [

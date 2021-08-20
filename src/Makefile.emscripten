@@ -56,7 +56,7 @@ STAGE_DIR := ./stage
 BUILT_DIR := ./built
 
 JS_FILENAMES := render.js settings.js worker.js
-TSC_PATHS := $(JS_FILENAMES:%.js=web/src/%.ts) web/src/types.ts
+TSC_PATHS := $(JS_FILENAMES:%.js=web/src/%.ts) web/src/types.d.ts web/src/font-type.d.ts
 JS_STAGED := $(JS_FILENAMES:%.js=$(STAGE_DIR)/%.js)
 
 STATIC_FILEPATHS = $(wildcard ./web/static/*)

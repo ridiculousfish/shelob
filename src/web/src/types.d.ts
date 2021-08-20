@@ -1,5 +1,5 @@
 /* Note this should have no actual JS logic, only interfaces. */
-namespace angband {
+declare namespace angband {
   export interface ERROR_MSG {
     name: "ERROR",
     text: string,

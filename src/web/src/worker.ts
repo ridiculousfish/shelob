@@ -1,4 +1,4 @@
-/// <reference path='./types.ts' />
+/// <reference path='./types.d.ts' />
 
 namespace angband {
   interface KeyEvent {
