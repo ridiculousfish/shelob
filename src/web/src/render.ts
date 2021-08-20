@@ -581,6 +581,12 @@ namespace angband {
       });
     }
 
+    // Activate the borg.
+    public unleashTheBorg() {
+      this.postMessage({
+        name: "ACTIVATE_BORG",
+      });
+    }
 
     constructor(private grid: Grid, private status: Status, private printOutputElement: HTMLTextAreaElement) {
       this.grid.rebuildCells();

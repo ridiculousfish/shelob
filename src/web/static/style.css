@@ -113,6 +113,11 @@ body {
 	user-select: none;
 }
 
+#controls .borg-button {
+	font-size: 12pt;
+	padding: 6px;
+}
+
 #controls .footer {
 	position: absolute;
 	bottom: 50px;

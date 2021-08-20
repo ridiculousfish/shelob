@@ -31,6 +31,9 @@ namespace angband {
     // Graphics mode, or 0 for ASCII.
     public desiredGraphicsMode: number = 0;
 
+    // If set, activate the borg (and clear this flag) on next check.
+    activateBorg: boolean = false;
+
     // Whee!
     public turbo: boolean = false;
 
@@ -85,6 +88,11 @@ namespace angband {
       }
     }
 
+    setActivateBorg(_msg: ACTIVATE_BORG_MSG) {
+      this.activateBorg = true;
+      this.postKeyEvent(WAKE_UP_EVENT);
+    }
+
     // Incoming message handler.
     public onMessage = (msg: MessageEvent) => {
       let evt = msg.data as WorkerEvent;
@@ -97,6 +105,9 @@ namespace angband {
           break;
         case 'SET_GRAPHICS':
           this.setGraphicsMode((evt as SET_GRAPHICS_MSG).mode);
+          break;
+        case 'ACTIVATE_BORG':
+          this.setActivateBorg(evt as ACTIVATE_BORG_MSG);
           break;
         default:
           this.reportError("Unknown event: " + JSON.stringify(evt));
@@ -151,7 +162,8 @@ namespace angband {
     }
 
 
-    // The following functions are called from emscripten.
+    /** The following functions are called from emscripten **/
+
     // Set a cell at (row, col) to the given character code, with the given color.
     public setCell(row: number, col: number, charCode: number, rgb: number) {
       const msg: SET_CELL_MSG = {
@@ -256,6 +268,13 @@ namespace angband {
     public popEvent() {
       let evt = this.eventQueue.shift();
       if (evt === undefined) throw new Error("No events");
+    }
+
+    // \return if we should activate the borg, clearing the flag.
+    public checkActivateBorg() {
+      let res = this.activateBorg;
+      this.activateBorg = false;
+      return res;
     }
   }
 }

@@ -39,6 +39,13 @@
 #include <stdint.h>
 #include <emscripten/emscripten.h>
 
+/* Some borg guts. */
+extern bool borg_active;
+extern bool borg_cheat_death;
+
+/* Called before we start the borg from the UI. This causes us to return a 'z' (start) command. */
+static bool needs_start_borg_event = FALSE;
+
 /*
  * A hook for "quit()".
  *
@@ -135,6 +142,27 @@ static errr Term_pict_emscripten(int x, int y, int n, const byte *ap,
 }
 
 /*
+ * Check to see if we should activate the borg from the web UI.
+ */
+ static void check_activate_borg()
+ {
+	int do_borg = EM_ASM_INT({ return ANGBAND.checkActivateBorg(); });
+	if (do_borg)
+	{
+		// Suppress the "are you sure" message.
+		p_ptr->noscore |= NOSCORE_BORG;
+
+		// It will want a 'z'.
+		needs_start_borg_event = true;
+		
+		do_cmd_borg();
+		
+		/* Our borg cannot die. */
+		borg_cheat_death = TRUE;
+	}
+ }
+
+/*
  * Check to see if requested graphics modes have changed.
  */
 static void check_graphics_changes()
@@ -206,6 +234,14 @@ EM_JS(int, emscripten_turbo, (), {
  */
 static int Term_xtra_emscripten_event(int wait)
 {
+	if (needs_start_borg_event && !borg_active)
+	{
+		Term_keypress(KTRL('Z'), 0);
+		Term_keypress('z', 0);
+		return 0;
+	}
+	needs_start_borg_event = FALSE;
+
 	if (! emscripten_gather_event(wait)) return 0;
 	int ch = EM_ASM_INT({ return ANGBAND.eventKeyCode(); });
 	int mods = EM_ASM_INT({ return ANGBAND.eventModifiers(); });
@@ -214,6 +250,7 @@ static int Term_xtra_emscripten_event(int wait)
 	// A negative key code indicates a "wake up" event, where we react to some external change.
 	if (ch < 0)
 	{
+		check_activate_borg();
 		check_graphics_changes();
 		return 0;
 	}
@@ -300,6 +337,9 @@ static errr term_data_init_emscripten(term_data *td, int rows, int cols, int y, 
 	/* Erase with "white space" */
 	t->attr_blank = TERM_WHITE;
 	t->char_blank = ' ';
+
+	/* Suppress these unneeded calls. */
+	t->never_bored = TRUE;
 
 	/* Differentiate between BS/^h, Tab/^i, etc. */
 	t->complex_input = TRUE;
@@ -433,7 +473,7 @@ int main(int argc, char *argv[])
         });
 	});
 
-	/* Install "quit" hook */
+	/* Install "quit" hook (this doesn't actually work) */
 	quit_aux = quit_hook;
 
 	ANGBAND_SYS = "emscripten";

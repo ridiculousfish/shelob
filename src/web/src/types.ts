@@ -81,6 +81,10 @@ namespace angband {
     mode: number,
   }
 
+  export interface ACTIVATE_BORG_MSG {
+    name: "ACTIVATE_BORG",
+  }
+
   // Messages sent from Render to ThreadWorker.
-  export type WorkerEvent = KEY_EVENT_MSG | SET_TURBO_MSG | SET_GRAPHICS_MSG;
+  export type WorkerEvent = KEY_EVENT_MSG | SET_TURBO_MSG | SET_GRAPHICS_MSG | ACTIVATE_BORG_MSG;
 }

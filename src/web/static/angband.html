@@ -22,7 +22,7 @@
     <label for="turbo">Turbo! &#x1F4A8;</label>
     <div class="spacer"></div>
     <label for="graphics-select">Graphics</label><br />
-    <select name="graphics" id="graphics-select" onChange="ANGBAND_UI.setGraphics(this.value)">
+    <select name="graphics" id="graphics-select" onChange='ANGBAND_UI.setGraphics(this.value)'>
       <option value="0">good old @</option>
       <option value="1">original (8x8)</option>
       <option value="2">adam (16x16)</option>
@@ -30,6 +30,8 @@
       <option value="4">nomad (16x16)</option>
       <option value="5">shockbolt &#x26A1; (64x64)</option>
     </select>
+    <div class="spacer"></div>
+    <button class="borg-button" onClick='ANGBAND_UI.unleashTheBorg();'>Unleash the Borg</button>
     <div class="footer">
       <span class="shoutout">by&nbsp;<a href="https://ridiculousfish.com">ridiculous_fish</a>&nbsp;<a class="email"
           href="mailto:angband@ridiculousfish.com">&#x2709;</a>
