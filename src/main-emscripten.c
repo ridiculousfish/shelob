@@ -152,13 +152,13 @@ static errr Term_pict_emscripten(int x, int y, int n, const byte *ap,
 		// Suppress the "are you sure" message.
 		p_ptr->noscore |= NOSCORE_BORG;
 
+		// Allow our borg to never die.
+		op_ptr->opt[OPT_cheat_live] = TRUE;
+
 		// It will want a 'z'.
 		needs_start_borg_event = true;
 		
 		do_cmd_borg();
-		
-		/* Our borg cannot die. */
-		borg_cheat_death = TRUE;
 	}
  }
 
@@ -312,7 +312,7 @@ static errr Term_xtra_emscripten(int n, int v) {
 
 		/* Delay */
 		case TERM_XTRA_DELAY:
-			if (v > 0 && ! emscripten_turbo()) emscripten_sleep(v);
+			if (v > 0 && !emscripten_turbo()) emscripten_sleep(v);
 			return 0;
 
 		/* React to events */

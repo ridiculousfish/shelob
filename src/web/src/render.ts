@@ -179,7 +179,6 @@ namespace angband {
   }
 
 
-  const NBSP = "\xA0";
   const CURSOR_CLASS = "angband-cursor";
 
   interface SpriteLoc {
@@ -217,7 +216,7 @@ namespace angband {
   };
 
   class Cell {
-    public text: string = NBSP;
+    public text: string = "";
     public rgb: number = 0;
     public pict: Pict | undefined = undefined;
     public dirty: boolean = false;
@@ -334,7 +333,7 @@ namespace angband {
 
           let div = document.createElement("div");
           td.appendChild(div);
-          div.textContent = NBSP;
+          div.textContent = "";
           rowlist.push(new Cell(div, td));
         }
         this.cells.push(rowlist);
@@ -381,7 +380,8 @@ namespace angband {
       let { charCode, rgb } = msg;
       // The cursor is transient and is cleared by any screen update.
       this.clearCursor();
-      let text = (charCode === 0x20 ? NBSP : String.fromCharCode(charCode));
+      // No need to use a literal space.
+      let text = (charCode === 0x20 ? "" : String.fromCharCode(charCode));
       if (this.getCell(msg).setTextAndColor(text, rgb)) this.setNeedsDisplay();
     }
 
@@ -417,7 +417,7 @@ namespace angband {
       let { row, col, count } = msg;
       for (let i = 0; i < msg.count; i++) {
         let cell = this.getCell({ row: row + i, col });
-        if (cell.setTextAndColor(NBSP, 0)) this.setNeedsDisplay();
+        if (cell.setTextAndColor("", 0)) this.setNeedsDisplay();
       }
     }
 
@@ -426,7 +426,7 @@ namespace angband {
       this.clearCursor();
       this.cells.forEach((row) => {
         row.forEach((cell) => {
-          if (cell.setTextAndColor(NBSP, 0)) this.setNeedsDisplay();
+          if (cell.setTextAndColor("", 0)) this.setNeedsDisplay();
         });
       });
     }
