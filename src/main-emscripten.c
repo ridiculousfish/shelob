@@ -15,6 +15,7 @@
  */
 
 #include "angband.h"
+#include "cmds.h"
 #include "files.h"
 #include "init.h"
 
@@ -133,6 +134,30 @@ static errr Term_pict_emscripten(int x, int y, int n, const byte *ap,
 	return 0;
 }
 
+/*
+ * Check to see if requested graphics modes have changed.
+ */
+static void check_graphics_changes()
+{
+	int current = current_graphics_mode ? current_graphics_mode->grafID : GRAPHICS_NONE;
+	int requested = EM_ASM_INT({ return ANGBAND.desiredGraphicsMode; });
+	if (current != requested)
+	{
+        graphics_mode *new_mode = NULL;
+		if (requested != GRAPHICS_NONE)
+		{
+			new_mode = get_graphics_mode(requested);
+		}
+        use_graphics = (new_mode != NULL);
+        use_transparency = (new_mode != NULL);
+        ANGBAND_GRAF = (new_mode ? new_mode->pref : NULL);
+        current_graphics_mode = new_mode;
+
+		/* Hack -- Force redraw */
+		reset_visuals(TRUE);
+        do_cmd_redraw();
+	}
+}
 
 /*
  * "Move" the "hardware" cursor.
@@ -152,15 +177,6 @@ static errr Term_wipe_emscripten(int x, int y, int n) {
 	EM_ASM({
 		ANGBAND.wipeCells($0, $1, $2);
 	}, y, x, n);
-	return 0;
-}
-
-/*
- * React to changes
- */
-static errr Term_xtra_emscripten_react(void) {
-	// This is an opportunity to react to settings from JS, e.g. switching to graphics mode.
-	printf("React!\n");
 	return 0;
 }
 
@@ -194,6 +210,13 @@ static int Term_xtra_emscripten_event(int wait)
 	int ch = EM_ASM_INT({ return ANGBAND.eventKeyCode(); });
 	int mods = EM_ASM_INT({ return ANGBAND.eventModifiers(); });
 	EM_ASM({ ANGBAND.popEvent(); });
+
+	// A negative key code indicates a "wake up" event, where we react to some external change.
+	if (ch < 0)
+	{
+		check_graphics_changes();
+		return 0;
+	}
 
 	// Apply the MODS_INCLUDE_CONTROL logic, but in reverse.
 	// This is because the web does not encode ctrl in key event character key codes.
@@ -257,7 +280,6 @@ static errr Term_xtra_emscripten(int n, int v) {
 
 		/* React to events */
 		case TERM_XTRA_REACT:
-			Term_xtra_emscripten_react();
 			return 0;
 	}
 
@@ -436,12 +458,6 @@ int main(int argc, char *argv[])
 
 	/* Set up the command hook */
 	cmd_get_hook = default_get_cmd;
-
-	use_graphics = TRUE;
-	use_transparency = TRUE;
-	graphics_mode *mode = get_graphics_mode(5);
-	current_graphics_mode = mode;
-	ANGBAND_GRAF = mode->pref;
 
 	/* Set up the display handlers and things. */
 	init_display();

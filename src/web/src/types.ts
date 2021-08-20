@@ -76,6 +76,11 @@ namespace angband {
     value: boolean,
   }
 
+  export interface SET_GRAPHICS_MSG {
+    name: "SET_GRAPHICS",
+    mode: number,
+  }
+
   // Messages sent from Render to ThreadWorker.
-  export type WorkerEvent = KEY_EVENT_MSG | SET_TURBO_MSG;
+  export type WorkerEvent = KEY_EVENT_MSG | SET_TURBO_MSG | SET_GRAPHICS_MSG;
 }

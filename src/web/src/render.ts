@@ -573,6 +573,14 @@ namespace angband {
       });
     }
 
+    // Set graphics type. 0 means no graphics.
+    public setGraphics(mode: number) {
+      this.postMessage({
+        name: "SET_GRAPHICS",
+        mode,
+      });
+    }
+
 
     constructor(private grid: Grid, private status: Status, private printOutputElement: HTMLTextAreaElement) {
       this.grid.rebuildCells();

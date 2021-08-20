@@ -7,6 +7,13 @@ namespace angband {
     readonly modifiers: number;
   }
 
+  // A special "wake up" event which is ignored on the C side.
+  const WAKE_UP_EVENT: KeyEvent = {
+    key: "",
+    code: -1,
+    modifiers: 0,
+  };
+
   // A class which gets called from C source.
   export class ThreadWorker {
     // List of queued events.
@@ -20,6 +27,9 @@ namespace angband {
 
     // Enqueued render events, to be sent in flushDrawing().
     enqueuedRenderEvents: RenderEvent[] = [];
+
+    // Graphics mode, or 0 for ASCII.
+    public desiredGraphicsMode: number = 0;
 
     // Whee!
     public turbo: boolean = false;
@@ -48,19 +58,31 @@ namespace angband {
       this.postMessage(msg);
     }
 
-    // Called when we receive an event.
-    gotEvent(evt: KEY_EVENT_MSG) {
-      let keyevt: KeyEvent = {
-        key: evt.key,
-        code: evt.code,
-        modifiers: evt.modifiers,
-      };
-      this.eventQueue.push(keyevt);
+    // Post a key event to our queue.
+    postKeyEvent(evt: KeyEvent) {
+      this.eventQueue.push(evt);
       let cb = this.eventPromiseCallback;
       this.eventPromise = new Promise((resolve) => {
         this.eventPromiseCallback = resolve;
       });
       cb(this.hasEvent());
+    }
+
+    // Called when we receive an event.
+    gotEvent(evt: KEY_EVENT_MSG) {
+      this.postKeyEvent(<KeyEvent>{
+        key: evt.key,
+        code: evt.code,
+        modifiers: evt.modifiers,
+      });
+    }
+
+    // Update the desired graphics mode.
+    setGraphicsMode(mode: number) {
+      if (mode !== this.desiredGraphicsMode) {
+        this.desiredGraphicsMode = mode;
+        this.postKeyEvent(WAKE_UP_EVENT);
+      }
     }
 
     // Incoming message handler.
@@ -71,9 +93,13 @@ namespace angband {
           this.gotEvent(evt as KEY_EVENT_MSG);
           break;
         case 'SET_TURBO':
-          this.turbo = (msg.data as SET_TURBO_MSG).value;
+          this.turbo = (evt as SET_TURBO_MSG).value;
+          break;
+        case 'SET_GRAPHICS':
+          this.setGraphicsMode((evt as SET_GRAPHICS_MSG).mode);
+          break;
         default:
-          this.reportError("Unknown event name: " + evt.name);
+          this.reportError("Unknown event: " + JSON.stringify(evt));
           break;
       }
     }

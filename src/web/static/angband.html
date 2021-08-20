@@ -13,12 +13,22 @@
     onClick='SETTINGS.setControlsShown(true)'>&#x2699;</button>
   <div id='controls' onMouseLeave='SETTINGS.setControlsShown(false)' hidden="true">
     <select name="font" id="font-select" onChange="SETTINGS.setFont(this.value)"></select>
-    <br />
+    <div class="spacer"></div>
     <input id="bold" type="checkbox" onClick='SETTINGS.setBold(this.checked)'>
     <label for="bold">Bold</label>
-    <br />
+    <div class="spacer"></div>
     <input id="turbo" type="checkbox" onClick='ANGBAND_UI.setTurbo(this.checked)'>
-    <label for="turbo">Turbo</label>
+    <label for="turbo">Turbo! &#x1F4A8;</label>
+    <div class="spacer"></div>
+    <label for="graphics-select">Graphics</label><br />
+    <select name="graphics" id="graphics-select" onChange="ANGBAND_UI.setGraphics(this.value)">
+      <option value="0">good old @</option>
+      <option value="1">original (8x8)</option>
+      <option value="2">adam (16x16)</option>
+      <option value="3">david (32x32)</option>
+      <option value="4">nomad (16x16)</option>
+      <option value="5">shockbolt &#x26A1; (64x64)</option>
+    </select>
   </div>
 
   <div id="angband-progress-overlay">

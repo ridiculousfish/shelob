@@ -83,10 +83,15 @@ body {
 	right: 15px;
 	background-color: #111;
 	padding: 20px;
-	line-height: 2.3em;
 	z-index: 100;
 	font-size: large;
 	transition: visibility 0s linear 300ms;
+	min-height: 100%;
+	line-height: 1.7em;
+}
+
+#controls .spacer {
+	min-height: 1.5em;
 }
 
 #controls input {
@@ -98,6 +103,15 @@ body {
 	margin-right: 8px;
 	position: relative;
 	bottom: 3px;
+}
+
+#controls label {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 
 #output {
