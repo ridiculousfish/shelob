@@ -72,11 +72,11 @@ STATIC := $(STAGE_DIR)/static
 install: staging
 	mkdir -p $(BUILT_DIR)/
 	rm -Rf $(BUILT_DIR)/*
-	cp web/static/angband.html $(BUILT_DIR)/
+	cp web/static/index.html $(BUILT_DIR)/
 
 	mkdir -p $(BUILT_DIR)/assets/
 	cp $(ASSET_DATA) $(WASM) $(JS_STAGED) $(JS_GEN) $(BUILT_DIR)/assets/
-	cp $(filter-out */angband.html, $(STATIC_FILEPATHS)) $(BUILT_DIR)/assets/
+	cp $(filter-out */index.html, $(STATIC_FILEPATHS)) $(BUILT_DIR)/assets/
 	cp -r $(STAGE_DIR)/graf $(BUILT_DIR)/assets/
 	@echo "Built $(BUILT_DIR)/"
 

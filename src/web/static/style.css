@@ -121,7 +121,7 @@ body {
 #controls .footer {
 	position: absolute;
 	bottom: 50px;
-	right: 0px;
+	left: 10px;
 }
 
 .shoutout {
@@ -134,7 +134,7 @@ body {
 }
 
 .shoutout .email, .shoutout .email:link, .shoutout .email:visited {
-	font-size: 18pt;
+	font-size: 24pt;
 	color: #CCC;
 	text-decoration: none;
 }
