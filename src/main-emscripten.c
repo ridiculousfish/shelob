@@ -47,29 +47,6 @@ extern bool borg_cheat_death;
 static bool needs_start_borg_event = FALSE;
 
 /*
- * A hook for "quit()".
- *
- * Close down, then fall back into "quit()".
- */
-static void quit_hook(const char *s)
-{
-	int j;
-
-	/* Unused parameter */
-	(void)s;
-
-	/* Scan windows */
-	for (j = ANGBAND_TERM_MAX - 1; j >= 0; j--)
-	{
-		/* Unused */
-		if (!angband_term[j]) continue;
-
-		/* Nuke it */
-		term_nuke(angband_term[j]);
-	}
-}
-
-/*
  * Information about a term
  */
 typedef struct term_data {
@@ -207,6 +184,10 @@ static errr Term_wipe_emscripten(int x, int y, int n) {
 	}, y, x, n);
 	return 0;
 }
+
+EM_JS(void, emscripten_quit_with_great_force, (), {
+	ANGBAND.quitWithGreatForce();
+})
 
 /*
  * Helper to sync after file operations.
@@ -472,10 +453,10 @@ int main(int argc, char *argv[])
 	argv0 = argv[0];
 
 	/* Do some JS init now that emscripten is alive. */
-	EM_ASM({ANGBAND. initialize(); });
+	EM_ASM({ ANGBAND.initializeFilesystem(); });
 
-	/* Install "quit" hook (this doesn't actually work) */
-	quit_aux = quit_hook;
+	/* We quit very violently. */
+	quit_aux = emscripten_quit_with_great_force;
 
 	/* We need to sync. */
 	file_sync_hook = emscripten_file_sync;

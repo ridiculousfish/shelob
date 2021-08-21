@@ -522,6 +522,11 @@ namespace angband {
           });
           break;
 
+        case 'RESTART':
+          /* Our worker has embarked upon a journey to the halls of Mandos. */
+          this.worker = this.summonWorkerFromPureNonexistence();
+          break;
+
         case 'PRINT':
           this.printOutput(msg as PRINT_MSG);
           break;
@@ -588,10 +593,16 @@ namespace angband {
       });
     }
 
+    summonWorkerFromPureNonexistence(): Worker {
+      /* We serve the Secret Fire, the Flame Imperishable. */
+      let worker = new Worker('assets/worker.js');
+      worker.onmessage = this.onMessage.bind(this);
+      return worker;
+    }
+
     constructor(private grid: Grid, private status: Status, private printOutputElement: HTMLTextAreaElement) {
       this.grid.rebuildCells();
-      this.worker = new Worker('assets/worker.js');
-      this.worker.onmessage = this.onMessage.bind(this);
+      this.worker = this.summonWorkerFromPureNonexistence();
     }
   }
 }

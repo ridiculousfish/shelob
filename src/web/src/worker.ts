@@ -1,6 +1,9 @@
 /// <reference path='./types.d.ts' />
 /// <reference path='./emscripten.d.ts' />
 
+/// Emscripten gives us this.
+declare function callMain(args?: string[]): void;
+
 namespace angband {
   interface KeyEvent {
     readonly key: string;
@@ -36,6 +39,9 @@ namespace angband {
     // Graphics mode, or 0 for ASCII.
     public desiredGraphicsMode: number = 0;
 
+    // Whether FS initialization has been performed.
+    fsInitialized: boolean = false;
+
     // If set, activate the borg (and clear this flag) on next check.
     activateBorg: boolean = false;
 
@@ -58,7 +64,7 @@ namespace angband {
     }
 
     // Post an error message to our renderer.
-    reportError(text: string): void {
+    public reportError(text: string): void {
       const msg: ERROR_MSG = {
         name: "ERROR",
         text,
@@ -157,20 +163,12 @@ namespace angband {
       };
     }
 
-    // Entry point.
-    public run() {
-      try {
-        importScripts('angband-gen.js');
-      } catch (error) {
-        this.reportError(error.message);
-      }
-    }
-
-
     /** The following functions are called from emscripten **/
 
     // Called from C to perform any initial setup.
-    public initialize() {
+    public initializeFilesystem() {
+      if (this.fsInitialized) return;
+      this.fsInitialized = true;
       /* Mount our writable filesystem. Do this here instead in loader.ts to satisfy TypeScript, which doesn't know about FS. */
       FS.mkdir("/lib/save");
       FS.mount(IDBFS, {}, "/lib/save");
@@ -198,6 +196,17 @@ namespace angband {
           }, 0);
         }
       });
+    }
+
+    // Called when quitting from C.
+    // Emscripten is salty about calling main again.
+    // We just drop our entire WebWorker and reincarnate.
+    public quitWithGreatForce() {
+      const msg: RESTART_MSG = {
+        name: "RESTART",
+      };
+      this.postMessage(msg);
+      this.worker.terminate();
     }
 
     // Set a cell at (row, col) to the given character code, with the given color.
@@ -327,4 +336,8 @@ Module['monitorRunDependencies'] = ANGBAND.getModuleDependencyMonitor();
 Module['print'] = ANGBAND.modulePrint.bind(ANGBAND);
 Module['printErr'] = ANGBAND.modulePrintErr.bind(ANGBAND);
 
-ANGBAND.run();
+try {
+  importScripts('angband-gen.js');
+} catch (error) {
+  ANGBAND.reportError(error.message);
+}
