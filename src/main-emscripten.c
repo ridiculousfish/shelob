@@ -464,14 +464,8 @@ int main(int argc, char *argv[])
 	/* Save the "program name" XXX XXX XXX */
 	argv0 = argv[0];
 
-	/* Mount our writable filesystem. Do this here instead in loader.ts to satisfy TypeScript, which doesn't know about FS. */
-	EM_ASM({
-		FS.mkdir("/lib/save");
-		FS.mount(IDBFS, {}, "/lib/save");
-		FS.syncfs(true /* populate */, function (err) {
-            if (err) console.error(err); // TODO: something better.
-        });
-	});
+	/* Do some JS init now that emscripten is alive. */
+	EM_ASM({ANGBAND. initialize(); });
 
 	/* Install "quit" hook (this doesn't actually work) */
 	quit_aux = quit_hook;

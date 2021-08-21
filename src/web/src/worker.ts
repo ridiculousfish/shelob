@@ -1,4 +1,5 @@
 /// <reference path='./types.d.ts' />
+/// <reference path='./emscripten.d.ts' />
 
 namespace angband {
   interface KeyEvent {
@@ -164,6 +165,16 @@ namespace angband {
 
     /** The following functions are called from emscripten **/
 
+    // Called from C to perform any initial setup.
+    public initialize() {
+      /* Mount our writable filesystem. Do this here instead in loader.ts to satisfy TypeScript, which doesn't know about FS. */
+      FS.mkdir("/lib/save");
+      FS.mount(IDBFS, {}, "/lib/save");
+      FS.syncfs(true /* populate */, function (err) {
+        if (err) ANGBAND.reportError(JSON.stringify(err));
+      });
+    }
+
     // Set a cell at (row, col) to the given character code, with the given color.
     public setCell(row: number, col: number, charCode: number, rgb: number) {
       const msg: SET_CELL_MSG = {
@@ -278,6 +289,7 @@ namespace angband {
     }
   }
 }
+
 var ANGBAND: angband.ThreadWorker = new angband.ThreadWorker(self as unknown as Worker);
 
 // JS has a global worker onmessage hook.
