@@ -5,6 +5,9 @@
 EM_INCLUDE_PATH = ${EMSDK}/upstream/emscripten/system/include/
 
 # List of functions to not asyncify.
+# This is extremely ad-hoc. However not asyncifying aggressively has some advantages:
+#  - reduces compiled wasm size
+#  - prevents weird stack overflow errors in Safari
 NO_ASYNCIFY_FUNCS = quit,quit_fmt,borg_sort_aux,vformat,sscanf,borg_notice,borg_notice_aux1,Term_fresh,Term_fresh_row_pict,Term_fresh_row_text,Term_fresh_row_both,Term_mbstowcs,Term_activate
 
 # Basic compiler stuff
@@ -18,8 +21,6 @@ CFLAGS = -Os -g $(WARNINGS) -DWASM=1
 LDFLAGS = -s ENVIRONMENT=worker -lidbfs.js -s ASYNCIFY -s ASYNCIFY_REMOVE="$(NO_ASYNCIFY_FUNCS)" # -s ASYNCIFY_ADVISE=1
 INCLUDES = -I.
 LIBS =
-
-#### Things you probably shouldn't change, unless there is a problem ####
 
 # Import user prefs
 # If you don't want to edit this file, put your module redefinitions
@@ -129,54 +130,3 @@ clean:
 	-rm -f $(OBJS) $(EXE)
 	-rm -Rf $(STAGE_DIR) $(BUILT_DIR)
 	-rm -f ../lib/data/*.raw
-
-# make a distribution
-DIRS = lib/apex lib/bone lib/data lib/edit lib/file lib/help lib/info \
-       lib/pref lib/save lib/user lib/xtra/sound lib/xtra/graf lib/xtra/font
-
-TMPDIR = ./$(EXE)-$(VERSION)
-dist:
-	@-rm -rf $(TMPDIR)
-	@echo making directories...
-	@for i in $(DIRS) ; do mkdir -p $(TMPDIR)/$$i ; done
-	@echo copying files...
-	@cp ../lib/edit/*.txt $(TMPDIR)/lib/edit
-	@cp ../lib/file/*.txt $(TMPDIR)/lib/file
-	@cp ../lib/help/*.txt ../lib/help/*.hlp $(TMPDIR)/lib/help
-	@cp ../lib/pref/*.prf $(TMPDIR)/lib/pref
-	@cp ../lib/xtra/font/*.txt $(TMPDIR)/lib/xtra/font
-	@echo attempting to install sound and graphics
-	@-cp ../lib/xtra/sound/*.wav $(TMPDIR)/lib/xtra/sound
-	@-cp ../lib/xtra/graf/*.bmp $(TMPDIR)/lib/xtra/graf
-	@cp ../changes.txt ../readme.txt $(TMPDIR)
-	@cp $(EXE) $(TMPDIR)
-	tar czf ../$(EXE)-$(VERSION).tar.gz $(TMPDIR)
-	rm -rf $(TMPDIR)
-
-
-#  Verify module arguments
-args:
-	@echo CFLAGS = $(CFLAGS)
-	@echo LDFLAGS = $(LDFLAGS)
-	@echo LIBS = $(LIBS)
-
-
-# Generate dependencies automatically
-depend:
-	makedepend -D__MAKEDEPEND__ $(SRCS)
-
-
-# Some file dependencies
-%.o: %.c
-	@printf "%10s %-20s\n" CC $<
-	$(CC) $(CFLAGS) -o $@ -c $<
-
-# X11 dependencies
-main-x11.o: $(HEADERS) main.h
-
-# Basic dependencies for main-xxx.c, main.c
-$(MAINOBJS) : main.h $(HEADERS)
-
-# fake Dependency
-doc/index.html: $(HEADERS)
-	doxygen doc/doxygen.conf
