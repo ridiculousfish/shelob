@@ -51,14 +51,22 @@
 # define my_mkdir(path, perms) FALSE
 #endif
 
+void (*file_sync_hook)() = NULL;
+
 /*
  * Player info
  */
 int player_uid;
 int player_egid;
 
-
-
+/*
+ * Helper to call the sync hook, if set. Returns its argument for convenience.
+ */
+int call_sync(int arg)
+{
+	if (file_sync_hook) file_sync_hook();
+	return arg;
+}
 
 /*
  * Drop permissions
@@ -279,7 +287,7 @@ bool file_delete(const char *fname)
 	/* Get the system-specific paths */
 	path_parse(buf, sizeof(buf), fname);
 
-	return (remove(buf) == 0);
+	return (call_sync(remove(buf)) == 0);
 }
 
 /*
@@ -294,7 +302,7 @@ bool file_move(const char *fname, const char *newname)
 	path_parse(buf, sizeof(buf), fname);
 	path_parse(aux, sizeof(aux), newname);
 
-	return (rename(buf, aux) == 0);
+	return (call_sync(rename(buf, aux)) == 0);
 }
 
 
@@ -432,6 +440,8 @@ bool file_close(ang_file *f)
 
 	FREE(f->fname);
 	FREE(f);
+
+	call_sync(0);
 
 	return TRUE;
 }

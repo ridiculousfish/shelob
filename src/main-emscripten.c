@@ -209,6 +209,13 @@ static errr Term_wipe_emscripten(int x, int y, int n) {
 }
 
 /*
+ * Helper to sync after file operations.
+ */
+EM_JS(void, emscripten_file_sync, (), {
+	ANGBAND.fsync();
+});
+
+/*
  * Wait for an event, optionally blocking.
  */
 EM_ASYNC_JS(int, emscripten_gather_event, (int wait), {
@@ -469,6 +476,9 @@ int main(int argc, char *argv[])
 
 	/* Install "quit" hook (this doesn't actually work) */
 	quit_aux = quit_hook;
+
+	/* We need to sync. */
+	file_sync_hook = emscripten_file_sync;
 
 	ANGBAND_SYS = "emscripten";
 

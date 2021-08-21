@@ -29,6 +29,10 @@ namespace angband {
     // Enqueued render events, to be sent in flushDrawing().
     enqueuedRenderEvents: RenderEvent[] = [];
 
+    // Emscripten gets salty if we have multiple fsyncs going at once.
+    fsyncRequested: boolean = false;
+    fsyncInFlight: boolean = false;
+
     // Graphics mode, or 0 for ASCII.
     public desiredGraphicsMode: number = 0;
 
@@ -170,8 +174,29 @@ namespace angband {
       /* Mount our writable filesystem. Do this here instead in loader.ts to satisfy TypeScript, which doesn't know about FS. */
       FS.mkdir("/lib/save");
       FS.mount(IDBFS, {}, "/lib/save");
-      FS.syncfs(true /* populate */, function (err) {
+      this.fsync(true /* populate */);
+    }
+
+    // Called to trigger an syncfs().
+    public fsync(populate: boolean | undefined) {
+      if (this.fsyncInFlight) {
+        this.fsyncRequested = true;
+        return;
+      }
+
+      // Collapse undefined to false.
+      this.fsyncRequested = false;
+      this.fsyncInFlight = true;
+      FS.syncfs(populate || false, (err) => {
         if (err) ANGBAND.reportError(JSON.stringify(err));
+
+        // fsync is complete. Perhaps run another one.
+        this.fsyncInFlight = false;
+        if (this.fsyncRequested) {
+          setTimeout(() => {
+            if (this.fsyncRequested && !this.fsyncInFlight) this.fsync(false);
+          }, 0);
+        }
       });
     }
 
