@@ -110,9 +110,10 @@ $(ASSET_DIR): $(wildcard ../lib/**/*) | $(STAGE_DIR)
 	@cp ../lib/help/*.txt ../lib/help/*.hlp $@/lib/help
 	@cp ../lib/pref/*.prf $@/lib/pref
 	@ # Do not need fonts or sounds yet.
+	@ # Graphics are handled in HTML - don't need them in assets!
 	@ #cp ../lib/xtra/font/*.fon $@/lib/xtra/font
 	@ #-cp ../lib/xtra/sound/*.wav $@/lib/xtra/sound
-	@-cp ../lib/xtra/graf/*.png $@/lib/xtra/graf
+	@ # -cp ../lib/xtra/graf/*.png $@/lib/xtra/graf
 	@-cp ../lib/xtra/graf/*.txt $@/lib/xtra/graf
 	@cp ../changes.txt ../readme.txt $@
 
