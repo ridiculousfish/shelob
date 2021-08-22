@@ -1,0 +1,33 @@
+name: Build
+on:
+  pull_request:
+    branches:
+      - "v3.4.1-emscripten"
+  push:
+    branches:
+      - "v3.4.1-emscripten"
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mymindstorm/setup-emsdk@v10
+      - name: Verify emcc
+        run: emcc -v
+      - uses: actions/checkout@v2
+      - name: Install deps
+        run: |
+          npm install -g typescript
+      - uses: actions/checkout@v2
+      - name: Build
+        run: |
+          make -C src -f Makefile.emscripten install -j 16
+
+      - name: Deploy
+        if: ${{ github.event_name == 'push' }}
+        uses: JamesIves/github-pages-deploy-action@4.1.4
+        with:
+          branch: gh-pages
+          folder: src/built
+
+      

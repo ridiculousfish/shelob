@@ -1,6 +1,8 @@
 ## Shelob: Angband on the Web
 
-This is Angband 3.4.1 running on the web, in your browser.
+[![Build Actions Status](https://github.com/ridiculousfish/shelob/workflows/Build/badge.svg)](https://github.com/ridiculousfish/shelob/actions)
+
+This is Angband 3.4.1 running on the web, in your browser. [Play it now!](https://ang.band/)
 
 ## Features
 
