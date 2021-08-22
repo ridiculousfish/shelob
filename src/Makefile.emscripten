@@ -15,8 +15,9 @@ CC = emcc
 WARNINGS = -W -Wall -Wextra -Wold-style-definition -Wdeclaration-after-statement -Wmissing-declarations \
 		  -Wredundant-decls -Wpointer-arith -Wcast-align -Wwrite-strings -Winline -Wformat-security \
 		  -Winit-self -Wmissing-include-dirs -Wundef -Wmissing-format-attribute -Wnested-externs \
-		  -Wunreachable-code -Wno-unused-parameter -Wno-missing-field-initializers \
-		  -Wno-incompatible-pointer-types-discards-qualifiers
+		  -Wunreachable-code \
+		  -Wno-unused-parameter -Wno-missing-field-initializers -Wno-incompatible-pointer-types-discards-qualifiers \
+		  -Wno-misleading-indentation -Wno-unreachable-code
 CFLAGS = -Os -g $(WARNINGS) -DWASM=1
 LDFLAGS = -s ENVIRONMENT=worker -lidbfs.js -s ASYNCIFY -s ASYNCIFY_REMOVE="$(NO_ASYNCIFY_FUNCS)" # -s ASYNCIFY_ADVISE=1
 INCLUDES = -I.
