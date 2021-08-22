@@ -53,14 +53,14 @@ include Makefile.inc
 # Targets
 #
 
-STAGE_DIR := ./stage
-BUILT_DIR := ./built
+STAGE_DIR := stage
+BUILT_DIR := built
 
 JS_FILENAMES := render.js settings.js worker.js
 TSC_PATHS := $(JS_FILENAMES:%.js=web/src/%.ts) web/src/types.d.ts web/src/font-type.d.ts
 JS_STAGED := $(JS_FILENAMES:%.js=$(STAGE_DIR)/%.js)
 
-STATIC_FILEPATHS = $(wildcard ./web/static/*)
+STATIC_FILEPATHS = $(wildcard web/static/*)
 
 JS_GEN := $(STAGE_DIR)/angband-gen.js
 WASM := $(JS_GEN:.js=.wasm)
@@ -84,8 +84,11 @@ install: staging
 $(STAGE_DIR):
 	mkdir -p $(STAGE_DIR)
 
-# Note: this requires GNU Make 4.3 or later.
-$(JS_STAGED) &: $(TSC_PATHS) web/tsconfig.json
+# We need a single rule that 'make' knows produces multiple outputs.
+# make 4.3 has the &: syntax but we need the wisdom of the ancients.
+# The idea here is to make a rule for e.g. 'file1%js file2%js'
+# make will execute tsc once, not one per target.
+$(subst .,%,$(JS_STAGED)) : $(TSC_PATHS) web/tsconfig.json
 	tsc --project ./web --outDir $(STAGE_DIR)
 
 $(STAGE_DIR)/%.js: web/built/%.js | $(STAGE_DIR)
@@ -118,8 +121,9 @@ $(ASSET_DIR): $(wildcard ../lib/**/*) | $(STAGE_DIR)
 	@-cp ../lib/xtra/graf/*.txt $@/lib/xtra/graf
 	@cp ../changes.txt ../readme.txt $@
 
-# Note: this requires GNU Make 4.3 or later.
-$(ASSET_DATA) $(WASM) $(JS_GEN) &: $(OBJS) $(ASSET_DIR)
+# A trick to invoke emcc once, not once per output file.
+# With GNU Make 4.3+ we could use the &: syntax.
+$(subst .,%,$(ASSET_DATA) $(WASM) $(JS_GEN)) : $(OBJS) $(ASSET_DIR)
 	@# The @ here makes the assets directory the root of the VFS.
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $(JS_GEN) --preload-file $(STAGE_DIR)/assets@/ $(OBJS) $(LIBS)
 

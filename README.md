@@ -25,11 +25,8 @@ This is Angband 3.4.1 running on the web, in your browser.
 
 Building on Linux is recommended. You will need:
 
-1. GNU Make version 4.3 or later
-2. Emscripten 2.0.27 or later
-3. Typescript (4.3.5 is known to work)
-
-Earlier versions of gmake and emscripten will NOT work.
+1. Emscripten 2.0.27 or later (earlier versions will NOT work).
+2. Typescript (4.3.5 is known to work)
 
 ## Quickstart
 
