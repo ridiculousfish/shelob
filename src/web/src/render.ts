@@ -566,6 +566,7 @@ namespace angband {
       // Print some text.
       let { text, stderr } = evt;
       this.printOutputElement.value += text + "\n";
+      this.printOutputElement.style.display = 'block';
       this.printOutputElement.scrollTop = this.printOutputElement.scrollHeight;
       (stderr ? console.error : console.log)(text);
     }
@@ -625,7 +626,7 @@ const ANGBAND_UI: angband.UI = (function () {
     getElem('angband-status-text'));
   window.onerror = status.globalReportError.bind(status);
 
-  let printOutput = getElem<HTMLTextAreaElement>('output');
+  let printOutput = getElem<HTMLTextAreaElement>('print-output');
 
   let ui = new angband.UI(grid, status, printOutput);
   document.addEventListener('keydown', ui.handleKeyEvent.bind(ui));

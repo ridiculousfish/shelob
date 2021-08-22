@@ -23,5 +23,6 @@ doc/manual/*.aux
 mk/buildsys.mk
 *~
 .DS_Store
+._.DS_Store
 .vscode
 
