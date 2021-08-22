@@ -80,9 +80,9 @@ body {
 #controls {
 	position: fixed;
 	top: 0px;
-	right: 15px;
+	right: 0px;
 	background-color: #111;
-	padding: 20px;
+	padding: 20px 50px 20px 20px;
 	z-index: 100;
 	font-size: large;
 	min-height: 100%;
