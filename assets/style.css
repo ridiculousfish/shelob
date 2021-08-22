@@ -1,0 +1,233 @@
+:root {
+	color-scheme: dark;
+}
+
+body {
+	font-family: Helvetica;
+	margin: 0;
+	padding: none;
+	width: 100%;
+	background-color: black;
+	color: #F5F5F5;
+}
+
+#progress-ring {
+	position: absolute;
+	overflow: visible;
+	width: 120px;
+	height: 120px;
+	transform: rotate(-90deg);
+}
+
+#progress-ring-circle {
+	transition: stroke-dashoffset 0.2s linear;
+	stroke-width: 6;
+	stroke: white;
+	fill: transparent;
+	/* Note: 402.12 is circumference of circle of radius 64. */
+	stroke-dashoffset: 402.12;
+	stroke-dasharray: 402.12 402.12;
+}
+
+#angband-loadings {
+	height: 120px;
+	opacity: .6;
+}
+
+#progress-logo {
+	width: 120px;
+	height: 120px;
+	position: absolute;
+	background-image: url("logo_circle.png");
+	background-repeat: no-repeat;
+	background-size: contain;
+}
+
+#angband-progress-overlay {
+	position: fixed;
+	left: 50px;
+	top: 10px;
+	z-index: 100;
+}
+
+#angband-status-text {
+	margin-top: 20px;
+	font-weight: bold;
+	color: rgb(120, 120, 120);
+	min-height: 1.25em;
+	line-height: 1.25;
+	margin-bottom: 25px;
+}
+
+.controls-toggle {
+	position: fixed;
+	top: 0px;
+	right: 15px;
+	font-size: 18pt;
+	background-color: #111;
+	color: #AAA;
+	border: none;
+	text-align: center;
+	border-bottom-right-radius: 15%;
+	border-bottom-left-radius: 15%;
+}
+
+.controls-toggle:hover {
+	background-color: #555;
+	color: white;
+}
+
+#controls {
+	position: fixed;
+	top: 0px;
+	right: 15px;
+	background-color: #111;
+	padding: 20px;
+	z-index: 100;
+	font-size: large;
+	min-height: 100%;
+	line-height: 1.7em;
+}
+
+#controls .spacer {
+	min-height: 1.5em;
+}
+
+#controls input {
+	vertical-align: middle;
+}
+
+#controls input[type=checkbox] {
+	transform: scale(1.8);
+	margin-right: 8px;
+	position: relative;
+	bottom: 3px;
+}
+
+#controls label {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+#controls .borg-button {
+	font-size: 12pt;
+	padding: 6px;
+}
+
+#controls .footer {
+	position: absolute;
+	bottom: 50px;
+	left: 10px;
+}
+
+.shoutout {
+	font-size: 11pt;
+	font-family: 'Menlo', 'Monaco', 'Courier', monospace;
+}
+
+.shoutout a:link, .shoutout a:visited {
+	color: #9cc2ff;
+}
+
+.shoutout .email, .shoutout .email:link, .shoutout .email:visited {
+	font-size: 24pt;
+	color: #CCC;
+	text-decoration: none;
+}
+
+#output {
+	width: 100%;
+	height: 200px;
+	margin: 0 auto;
+	margin-top: 10px;
+	border-left: 0px;
+	border-right: 0px;
+	padding-left: 0px;
+	padding-right: 0px;
+	display: block;
+	background-color: black;
+	color: white;
+	border: none;
+	font-family: 'Lucida Console', Monaco, monospace;
+	outline: none;
+}
+
+.angband-grid {
+	font-family: 'Menlo', 'Monaco', 'Courier', monospace;
+	table-layout: fixed;
+	width: 85%;
+	position: relative;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 100px;
+	padding: 20px;
+	/* border: 1px solid #333; */
+	white-space: nowrap;
+	/* suppress focus ring */
+	outline: none;
+	background-repeat: no-repeat;
+	border-spacing: 0;
+}
+
+.angband-grid tr {}
+
+.angband-grid td {
+	background-color: black;
+}
+
+.angband-grid tr, .angband-grid td {
+	border: none;
+	padding: 0;
+	border-spacing: 0;
+}
+
+.angband-cursor {
+	-webkit-box-shadow: inset 0px 0px 0px 1.5px rgba(255, 229, 97, 0.75);
+	box-shadow: inset 0px 0px 0px 1.5px rgba(255, 229, 97, 0.75);
+}
+
+/* Elements inside our angband grid. */
+
+.angband-grid td div {
+	width: 100%;
+	min-height: 100%;
+	color: white;
+	text-align: left;
+	font-size: 18pt;
+	text-align: center;
+	height: 1.2em;
+	border: none;
+	padding: 0;
+	border-spacing: 0;
+}
+
+/* CSS supporting the built-in Angband image sprite sheets. */
+
+.angband-sprites-1 {
+	background-image: url("graf/8x8.png");
+	background-size: 8300% 9900%;
+}
+
+.angband-sprites-2 {
+	background-image: url("graf/16x16.png");
+	background-size: 3200% 6000%;
+}
+
+.angband-sprites-3 {
+	background-image: url("graf/32x32.png");
+	background-size: 12800% 3000%;
+}
+
+.angband-sprites-4 {
+	background-image: url("graf/8x16.png");
+	background-size: 3200% 6000%;
+}
+
+.angband-sprites-5 {
+	background-image: url("graf/64x64.png");
+	background-size: 12800% 3200%;
+}
