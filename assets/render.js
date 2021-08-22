@@ -523,6 +523,7 @@ var angband;
             // Print some text.
             let { text, stderr } = evt;
             this.printOutputElement.value += text + "\n";
+            this.printOutputElement.style.display = 'block';
             this.printOutputElement.scrollTop = this.printOutputElement.scrollHeight;
             (stderr ? console.error : console.log)(text);
         }
@@ -570,7 +571,7 @@ const ANGBAND_UI = (function () {
     let grid = new angband.Grid(getElem('main-angband-grid'));
     let status = new angband.Status(getElem('angband-loadings'), getBaseElem('progress-ring-circle'), getElem('angband-status-text'));
     window.onerror = status.globalReportError.bind(status);
-    let printOutput = getElem('output');
+    let printOutput = getElem('print-output');
     let ui = new angband.UI(grid, status, printOutput);
     document.addEventListener('keydown', ui.handleKeyEvent.bind(ui));
     return ui;

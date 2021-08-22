@@ -9,36 +9,6 @@
 </head>
 
 <body>
-  <button class='controls-toggle' onClick='SETTINGS.setControlsShown(true)'>&#x21E6;</button>
-  <div id='controls'>
-    <button class='controls-toggle' onClick='SETTINGS.setControlsShown(false)'>&#x21E8;</button>
-    <div class="spacer"></div>
-    <select name="font" id="font-select" onChange="SETTINGS.setFont(this.value)"></select>
-    <div class="spacer"></div>
-    <input id="bold" type="checkbox" onClick='SETTINGS.setBold(this.checked)'>
-    <label for="bold">Bold</label>
-    <div class="spacer"></div>
-    <input id="turbo" type="checkbox" onClick='ANGBAND_UI.setTurbo(this.checked)'>
-    <label for="turbo">Turbo! &#x1F4A8;</label>
-    <div class="spacer"></div>
-    <label for="graphics-select">Graphics</label><br />
-    <select name="graphics" id="graphics-select" onChange='ANGBAND_UI.setGraphics(this.value)'>
-      <option value="0">good old @</option>
-      <option value="1">original (8x8)</option>
-      <option value="2">adam (16x16)</option>
-      <option value="3">david (32x32)</option>
-      <option value="4">nomad (16x16)</option>
-      <option value="5">shockbolt &#x26A1; (64x64)</option>
-    </select>
-    <div class="spacer"></div>
-    <button class="borg-button" onClick='ANGBAND_UI.unleashTheBorg();'>Unleash the Borg</button>
-    <div class="footer">
-      <span class="shoutout">by&nbsp;<a href="https://ridiculousfish.com">ridiculous_fish</a><br/>
-        <a href="https://github.com/ridiculousfish/shelob/"><img src="assets/git.svg" width="20" height="20" /></a>
-        <a class="email" href="mailto:angband@ridiculousfish.com">&#x2709;</a>
-    </div>
-  </div>
-
   <div id="angband-progress-overlay">
     <div id='angband-status-text'>Downloading...</div>
     <div id="angband-loadings">
@@ -49,10 +19,44 @@
     </div>
   </div>
 
-  <table id="main-angband-grid" class="angband-grid" tabindex="0"></table>
-  <textarea id="output" rows="4" readonly></textarea>
-  <script type="text/javascript" src="assets/render.js"></script>
-  <script type="text/javascript" src="assets/settings.js"></script>
+  <button class='controls-toggle' onClick='SETTINGS.setControlsShown(true)'>&#x21E6;</button>
+  <div id='top-container'>
+    <div>
+      <table id="main-angband-grid" class="angband-grid" tabindex="0"></table>
+      <textarea id="print-output" rows="4" readonly></textarea>
+    </div>
+    <div id='controls'>
+      <div class="spacer"></div>
+      <button class='controls-toggle' onClick='SETTINGS.setControlsShown(false)'>&#x21E8;</button>
+      <div class="spacer"></div>
+      <select name="font" id="font-select" onChange="SETTINGS.setFont(this.value)"></select>
+      <div class="spacer"></div>
+      <input id="bold" type="checkbox" onClick='SETTINGS.setBold(this.checked)'>
+      <label for="bold">Bold</label>
+      <div class="spacer"></div>
+      <input id="turbo" type="checkbox" onClick='ANGBAND_UI.setTurbo(this.checked)'>
+      <label for="turbo">Turbo! &#x1F4A8;</label>
+      <div class="spacer"></div>
+      <label for="graphics-select">Graphics</label><br />
+      <select name="graphics" id="graphics-select" onChange='ANGBAND_UI.setGraphics(this.value)'>
+        <option value="0">good old @</option>
+        <option value="1">original (8x8)</option>
+        <option value="2">adam (16x16)</option>
+        <option value="3">david (32x32)</option>
+        <option value="4">nomad (16x16)</option>
+        <option value="5">shockbolt &#x26A1; (64x64)</option>
+      </select>
+      <div class="spacer"></div>
+      <button class="borg-button" onClick='ANGBAND_UI.unleashTheBorg();'>Unleash the Borg</button>
+      <div class="footer">
+        <span class="shoutout">by <a href="https://ridiculousfish.com">ridiculous_fish</a><br />
+          <a href="https://github.com/ridiculousfish/shelob/"><img src="assets/git.svg" width="20" height="20" /></a>
+          <a class="email" href="mailto:angband@ridiculousfish.com">&#x2709;</a>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" defer src="assets/render.js"></script>
+  <script type="text/javascript" defer src="assets/settings.js"></script>
 </body>
 
 </html>
