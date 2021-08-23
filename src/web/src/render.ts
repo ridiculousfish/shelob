@@ -594,6 +594,15 @@ namespace angband {
       });
     }
 
+    sendEscape() {
+      this.postMessage({
+        name: "KEY_EVENT",
+        key: "\x1b",
+        code: 0x1b,
+        modifiers: 0,
+      });
+    }
+
     summonWorkerFromPureNonexistence(): Worker {
       /* We serve the Secret Fire, the Flame Imperishable. */
       let worker = new Worker('assets/worker.js');
@@ -602,6 +611,8 @@ namespace angband {
     }
 
     constructor(private grid: Grid, private status: Status, private printOutputElement: HTMLTextAreaElement) {
+      // Touch triggers escape, so that the borg may be cancelled.
+      this.grid.element.addEventListener('touchstart', this.sendEscape.bind(this));
       this.grid.rebuildCells();
       this.worker = this.summonWorkerFromPureNonexistence();
     }
