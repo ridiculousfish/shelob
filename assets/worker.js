@@ -44,6 +44,9 @@ var angband;
                     case 'ACTIVATE_BORG':
                         this.setActivateBorg(evt);
                         break;
+                    case 'GET_SAVEFILE_CONTENTS':
+                        this.getSavefileContents(evt);
+                        break;
                     default:
                         this.reportError("Unknown event: " + JSON.stringify(evt));
                         break;
@@ -95,6 +98,24 @@ var angband;
         setActivateBorg(_msg) {
             this.activateBorg = true;
             this.postKeyEvent(WAKE_UP_EVENT);
+        }
+        getSavefileContents(_msg) {
+            // We could go through C but it is easier to just use the FS API.
+            // Here we hard-code the Angband savefile name.
+            let contents;
+            try {
+                let data = FS.readFile("/lib/save/PLAYER");
+                contents = data.buffer.slice(data.byteOffset, data.byteLength + data.byteOffset);
+            }
+            catch (_err) {
+                // e.g. file not found
+                contents = undefined;
+            }
+            const msg = {
+                name: "GOT_SAVEFILE",
+                contents,
+            };
+            this.postMessage(msg);
         }
         // Report status in our Emscripten module.
         moduleSetStatus(text) {

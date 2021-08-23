@@ -491,6 +491,9 @@ var angband;
                     /* Our worker has embarked upon a journey to the halls of Mandos. */
                     this.worker = this.summonWorkerFromPureNonexistence();
                     break;
+                case 'GOT_SAVEFILE':
+                    this.gotSavefile(msg);
+                    break;
                 case 'PRINT':
                     this.printOutput(msg);
                     break;
@@ -548,6 +551,25 @@ var angband;
             this.postMessage({
                 name: "ACTIVATE_BORG",
             });
+        }
+        // Let the user get their savefile.
+        requestDownloadSavefile() {
+            this.postMessage({
+                name: "GET_SAVEFILE_CONTENTS",
+            });
+        }
+        // Called after we got the savefile contents, hopefully.
+        gotSavefile(msg) {
+            let contents = msg.contents;
+            if (contents === undefined) {
+                alert("Unable to get savefile. Trying using Control-S to save first.");
+                return;
+            }
+            let url = window.URL.createObjectURL(new Blob([contents], { type: 'application/octet-stream' }));
+            let hiddenLink = document.getElementById('hidden-download-link');
+            hiddenLink.href = url;
+            hiddenLink.click();
+            window.URL.revokeObjectURL(url);
         }
         sendEscape() {
             this.postMessage({

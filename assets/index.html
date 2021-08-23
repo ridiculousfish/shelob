@@ -28,17 +28,17 @@
       <textarea id="print-output" rows="4" readonly></textarea>
     </div>
     <div id='controls'>
-      <div class="spacer"></div>
+      <hr class="spacer" />
       <button class='controls-toggle' onClick='SETTINGS.setControlsShown(false)'>&#x21E8;</button>
-      <div class="spacer"></div>
+      <hr class="spacer" />
       <select name="font" id="font-select" onChange="SETTINGS.setFont(this.value)"></select>
-      <div class="spacer"></div>
+      <hr class="spacer" />
       <input id="bold" type="checkbox" onClick='SETTINGS.setBold(this.checked)'>
       <label for="bold">Bold</label>
-      <div class="spacer"></div>
+      <hr class="spacer" />
       <input id="turbo" type="checkbox" onClick='ANGBAND_UI.setTurbo(this.checked)'>
       <label for="turbo">Turbo! &#x1F4A8;</label>
-      <div class="spacer"></div>
+      <hr class="spacer" />
       <label for="graphics-select">Graphics</label><br />
       <select name="graphics" id="graphics-select" onChange='ANGBAND_UI.setGraphics(this.value)'>
         <option value="0">good old @</option>
@@ -48,8 +48,13 @@
         <option value="4">nomad (16x16)</option>
         <option value="5">shockbolt &#x26A1; (64x64)</option>
       </select>
-      <div class="spacer"></div>
+      <hr class="spacer" />
       <button class="borg-button" onClick='ANGBAND_UI.unleashTheBorg();'>Unleash the Borg</button>
+      <hr class="separator" />
+      <button class="download-savefile-button" onClick='ANGBAND_UI.requestDownloadSavefile();'>
+        Download savefile
+      </button>
+      <a id="hidden-download-link" href="" download="PLAYER"></a>
       <div class="footer">
         <span class="shoutout">by <a href="https://ridiculousfish.com">ridiculous_fish</a><br />
           <a href="https://github.com/ridiculousfish/shelob/"><img src="assets/git.svg" width="20" height="20" /></a>
