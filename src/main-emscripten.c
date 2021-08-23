@@ -218,19 +218,21 @@ EM_JS(int, emscripten_turbo, (), {
 });
 
 /*
- * Check for Events, return 1 if we process any.
+ * Check for Events, return true if we process any.
  */
-static int Term_xtra_emscripten_event(int wait)
+static bool Term_xtra_emscripten_event(int wait)
 {
 	if (needs_start_borg_event && !borg_active)
 	{
+		// Wait until it wants us to block.
+		if (! wait) return FALSE;
 		Term_keypress(KTRL('Z'), 0);
 		Term_keypress('z', 0);
-		return 0;
+		return TRUE;
 	}
 	needs_start_borg_event = FALSE;
 
-	if (! emscripten_gather_event(wait)) return 0;
+	if (! emscripten_gather_event(wait)) return FALSE;
 	int ch = EM_ASM_INT({ return ANGBAND.eventKeyCode(); });
 	int mods = EM_ASM_INT({ return ANGBAND.eventModifiers(); });
 	EM_ASM({ ANGBAND.popEvent(); });
@@ -240,7 +242,7 @@ static int Term_xtra_emscripten_event(int wait)
 	{
 		check_activate_borg();
 		check_graphics_changes();
-		return 0;
+		return TRUE;
 	}
 
 	// Apply the MODS_INCLUDE_CONTROL logic, but in reverse.
@@ -257,7 +259,7 @@ static int Term_xtra_emscripten_event(int wait)
 		}
 	}
 	Term_keypress(ch, mods);	
-	return 1;
+	return TRUE;
 }
 
 /*
@@ -291,11 +293,14 @@ static errr Term_xtra_emscripten(int n, int v) {
 
 		/* Process events */
 		case TERM_XTRA_EVENT:
-			return Term_xtra_emscripten_event(v);
+			(void)Term_xtra_emscripten_event(v);
+			return 0;
 
 		/* Flush events */
 		case TERM_XTRA_FLUSH:
-			while (Term_xtra_emscripten_event(FALSE)) continue;
+			while (Term_xtra_emscripten_event(FALSE)) {
+				continue;
+			}
 			return 0;
 
 		/* Delay */
