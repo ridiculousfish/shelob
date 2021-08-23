@@ -193,7 +193,7 @@ Module['FS_createPath']("/lib", "pref", true, true);
     }
   
    }
-   loadPackage({"files": [{"filename": "/changes.txt", "start": 0, "end": 6936}, {"filename": "/readme.txt", "start": 6936, "end": 7440}, {"filename": "/lib/file/dead.txt", "start": 7440, "end": 8926}, {"filename": "/lib/file/crown.txt", "start": 8926, "end": 9250}, {"filename": "/lib/file/news.txt", "start": 9250, "end": 10321}, {"filename": "/lib/xtra/graf/graphics.txt", "start": 10321, "end": 11773}, {"filename": "/lib/user/borg.txt", "start": 11773, "end": 70171}, {"filename": "/lib/edit/p_class.txt", "start": 70171, "end": 79858}, {"filename": "/lib/edit/p_race.txt", "start": 79858, "end": 82857}, {"filename": "/lib/edit/object.txt", "start": 82857, "end": 133969}, {"filename": "/lib/edit/monster_base.txt", "start": 133969, "end": 139690}, {"filename": "/lib/edit/store.txt", "start": 139690, "end": 142597}, {"filename": "/lib/edit/vault.txt", "start": 142597, "end": 182528}, {"filename": "/lib/edit/limits.txt", "start": 182528, "end": 182999}, {"filename": "/lib/edit/shop_own.txt", "start": 182999, "end": 184513}, {"filename": "/lib/edit/pit.txt", "start": 184513, "end": 188951}, {"filename": "/lib/edit/flavor.txt", "start": 188951, "end": 197300}, {"filename": "/lib/edit/pain.txt", "start": 197300, "end": 199518}, {"filename": "/lib/edit/p_hist.txt", "start": 199518, "end": 207008}, {"filename": "/lib/edit/artifact.txt", "start": 207008, "end": 262544}, {"filename": "/lib/edit/hints.txt", "start": 262544, "end": 268730}, {"filename": "/lib/edit/names.txt", "start": 268730, "end": 282687}, {"filename": "/lib/edit/spell.txt", "start": 282687, "end": 302753}, {"filename": "/lib/edit/terrain.txt", "start": 302753, "end": 310927}, {"filename": "/lib/edit/object_base.txt", "start": 310927, "end": 312225}, {"filename": "/lib/edit/monster.txt", "start": 312225, "end": 504355}, {"filename": "/lib/edit/ego_item.txt", "start": 504355, "end": 522874}, {"filename": "/lib/help/option.txt", "start": 522874, "end": 537283}, {"filename": "/lib/help/index.txt", "start": 537283, "end": 537781}, {"filename": "/lib/help/attack.txt", "start": 537781, "end": 571603}, {"filename": "/lib/help/general.txt", "start": 571603, "end": 589632}, {"filename": "/lib/help/version.txt", "start": 589632, "end": 612766}, {"filename": "/lib/help/help.hlp", "start": 612766, "end": 614094}, {"filename": "/lib/help/command.txt", "start": 614094, "end": 650820}, {"filename": "/lib/help/birth.txt", "start": 650820, "end": 681487}, {"filename": "/lib/help/debug.txt", "start": 681487, "end": 685528}, {"filename": "/lib/help/playing.txt", "start": 685528, "end": 702231}, {"filename": "/lib/help/dungeon.txt", "start": 702231, "end": 726985}, {"filename": "/lib/help/readme.txt", "start": 726985, "end": 732434}, {"filename": "/lib/help/customize.txt", "start": 732434, "end": 744880}, {"filename": "/lib/pref/font-mac.prf", "start": 744880, "end": 745302}, {"filename": "/lib/pref/xtra-xxx.prf", "start": 745302, "end": 749627}, {"filename": "/lib/pref/flvr-dvg.prf", "start": 749627, "end": 759633}, {"filename": "/lib/pref/xtra-nmd.prf", "start": 759633, "end": 764157}, {"filename": "/lib/pref/message.prf", "start": 764157, "end": 769106}, {"filename": "/lib/pref/user.prf", "start": 769106, "end": 770121}, {"filename": "/lib/pref/graf-xxx.prf", "start": 770121, "end": 806693}, {"filename": "/lib/pref/font-gcu.prf", "start": 806693, "end": 807240}, {"filename": "/lib/pref/graf.prf", "start": 807240, "end": 807868}, {"filename": "/lib/pref/font-win.prf", "start": 807868, "end": 808667}, {"filename": "/lib/pref/graf-shb.prf", "start": 808667, "end": 843773}, {"filename": "/lib/pref/flvr-xxx.prf", "start": 843773, "end": 853779}, {"filename": "/lib/pref/xtra-new.prf", "start": 853779, "end": 858200}, {"filename": "/lib/pref/graf-new.prf", "start": 858200, "end": 894449}, {"filename": "/lib/pref/flvr-shb.prf", "start": 894449, "end": 905118}, {"filename": "/lib/pref/graf-nmd.prf", "start": 905118, "end": 941805}, {"filename": "/lib/pref/xtra-dvg.prf", "start": 941805, "end": 946193}, {"filename": "/lib/pref/pref.prf", "start": 946193, "end": 950367}, {"filename": "/lib/pref/flvr-new.prf", "start": 950367, "end": 960373}, {"filename": "/lib/pref/font-x11.prf", "start": 960373, "end": 960985}, {"filename": "/lib/pref/font.prf", "start": 960985, "end": 961677}, {"filename": "/lib/pref/flvr-nmd.prf", "start": 961677, "end": 973050}, {"filename": "/lib/pref/font-sdl.prf", "start": 973050, "end": 973849}, {"filename": "/lib/pref/font-xxx.prf", "start": 973849, "end": 974586}, {"filename": "/lib/pref/graf-dvg.prf", "start": 974586, "end": 1010839}, {"filename": "/lib/pref/xtra-shb.prf", "start": 1010839, "end": 1021330}], "remote_package_size": 1021330, "package_uuid": "7bf09222-12df-4b83-aacf-0bf659406a23"});
+   loadPackage({"files": [{"filename": "/changes.txt", "start": 0, "end": 6936}, {"filename": "/readme.txt", "start": 6936, "end": 7440}, {"filename": "/lib/file/dead.txt", "start": 7440, "end": 8926}, {"filename": "/lib/file/crown.txt", "start": 8926, "end": 9250}, {"filename": "/lib/file/news.txt", "start": 9250, "end": 10321}, {"filename": "/lib/xtra/graf/graphics.txt", "start": 10321, "end": 11773}, {"filename": "/lib/user/borg.txt", "start": 11773, "end": 70171}, {"filename": "/lib/edit/p_class.txt", "start": 70171, "end": 79858}, {"filename": "/lib/edit/p_race.txt", "start": 79858, "end": 82857}, {"filename": "/lib/edit/object.txt", "start": 82857, "end": 133969}, {"filename": "/lib/edit/monster_base.txt", "start": 133969, "end": 139690}, {"filename": "/lib/edit/store.txt", "start": 139690, "end": 142597}, {"filename": "/lib/edit/vault.txt", "start": 142597, "end": 182528}, {"filename": "/lib/edit/limits.txt", "start": 182528, "end": 182999}, {"filename": "/lib/edit/shop_own.txt", "start": 182999, "end": 184513}, {"filename": "/lib/edit/pit.txt", "start": 184513, "end": 188951}, {"filename": "/lib/edit/flavor.txt", "start": 188951, "end": 197300}, {"filename": "/lib/edit/pain.txt", "start": 197300, "end": 199518}, {"filename": "/lib/edit/p_hist.txt", "start": 199518, "end": 207008}, {"filename": "/lib/edit/artifact.txt", "start": 207008, "end": 262544}, {"filename": "/lib/edit/hints.txt", "start": 262544, "end": 268730}, {"filename": "/lib/edit/names.txt", "start": 268730, "end": 282687}, {"filename": "/lib/edit/spell.txt", "start": 282687, "end": 302753}, {"filename": "/lib/edit/terrain.txt", "start": 302753, "end": 310927}, {"filename": "/lib/edit/object_base.txt", "start": 310927, "end": 312225}, {"filename": "/lib/edit/monster.txt", "start": 312225, "end": 504355}, {"filename": "/lib/edit/ego_item.txt", "start": 504355, "end": 522874}, {"filename": "/lib/help/option.txt", "start": 522874, "end": 537283}, {"filename": "/lib/help/index.txt", "start": 537283, "end": 537781}, {"filename": "/lib/help/attack.txt", "start": 537781, "end": 571603}, {"filename": "/lib/help/general.txt", "start": 571603, "end": 589632}, {"filename": "/lib/help/version.txt", "start": 589632, "end": 612766}, {"filename": "/lib/help/help.hlp", "start": 612766, "end": 614094}, {"filename": "/lib/help/command.txt", "start": 614094, "end": 650820}, {"filename": "/lib/help/birth.txt", "start": 650820, "end": 681487}, {"filename": "/lib/help/debug.txt", "start": 681487, "end": 685528}, {"filename": "/lib/help/playing.txt", "start": 685528, "end": 702231}, {"filename": "/lib/help/dungeon.txt", "start": 702231, "end": 726985}, {"filename": "/lib/help/readme.txt", "start": 726985, "end": 732434}, {"filename": "/lib/help/customize.txt", "start": 732434, "end": 744880}, {"filename": "/lib/pref/font-mac.prf", "start": 744880, "end": 745302}, {"filename": "/lib/pref/xtra-xxx.prf", "start": 745302, "end": 749627}, {"filename": "/lib/pref/flvr-dvg.prf", "start": 749627, "end": 759633}, {"filename": "/lib/pref/xtra-nmd.prf", "start": 759633, "end": 764157}, {"filename": "/lib/pref/message.prf", "start": 764157, "end": 769106}, {"filename": "/lib/pref/user.prf", "start": 769106, "end": 770121}, {"filename": "/lib/pref/graf-xxx.prf", "start": 770121, "end": 806693}, {"filename": "/lib/pref/font-gcu.prf", "start": 806693, "end": 807240}, {"filename": "/lib/pref/graf.prf", "start": 807240, "end": 807868}, {"filename": "/lib/pref/font-win.prf", "start": 807868, "end": 808667}, {"filename": "/lib/pref/graf-shb.prf", "start": 808667, "end": 843773}, {"filename": "/lib/pref/flvr-xxx.prf", "start": 843773, "end": 853779}, {"filename": "/lib/pref/xtra-new.prf", "start": 853779, "end": 858200}, {"filename": "/lib/pref/graf-new.prf", "start": 858200, "end": 894449}, {"filename": "/lib/pref/flvr-shb.prf", "start": 894449, "end": 905118}, {"filename": "/lib/pref/graf-nmd.prf", "start": 905118, "end": 941805}, {"filename": "/lib/pref/xtra-dvg.prf", "start": 941805, "end": 946193}, {"filename": "/lib/pref/pref.prf", "start": 946193, "end": 950367}, {"filename": "/lib/pref/flvr-new.prf", "start": 950367, "end": 960373}, {"filename": "/lib/pref/font-x11.prf", "start": 960373, "end": 960985}, {"filename": "/lib/pref/font.prf", "start": 960985, "end": 961677}, {"filename": "/lib/pref/flvr-nmd.prf", "start": 961677, "end": 973050}, {"filename": "/lib/pref/font-sdl.prf", "start": 973050, "end": 973849}, {"filename": "/lib/pref/font-xxx.prf", "start": 973849, "end": 974586}, {"filename": "/lib/pref/graf-dvg.prf", "start": 974586, "end": 1010839}, {"filename": "/lib/pref/xtra-shb.prf", "start": 1010839, "end": 1021330}], "remote_package_size": 1021330, "package_uuid": "0135bdc9-27e2-4c70-a5f8-9f5175e2eac2"});
   
   })();
   
@@ -1323,8 +1323,10 @@ Module["preloadedAudios"] = {}; // maps url to audio data
 
 /** @param {string|number=} what */
 function abort(what) {
-  if (Module['onAbort']) {
-    Module['onAbort'](what);
+  {
+    if (Module['onAbort']) {
+      Module['onAbort'](what);
+    }
   }
 
   what += '';
@@ -1571,6 +1573,21 @@ function emscripten_turbo(){ return ANGBAND.turbo; }
           var y = demangle(x);
           return x === y ? x : (y + ' [' + x + ']');
         });
+    }
+
+  function handleException(e) {
+      // Certain exception types we do not treat as errors since they are used for
+      // internal control flow.
+      // 1. ExitStatus, which is thrown by exit()
+      // 2. "unwind", which is thrown by emscripten_unwind_to_js_event_loop() and others
+      //    that wish to return to JS event loop.
+      if (e instanceof ExitStatus || e == 'unwind') {
+        return EXITSTATUS;
+      }
+      // Anything else is an unexpected exception and we treat it as hard error.
+      var toLog = e;
+      err('exception thrown: ' + toLog);
+      quit_(1, e);
     }
 
   function jsStackTrace() {
@@ -4560,6 +4577,29 @@ function emscripten_turbo(){ return ANGBAND.turbo; }
       abortOnCannotGrowMemory(requestedSize);
     }
 
+  function callUserCallback(func, synchronous) {
+      if (ABORT) {
+        return;
+      }
+      // For synchronous calls, let any exceptions propagate, and don't let the runtime exit.
+      if (synchronous) {
+        func();
+        return;
+      }
+      try {
+        func();
+      } catch (e) {
+        handleException(e);
+      }
+    }
+  
+  function runtimeKeepalivePush() {
+      runtimeKeepaliveCounter += 1;
+    }
+  
+  function runtimeKeepalivePop() {
+      runtimeKeepaliveCounter -= 1;
+    }
   function safeSetTimeout(func, timeout) {
       
       return setTimeout(function() {
@@ -5074,39 +5114,7 @@ function emscripten_turbo(){ return ANGBAND.turbo; }
         abort(e);
       }
     }
-  
-  function handleException(e) {
-      if (e instanceof ExitStatus || e === 'unwind') {
-        return;
-      }
-      // And actual unexpected user-exectpion occured
-      if (e && typeof e === 'object' && e.stack) err('exception thrown: ' + [e, e.stack]);
-      throw e;
-    }
-  function callUserCallback(func, synchronous) {
-      if (ABORT) {
-        return;
-      }
-      // For synchronous calls, let any exceptions propagate, and don't let the runtime exit.
-      if (synchronous) {
-        func();
-        return;
-      }
-      try {
-        func();
-      } catch (e) {
-        handleException(e);
-      }
-    }
-  
-  function runtimeKeepalivePush() {
-      runtimeKeepaliveCounter += 1;
-    }
-  
-  function runtimeKeepalivePop() {
-      runtimeKeepaliveCounter -= 1;
-    }
-  var Asyncify = {State:{Normal:0,Unwinding:1,Rewinding:2,Disabled:3},state:0,StackSize:4096,currData:null,handleSleepReturnValue:0,exportCallStack:[],callStackNameToId:{},callStackIdToName:{},callStackId:0,afterUnwind:null,asyncPromiseHandlers:null,sleepCallbacks:[],getCallStackId:function(funcName) {
+  var Asyncify = {State:{Normal:0,Unwinding:1,Rewinding:2,Disabled:3},state:0,StackSize:4096,currData:null,handleSleepReturnValue:0,exportCallStack:[],callStackNameToId:{},callStackIdToName:{},callStackId:0,asyncPromiseHandlers:null,sleepCallbacks:[],getCallStackId:function(funcName) {
         var id = Asyncify.callStackNameToId[funcName];
         if (id === undefined) {
           id = Asyncify.callStackId++;
@@ -5149,10 +5157,6 @@ function emscripten_turbo(){ return ANGBAND.turbo; }
           runAndAbortIfError(Module['_asyncify_stop_unwind']);
           if (typeof Fibers !== 'undefined') {
             Fibers.trampoline();
-          }
-          if (Asyncify.afterUnwind) {
-            Asyncify.afterUnwind();
-            Asyncify.afterUnwind = null;
           }
         }
       },whenDone:function() {
@@ -5688,23 +5692,10 @@ function callMain(args) {
     // execution is asynchronously handed off to a pthread.
     // if we're not running an evented main loop, it's time to exit
     exit(ret, /* implicit = */ true);
+    return ret;
   }
   catch (e) {
-    // Certain exception types we do not treat as errors since they are used for
-    // internal control flow.
-    // 1. ExitStatus, which is thrown by exit()
-    // 2. "unwind", which is thrown by emscripten_unwind_to_js_event_loop() and others
-    //    that wish to return to JS event loop.
-    if (e instanceof ExitStatus || e == 'unwind') {
-      return;
-    }
-    // Anything else is an unexpected exception and we treat it as hard error.
-    var toLog = e;
-    if (e && typeof e === 'object' && e.stack) {
-      toLog = [e, e.stack];
-    }
-    err('exception thrown: ' + toLog);
-    quit_(1, e);
+    return handleException(e);
   } finally {
     calledMain = true;
 

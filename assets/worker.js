@@ -281,6 +281,13 @@ var angband;
         }
     }
     angband.ThreadWorker = ThreadWorker;
+    // Hack: we rename angband-gen.data to angband-gen.data.bmp so github pages will gzip it.
+    function locateFile(path, directory) {
+        if (path === 'angband-gen.data')
+            path += '.bmp';
+        return directory + path;
+    }
+    angband.locateFile = locateFile;
 })(angband || (angband = {}));
 var ANGBAND = new angband.ThreadWorker(self);
 // JS has a global worker onmessage hook.
@@ -291,6 +298,7 @@ Module['setStatus'] = ANGBAND.moduleSetStatus.bind(ANGBAND);
 Module['monitorRunDependencies'] = ANGBAND.getModuleDependencyMonitor();
 Module['print'] = ANGBAND.modulePrint.bind(ANGBAND);
 Module['printErr'] = ANGBAND.modulePrintErr.bind(ANGBAND);
+Module['locateFile'] = angband.locateFile;
 try {
     importScripts('angband-gen.js');
 }
