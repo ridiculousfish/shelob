@@ -15,6 +15,7 @@
  */
 
 #include "angband.h"
+#include "birth.h"
 #include "cmds.h"
 #include "files.h"
 #include "init.h"
@@ -44,7 +45,7 @@ extern bool borg_active;
 extern bool borg_cheat_death;
 
 /* Called before we start the borg from the UI. This causes us to return a 'z' (start) command. */
-static bool needs_start_borg_event = FALSE;
+static bool wants_start_borg = FALSE;
 
 /*
  * Information about a term
@@ -126,16 +127,8 @@ static errr Term_pict_emscripten(int x, int y, int n, const byte *ap,
 	int do_borg = EM_ASM_INT({ return ANGBAND.checkActivateBorg(); });
 	if (do_borg)
 	{
-		// Suppress the "are you sure" message.
-		p_ptr->noscore |= NOSCORE_BORG;
-
-		// Allow our borg to never die.
-		op_ptr->opt[OPT_cheat_live] = TRUE;
-
-		// It will want a 'z'.
-		needs_start_borg_event = true;
-		
-		do_cmd_borg();
+		// Turn on some hacks in our event loop.
+		wants_start_borg = TRUE;
 	}
  }
 
@@ -222,15 +215,40 @@ EM_JS(int, emscripten_turbo, (), {
  */
 static bool Term_xtra_emscripten_event(int wait)
 {
-	if (needs_start_borg_event && !borg_active)
+	if (wants_start_borg)
 	{
+		if (borg_active)
+		{
+			// Hooray, we did it.
+			wants_start_borg = FALSE;
+			return FALSE;
+		}
+
+		// We're still in the process of starting the borg.
 		// Wait until it wants us to block.
 		if (! wait) return FALSE;
-		Term_keypress(KTRL('Z'), 0);
-		Term_keypress('z', 0);
+
+		if (!p_ptr->playing)
+		{
+			// Hit return until we have a character.
+			Term_keypress(KC_ENTER, 0);
+		}
+		else
+		{
+			// Suppress the "are you sure" message.
+			p_ptr->noscore |= NOSCORE_BORG;
+
+			// Allow our borg to never die.
+			op_ptr->opt[OPT_cheat_live] = TRUE;
+
+			// Send the right keypresses to start it.
+			Term_keypress(ESCAPE, 0);
+			Term_keypress(KTRL('Z'), 0);
+			Term_keypress('z', 0);
+			wants_start_borg = FALSE;
+		}
 		return TRUE;
 	}
-	needs_start_borg_event = FALSE;
 
 	if (! emscripten_gather_event(wait)) return FALSE;
 	int ch = EM_ASM_INT({ return ANGBAND.eventKeyCode(); });
