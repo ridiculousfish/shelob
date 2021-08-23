@@ -65,11 +65,16 @@ declare namespace angband {
     name: "RESTART",
   }
 
+  export interface GOT_SAVEFILE_MSG {
+    name: "GOT_SAVEFILE",
+    contents: ArrayBuffer | undefined,
+  }
+
   // List of messages sent from ThreadWorker to Render.
   export type RenderEvent =
     ERROR_MSG | STATUS_MSG | PRINT_MSG | SET_CELL_MSG | SET_CELL_PICT_MSG |
     SET_CURSOR_MSG | WIPE_CELLS_MSG | CLEAR_SCREEN_MSG | FLUSH_DRAWING_MSG |
-    BATCH_RENDER_MSG | RESTART_MSG;
+    BATCH_RENDER_MSG | RESTART_MSG | GOT_SAVEFILE_MSG;
 
   export interface KEY_EVENT_MSG {
     name: "KEY_EVENT",
@@ -92,6 +97,10 @@ declare namespace angband {
     name: "ACTIVATE_BORG",
   }
 
+  export interface GET_SAVEFILE_CONTENTS_MSG {
+    name: "GET_SAVEFILE_CONTENTS",
+  }
+
   // Messages sent from Render to ThreadWorker.
-  export type WorkerEvent = KEY_EVENT_MSG | SET_TURBO_MSG | SET_GRAPHICS_MSG | ACTIVATE_BORG_MSG;
+  export type WorkerEvent = KEY_EVENT_MSG | SET_TURBO_MSG | SET_GRAPHICS_MSG | ACTIVATE_BORG_MSG | GET_SAVEFILE_CONTENTS_MSG;
 }

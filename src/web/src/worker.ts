@@ -104,6 +104,24 @@ namespace angband {
       this.postKeyEvent(WAKE_UP_EVENT);
     }
 
+    getSavefileContents(_msg: GET_SAVEFILE_CONTENTS_MSG) {
+      // We could go through C but it is easier to just use the FS API.
+      // Here we hard-code the Angband savefile name.
+      let contents: ArrayBuffer | undefined;
+      try {
+        let data = FS.readFile("/lib/save/PLAYER");
+        contents = data.buffer.slice(data.byteOffset, data.byteLength + data.byteOffset);
+      } catch (_err) {
+        // e.g. file not found
+        contents = undefined;
+      }
+      const msg: GOT_SAVEFILE_MSG = {
+        name: "GOT_SAVEFILE",
+        contents,
+      };
+      this.postMessage(msg);
+    }
+
     // Incoming message handler.
     public onMessage = (msg: MessageEvent) => {
       let evt = msg.data as WorkerEvent;
@@ -119,6 +137,9 @@ namespace angband {
           break;
         case 'ACTIVATE_BORG':
           this.setActivateBorg(evt as ACTIVATE_BORG_MSG);
+          break;
+        case 'GET_SAVEFILE_CONTENTS':
+          this.getSavefileContents(evt as GET_SAVEFILE_CONTENTS_MSG);
           break;
         default:
           this.reportError("Unknown event: " + JSON.stringify(evt));

@@ -527,6 +527,10 @@ namespace angband {
           this.worker = this.summonWorkerFromPureNonexistence();
           break;
 
+        case 'GOT_SAVEFILE':
+          this.gotSavefile(msg as GOT_SAVEFILE_MSG);
+          break;
+
         case 'PRINT':
           this.printOutput(msg as PRINT_MSG);
           break;
@@ -593,6 +597,28 @@ namespace angband {
         name: "ACTIVATE_BORG",
       });
     }
+
+    // Let the user get their savefile.
+    public requestDownloadSavefile() {
+      this.postMessage({
+        name: "GET_SAVEFILE_CONTENTS",
+      });
+    }
+
+    // Called after we got the savefile contents, hopefully.
+    public gotSavefile(msg: GOT_SAVEFILE_MSG) {
+      let contents = msg.contents;
+      if (contents === undefined) {
+        alert("Unable to get savefile. Trying using Control-S to save first.");
+        return;
+      }
+      let url = window.URL.createObjectURL(new Blob([contents], { type: 'application/octet-stream' }));
+      let hiddenLink = document.getElementById('hidden-download-link') as HTMLAnchorElement;
+      hiddenLink.href = url;
+      hiddenLink.click();
+      window.URL.revokeObjectURL(url);
+    }
+
 
     sendEscape() {
       this.postMessage({

@@ -17,7 +17,6 @@ This is Angband 3.4.1 running on the web, in your browser. [Play it now!](https:
 - Grid resizing (currently always 80x24)
 - [Updated borg](http://www.innovapain.com/borg/angband-341/)
 - Multiple savefiles
-- Allow downloading your savefile
 - Remember preferences (font, graphics) across sesssions
 - Mobile support, somehow
 - Sound support

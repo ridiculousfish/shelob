@@ -102,10 +102,6 @@ body {
 	overflow: visible;
 }
 
-#controls .spacer {
-	min-height: 1.5em;
-}
-
 #controls input {
 	vertical-align: middle;
 }
@@ -126,9 +122,27 @@ body {
 	user-select: none;
 }
 
-#controls .borg-button {
-	font-size: 12pt;
+#controls .borg-button, #controls .download-savefile-button {
+	font-size: 11pt;
 	padding: 6px;
+	white-space: nowrap;
+}
+
+#hidden-download-link {
+	display: none;
+}
+
+#controls .spacer {
+	margin: 0;
+	border: none;
+	min-height: 1.5em;
+}
+
+#controls hr.separator {
+	border: none;
+	border-top: 1px dotted #555;
+	margin-top: 2em;
+	margin-bottom: 2em;
 }
 
 #controls .footer {
