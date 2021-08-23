@@ -22,7 +22,9 @@
   <button class='controls-toggle' onClick='SETTINGS.setControlsShown(true)'>&#x21E6;</button>
   <div id='top-container'>
     <div>
-      <table id="main-angband-grid" class="angband-grid" tabindex="0"></table>
+      <div class="angband-grid-wrap">
+        <table id="main-angband-grid" class="angband-grid" tabindex="0"></table>
+      </div>
       <textarea id="print-output" rows="4" readonly></textarea>
     </div>
     <div id='controls'>
