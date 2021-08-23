@@ -322,6 +322,12 @@ namespace angband {
       return res;
     }
   }
+
+  // Hack: we rename angband-gen.data to angband-gen.data.bmp so github pages will gzip it.
+  export function locateFile(path: string, directory: string) {
+    if (path === 'angband-gen.data') path += '.bmp';
+    return directory + path;
+  }
 }
 
 var ANGBAND: angband.ThreadWorker = new angband.ThreadWorker(self as unknown as Worker);
@@ -335,6 +341,7 @@ Module['setStatus'] = ANGBAND.moduleSetStatus.bind(ANGBAND);
 Module['monitorRunDependencies'] = ANGBAND.getModuleDependencyMonitor();
 Module['print'] = ANGBAND.modulePrint.bind(ANGBAND);
 Module['printErr'] = ANGBAND.modulePrintErr.bind(ANGBAND);
+Module['locateFile'] = angband.locateFile;
 
 try {
   importScripts('angband-gen.js');

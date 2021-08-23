@@ -77,7 +77,9 @@ install: staging
 	cp web/static/index.html $(BUILT_DIR)/
 
 	mkdir -p $(BUILT_DIR)/assets/
-	cp $(ASSET_DATA) $(WASM) $(JS_STAGED) $(JS_GEN) $(BUILT_DIR)/assets/
+	cp $(WASM) $(JS_STAGED) $(JS_GEN) $(BUILT_DIR)/assets/
+	@ #We rename angband-gen.data to angband-gen.bmp so that GitHub will dynamically gzip it.
+	cp $(ASSET_DATA) $(BUILT_DIR)/assets/angband-gen.data.bmp
 	cp $(filter-out */index.html, $(STATIC_FILEPATHS)) $(BUILT_DIR)/assets/
 	cp -r $(STAGE_DIR)/graf $(BUILT_DIR)/assets/
 	@echo "Built $(BUILT_DIR)/"

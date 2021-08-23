@@ -19,7 +19,7 @@ This is Angband 3.4.1 running on the web, in your browser. [Play it now!](https:
 - Multiple savefiles
 - Allow downloading your savefile
 - Remember preferences (font, graphics) across sesssions
-- Better support on mobile (e.g. run the borg without a keyboard)
+- Mobile support, somehow
 - Sound support
 
 
