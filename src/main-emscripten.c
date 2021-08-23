@@ -44,8 +44,9 @@
 extern bool borg_active;
 extern bool borg_cheat_death;
 
-/* Called before we start the borg from the UI. This causes us to return a 'z' (start) command. */
+/* Called to request starting the borg, from the button in the UI. */
 static bool wants_start_borg = FALSE;
+static int wants_start_borg_keypress_idx = 0;
 
 /*
  * Information about a term
@@ -129,6 +130,7 @@ static errr Term_pict_emscripten(int x, int y, int n, const byte *ap,
 	{
 		// Turn on some hacks in our event loop.
 		wants_start_borg = TRUE;
+		wants_start_borg_keypress_idx = 0;
 	}
  }
 
@@ -230,8 +232,10 @@ static bool Term_xtra_emscripten_event(int wait)
 
 		if (!p_ptr->playing)
 		{
-			// Hit return until we have a character.
-			Term_keypress(KC_ENTER, 0);
+			// Hit * a bunch, then return until we have a character.
+			// The *s choose random stats.
+			int key = (++wants_start_borg_keypress_idx % 5) ? '*' : KC_ENTER;
+			Term_keypress(key, 0);
 		}
 		else
 		{
