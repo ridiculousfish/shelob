@@ -449,6 +449,8 @@ var angband;
             this.grid = grid;
             this.status = status;
             this.printOutputElement = printOutputElement;
+            // Touch triggers escape, so that the borg may be cancelled.
+            this.grid.element.addEventListener('touchstart', this.sendEscape.bind(this));
             this.grid.rebuildCells();
             this.worker = this.summonWorkerFromPureNonexistence();
         }
@@ -545,6 +547,14 @@ var angband;
         unleashTheBorg() {
             this.postMessage({
                 name: "ACTIVATE_BORG",
+            });
+        }
+        sendEscape() {
+            this.postMessage({
+                name: "KEY_EVENT",
+                key: "\x1b",
+                code: 0x1b,
+                modifiers: 0,
             });
         }
         summonWorkerFromPureNonexistence() {
