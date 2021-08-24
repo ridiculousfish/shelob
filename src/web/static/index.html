@@ -34,12 +34,9 @@
       <button class='controls-toggle' onClick='SETTINGS.setControlsShown(false)'>&#x21E8;</button>
       <hr class="spacer" />
       <select name="font" id="font-select" onChange="SETTINGS.setFont(this.value)"></select>
-      <hr class="spacer" />
+      <hr class="minispacer" />
       <input id="bold" type="checkbox" onClick='SETTINGS.setBold(this.checked)'>
       <label for="bold">Bold</label>
-      <hr class="spacer" />
-      <input id="turbo" type="checkbox" onClick='ANGBAND_UI.setTurbo(this.checked)'>
-      <label for="turbo">Turbo! &#x1F4A8;</label>
       <hr class="spacer" />
       <label for="graphics-select">Graphics</label><br />
       <select name="graphics" id="graphics-select" onChange='ANGBAND_UI.setGraphics(this.value)'>
@@ -50,8 +47,11 @@
         <option value="4">nomad (16x16)</option>
         <option value="5">shockbolt &#x26A1; (64x64)</option>
       </select>
-      <hr class="spacer" />
+      <hr class="separator" />
       <button class="borg-button" onClick='ANGBAND_UI.unleashTheBorg();'>Unleash the Borg</button>
+      <hr class="minispacer" />
+      <input id="turbo" type="checkbox" onClick='ANGBAND_UI.setTurbo(this.checked)'>
+      <label for="turbo">Turbo! &#x1F4A8;</label>
       <hr class="separator" />
       <button class="download-savefile-button" onClick='ANGBAND_UI.requestDownloadSavefile();'>
         Download savefile
