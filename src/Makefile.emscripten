@@ -19,11 +19,12 @@ WARNINGS := -W -Wall -Wextra -Wold-style-definition -Wdeclaration-after-statemen
 		   -Wno-unused-parameter -Wno-missing-field-initializers -Wno-incompatible-pointer-types-discards-qualifiers \
 		   -Wno-misleading-indentation -Wno-unreachable-code
 CFLAGS := -Os $(WARNINGS) -DWASM=1
-LDFLAGS := -s ENVIRONMENT=worker -lidbfs.js -s ASYNCIFY -s ASYNCIFY_REMOVE="$(NO_ASYNCIFY_FUNCS)"
+LDFLAGS := -s ENVIRONMENT=worker -lidbfs.js -s ASYNCIFY -s ASYNCIFY_REMOVE="$(NO_ASYNCIFY_FUNCS)" \
+		   -s MODULARIZE -s 'EXPORT_NAME="createAngbandModule"' -s 'EXPORTED_RUNTIME_METHODS=["FS","callMain","IDBFS"]'
 INCLUDES = -I.
 LIBS =
 
-# If we want debug symbols.
+# Uncomment for debug symbols and human-readable JavaScript.
 # CFLAGS += -g
 
 # If we want to see what is being asyncified.
