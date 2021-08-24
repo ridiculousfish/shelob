@@ -1,0 +1,11 @@
+
+*Hallucinating while stair scumming.
+*Attempting to tunnel while out of light will be forbidden in most cases.
+
+
+
+Weird crash with track_object(-31)
+
+Borg crashes with full screen
+
+Why are some items in the home not stacking?

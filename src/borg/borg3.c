@@ -6,7 +6,7 @@
 #include "object/tvalsval.h"
 #include "cave.h"
 
-#ifdef ALLOW_BORG
+
 #include "borg1.h"
 #include "borg3.h"
 
@@ -237,8 +237,8 @@ static byte borg_magic_method[2][9][9] =
             BORG_MAGIC_NOP  /*   "Chant" */,
             BORG_MAGIC_NOP  /*   "Sanctuary" */,
             BORG_MAGIC_NOP  /* H "Satisfy Hunger" */,
-            BORG_MAGIC_NOP  /*   "Remove Curse" */,
-            BORG_MAGIC_NOP  /*   "Resist Heat and Cold" */,
+            BORG_MAGIC_NOP  /*    "Resist Heat and Cold"*/,
+            BORG_MAGIC_ICK  /*    */,
             BORG_MAGIC_ICK  /*   "(blank)" */
         },
 
@@ -311,10 +311,10 @@ static byte borg_magic_method[2][9][9] =
             /* Holy Infusions (sval 7) */
             BORG_MAGIC_NOP  /* F "Unbarring Ways" */,
             BORG_MAGIC_OBJ  /* O "Recharging" */,
-            BORG_MAGIC_NOP  /*   "Dispel Curse" */,
             BORG_MAGIC_OBJ  /* O "Enchant Weapon" */,
             BORG_MAGIC_OBJ  /* O "Enchant Armour" */,
             BORG_MAGIC_OBJ  /*   "Elemental Brand" */,
+            BORG_MAGIC_ICK  /*   "(blank)" */,
             BORG_MAGIC_ICK  /*   "(blank)" */,
             BORG_MAGIC_ICK  /*   "(blank)" */,
             BORG_MAGIC_ICK  /*   "(blank)" */
@@ -618,7 +618,7 @@ static byte borg_magic_index[2][9][9] =
             1  /* SPELL_DETECT_MONSTERS */,
             2  /* SPELL_PHASE_DOOR */,
             3  /* SPELL_LIGHT_AREA */,
-            6  /* SPELL_OBJECT_DETECTION */,
+            6  /* SPELL_TREASURE_DETECTION */,
             5  /* SPELL_CURE_LIGHT_WOUNDS */,
             4  /* SPELL_FIND_TRAPS_DOORS */,
             11 /* SPELL_STINKING_CLOUD */,
@@ -658,7 +658,7 @@ static byte borg_magic_index[2][9][9] =
             29 /* SPELL_HASTE_SELF */,
             39 /* SPELL_MASS_SLEEP */,
             57 /* SPELL_FIRE_BALL */,
-            10 /* SPELL_TREASURE_DETECTION */,
+            10 /* SPELL_DETECT_ENCHANTMENT */,
             99,
             99,
             99
@@ -752,8 +752,8 @@ static byte borg_magic_index[2][9][9] =
             11 /* PRAYER_CHANT */,
             12 /* PRAYER_SANCTUARY */,
             13 /* PRAYER_SATISFY_HUNGER */,
-            14 /* PRAYER_REMOVE_CURSE */,
             15 /* PRAYER_RESIST_HEAT_COLD */,
+            99 /* ??PRAYER_REMOVE_CURSE */,
             99
         },
 
@@ -820,12 +820,12 @@ static byte borg_magic_index[2][9][9] =
         {
             46  /* PRAYER_UNBARRING_WAYS */,
             47  /* PRAYER_RECHARGING */,
-            48  /* PRAYER_DISPEL_CURSE */,
             49  /* PRAYER_ENCHANT_WEAPON */,
             50  /* PRAYER_ENCHANT_ARMOUR */,
             51  /* PRAYER_ELEMENTAL_BRAND */,
             99,
             99,
+            99,  
             99
         },
 
@@ -993,8 +993,8 @@ static char *borg_magic_name[2][9][9] =
              "Chant" ,
              "Sanctuary" ,
              "Satisfy Hunger" ,
-             "Remove Curse" ,
              "Resist Heat and Cold" ,
+             "(blank)" , /* what happened to Remove Curse ?*/
              "(blank)"
         },
 
@@ -1067,10 +1067,10 @@ static char *borg_magic_name[2][9][9] =
             /* Holy Infusions (sval 7) */
              "Unbarring Ways" ,
              "Recharging" ,
-             "Dispel Curse" ,
              "Enchant Weapon" ,
              "Enchant Armour" ,
              "Elemental Brand" ,
+             "(blank)" ,
              "(blank)" ,
              "(blank)" ,
              "(blank)"
@@ -1334,10 +1334,11 @@ int borg_wield_slot(borg_item *item)
 bool borg_object_star_id_aux(borg_item *borg_item, object_type *real_item)
 {
 	bitflag f[OF_SIZE];
+	int i = OF_SIZE;
 
     /* the data directly from the real item    */
     object_flags(real_item, f);
-    of_copy(borg_item->flags, f);
+	for (i = 0; i < 12 && i < OF_SIZE; i++) borg_item->flags[i] = f[i];
 
     borg_item->needs_I = FALSE;
 
@@ -1350,7 +1351,7 @@ bool borg_object_star_id_aux(borg_item *borg_item, object_type *real_item)
  * This will go through inventory and look for items that were just*ID*'d
  * and examine them for their bonuses.
  */
-bool borg_object_star_id( void )
+void borg_object_star_id( void )
 {
     int i;
 
@@ -1361,128 +1362,128 @@ bool borg_object_star_id( void )
         borg_item *item = &borg_items[i];
 		ego_item_type *e_ptr = &e_info[item->name2];
 
-        if (borg_items[i].needs_I)
+        /* inscribe certain objects */
+        if (borg_skill[BI_CDEPTH] &&  item->tval >= TV_BOW && item->tval <= TV_RING &&
+            (e_ptr->xtra == OBJECT_XTRA_TYPE_RESIST || e_ptr->xtra == OBJECT_XTRA_TYPE_POWER || item->name1 || item->quest) &&
+            (streq(item->note, "{ }")  || streq(item->note, "")  || strstr(item->note, "uncursed")))
         {
-            /* cheat to get the information. */
-            borg_object_star_id_aux( &borg_items[i], &p_ptr->inventory[i]);
 
-            /* inscribe certain objects */
-            if (!borg_skill[BI_CDEPTH] &&
-                (e_ptr->xtra == OBJECT_XTRA_TYPE_RESIST || e_ptr->xtra == OBJECT_XTRA_TYPE_POWER) &&
-                (streq(item->note, "{ }")  || streq(item->note, "")  || strstr(item->note, "uncursed")))
+            /* make the inscription */
+            borg_keypress('{');
+
+            if (i >= INVEN_WIELD)
             {
-
-                /* make the inscription */
-                borg_keypress('{');
-
-                if (i >= INVEN_WIELD)
-                {
-                borg_keypress('/');
-                borg_keypress(I2A(i - INVEN_WIELD));
-                }
-                else
-                {
-                borg_keypress(I2A(i));
-                }
-
-                if (of_has(item->flags, OF_SPEED))
-                {
-                    borg_keypresses("Spd");
-                }
-                /* slays and immunities */
-                if (of_has(item->flags, OF_RES_POIS))
-                {
-                	borg_keypresses("Poisn");
-                }
-                if (of_has(item->flags, OF_IM_FIRE))
-                {
-                	borg_keypresses("IFir");
-                }
-                if (of_has(item->flags, OF_IM_COLD))
-                {
-                	borg_keypresses("ICld");
-                }
-                if (of_has(item->flags, OF_IM_ACID))
-                {
-                	borg_keypresses("IAcd");
-                }
-                if (of_has(item->flags, OF_IM_ELEC))
-                {
-                	borg_keypresses("IElc");
-                }
-                if (of_has(item->flags, OF_RES_LIGHT))
-                {
-                    borg_keypresses("Lite");
-                }
-                if (of_has(item->flags, OF_RES_DARK))
-                {
-                    borg_keypresses("Dark");
-                }
-                if (of_has(item->flags, OF_RES_BLIND))
-                {
-                    borg_keypresses("Blnd");
-                }
-                if (of_has(item->flags, OF_RES_CONFU))
-                {
-                    borg_keypresses("Conf");
-                }
-                if (of_has(item->flags, OF_RES_SOUND))
-                {
-                    borg_keypresses("Sound");
-                }
-                if (of_has(item->flags, OF_RES_SHARD))
-                {
-                    borg_keypresses("Shrd");
-                }
-                if (of_has(item->flags, OF_RES_NETHR))
-                {
-                    borg_keypresses("Nthr");
-                }
-                if (of_has(item->flags, OF_RES_NEXUS))
-                {
-                    borg_keypresses("Nxs");
-                }
-                if (of_has(item->flags, OF_RES_CHAOS))
-                {
-                    borg_keypresses("Chaos");
-                }
-                if (of_has(item->flags, OF_RES_DISEN))
-                {
-                    borg_keypresses("Disn");
-                }
-				/* TR2_activate was removed */
-				if ((item->name1 && a_info[item->name1].effect) ||
-				    (k_info[item->kind].effect))
-				{
-                    borg_keypresses("Actv");
-                }
-                if (of_has(item->flags, OF_TELEPATHY))
-                {
-                    borg_keypresses("ESP");
-                }
-                if (of_has(item->flags, OF_HOLD_LIFE))
-                {
-                    borg_keypresses("HL");
-                }
-                if (of_has(item->flags, OF_FREE_ACT))
-                {
-                    borg_keypresses("FA");
-                }
-                if (of_has(item->flags, OF_SEE_INVIS))
-                {
-                    borg_keypresses("SInv");
-                }
-
-                /* end the inscription */
-                borg_keypress(KC_ENTER);
-
+            borg_keypress('/');
+            borg_keypress(I2A(i - INVEN_WIELD));
             }
+            else
+            {
+            borg_keypress(I2A(i));
+            }
+
+			/* make the inscription */
+			if (item->quest && item->tval != TV_PRAYER_BOOK && item->tval != TV_MAGIC_BOOK && !item->fully_identified)
+			{
+				borg_keypresses( "Quest");
+			}
+            if (of_has(item->flags, OF_SPEED))
+            {
+                borg_keypresses("Spd");
+            }
+            /* slays and immunities */
+            if (of_has(item->flags, OF_RES_POIS))
+            {
+            	borg_keypresses("Poisn");
+            }
+            if (of_has(item->flags, OF_IM_FIRE))
+            {
+            	borg_keypresses("IFir");
+            }
+            if (of_has(item->flags, OF_IM_COLD))
+            {
+            	borg_keypresses("ICld");
+            }
+            if (of_has(item->flags, OF_IM_ACID))
+            {
+            	borg_keypresses("IAcd");
+            }
+            if (of_has(item->flags, OF_IM_ELEC))
+            {
+            	borg_keypresses("IElc");
+            }
+            if (of_has(item->flags, OF_RES_LIGHT))
+            {
+                borg_keypresses("Lite");
+            }
+            if (of_has(item->flags, OF_RES_DARK))
+            {
+                borg_keypresses("Dark");
+            }
+            if (of_has(item->flags, OF_RES_BLIND))
+            {
+                borg_keypresses("Blnd");
+            }
+            if (of_has(item->flags, OF_RES_CONFU))
+            {
+                borg_keypresses("Conf");
+            }
+            if (of_has(item->flags, OF_RES_SOUND))
+            {
+                borg_keypresses("Sound");
+            }
+            if (of_has(item->flags, OF_RES_SHARD))
+            {
+                borg_keypresses("Shrd");
+            }
+            if (of_has(item->flags, OF_RES_NETHR))
+            {
+                borg_keypresses("Nthr");
+            }
+            if (of_has(item->flags, OF_RES_NEXUS))
+            {
+                borg_keypresses("Nxs");
+            }
+            if (of_has(item->flags, OF_RES_CHAOS))
+            {
+                borg_keypresses("Chaos");
+            }
+            if (of_has(item->flags, OF_RES_DISEN))
+            {
+                borg_keypresses("Disn");
+            }
+			/* TR2_activate was removed */
+			if ((item->name1 && a_info[item->name1].effect) ||
+			    (k_info[item->kind].effect))
+			{
+                borg_keypresses("Actv");
+            }
+            if (of_has(item->flags, OF_TELEPATHY))
+            {
+                borg_keypresses("ESP");
+            }
+            if (of_has(item->flags, OF_HOLD_LIFE))
+            {
+                borg_keypresses("HL");
+            }
+            if (of_has(item->flags, OF_FREE_ACT))
+            {
+                borg_keypresses("FA");
+            }
+            if (of_has(item->flags, OF_SEE_INVIS))
+            {
+                borg_keypresses("SInv");
+            }
+
+            /* end the inscription */
+            borg_keypress(KC_ENTER);
 
         }
 
     }
-    return (FALSE);
+	return;
 }
+
+
 
 
 
@@ -1723,12 +1724,21 @@ static s32b borg_object_value_known(borg_item *item)
  * correctly handle objects with "bizarre" inscriptions, or even with
  * "broken" inscriptions, so we should be okay.
  */
-void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
+void borg_item_analyze(borg_item *item, object_type *real_item, char *desc, int location, bool fake_gear)
 {
+	object_kind *k_ptr;
 	bitflag f[OF_SIZE];
 	bitflag known_f[OF_SIZE];
 
     char *scan;
+	int i;
+	bool main = FALSE;
+	bool swap = FALSE;
+
+
+	/* Set some keeper flags */
+	if (item->main) main = TRUE;
+	if (item->swap) main = TRUE;
 
     /* Wipe the item */
     WIPE(item, borg_item);
@@ -1745,6 +1755,14 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 
     /* Save a pointer to the inscription */
     item->note = scan;
+
+	/* Set certain flags */
+	if (!fake_gear)
+	{
+		if (location >= INVEN_WIELD || main == TRUE) item->main = TRUE;
+		if ((location == weapon_swap && location != 0) || swap == TRUE) item->swap = TRUE;
+		if ((location == armour_swap && location != 0) || swap == TRUE) item->swap = TRUE;
+	}
 
     /* Empty item */
     if (!desc[0]) return;
@@ -1776,12 +1794,12 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 	}
 
 	/* Item has been ID'd (store, scroll, spell) */
-  	if ((real_item->ident & IDENT_KNOWN) ||
+  	if ((real_item->ident & IDENT_SENSE) || 
+		(real_item->ident & IDENT_KNOWN) ||
+  	    (real_item->ident & IDENT_STORE) ||
 		(real_item->ident & IDENT_ATTACK) ||
 		/*(real_item->ident & IDENT_FIRED)  || */
-		(real_item->ident & IDENT_DEFENCE) ||
-  	    (real_item->ident & IDENT_STORE) ||
-		(real_item->ident & IDENT_SENSE)) item->ident = TRUE;
+		(real_item->ident & IDENT_DEFENCE)) item->ident = TRUE;
 
 	/* Descriptions from PseudoID trump the IDENT_SENSE */
 	if (strstr(item->note, "magical") ||
@@ -1790,7 +1808,7 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 		strstr(item->note, "splendid") ||
 		strstr(item->note, "special") ||
 		strstr(item->note, "terrible") ||
-		strstr(item->note, "indestructible")) item->ident = FALSE;
+		strstr(item->note, "indestructible")) item->ident = FALSE;        
 
 	/* Item has been *ID*'d (store, scroll, spell) */
   	if ((real_item->ident & IDENT_KNOWN) /*||
@@ -1807,11 +1825,14 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
   	if (item->ident) item->pval = real_item->pval[DEFAULT_PVAL];
 
 	/* does it have an activation or effect? */
-	item->activation = k_info[item->kind].effect;
+	if (item->ident) item->activation = k_info[item->kind].effect;
 
 	/* Rods are considered pval 1 if charged */
   	if (item->tval == TV_ROD)
   	{
+
+		k_ptr = &k_info[real_item->kind->kidx];
+
 		if (item->iqty == 1 && real_item->timeout) item->pval = 0;
   		else
 		{
@@ -1849,11 +1870,11 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 					/* Quantity more than number charging */
 					if (item->iqty > number)
 					{
-						item->pval = 1;
+						item->pval = item->iqty - number;
 					}
 				}
 			}
-  			else item->pval = 1;
+  			else item->pval = item->iqty;
 		}
 	}
 
@@ -1912,18 +1933,18 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
     item->level = k_info[item->kind].level;
 
     /* Extract the base flags -- Kind only given if 'able' */
-    of_copy(item->flags, known_f);
+	for (i = 0; i < 12 && i < OF_SIZE; i++) item->flags[i] = f[i];
 
     /* Base Cost -- Guess */
 
     /* Known items */
-    if (item->ident)
+    if (item->ident && !strstr(item->note, "cursed"))
     {
         /* Process various fields */
         item->value = borg_object_value_known(item);
     }
     /* Aware items */
-    else if (item->aware)
+    else if (item->aware && !strstr(item->note, "cursed"))
     {
         /* Aware items can assume template cost */
         item->value = k_info[item->kind].cost;
@@ -1987,6 +2008,23 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 		item->cursed = cursed_p(real_item->flags);
 	}
 
+	/* Try to set the Quest Item flag correctly the first time the item is anayzed. */
+	if (strstr(item->note,"Quest")) item->quest = TRUE;
+	else
+	{
+		for (i = 0; i <= good_obj_num; i++)
+		{
+			if (good_obj_tval[i] == item->tval &&
+				good_obj_sval[i] == item->sval &&
+				distance(good_obj_y[i], good_obj_x[i], c_y, c_x) <= 3 &&
+				item->iqty >= 1 &&
+				location < INVEN_WIELD)
+			{
+					item->quest = TRUE;
+			}
+		}
+	}
+
 	/* Hack -- examine artifacts */
     if (item->name1)
     {
@@ -1994,11 +2032,8 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
         if ((item->tval != a_info[item->name1].tval) ||
             (item->sval != a_info[item->name1].sval))
         {
-			object_kind *o_ptr;
-
             /* Save the kind */
-            o_ptr = lookup_kind(item->tval, item->sval);
-			item->kind = o_ptr->kidx;
+            item->kind = borg_lookup_kind(item->tval, item->sval);
 
             /* Save the tval/sval */
             item->tval = k_info[item->kind].tval;
@@ -2007,7 +2042,6 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 
         /* Extract the weight */
         item->weight = a_info[item->name1].weight;
-
     }
 
 
@@ -2022,7 +2056,7 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 /*     item->discount = real_item->discount */
 
     /* Cursed indicators */
-    if (strstr(item->note, "cursed")) item->value = 0L;
+    if (strstr(item->note, "cursed") && !item->name1) item->value = 0L;
     else if (strstr(item->note, "{broken")) item->value = 0L;
     else if (strstr(item->note, "{terrible")) item->value = 0L;
     else if (strstr(item->note, "{worthless")) item->value = 0L;
@@ -2058,10 +2092,16 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
         item->pval = 0;
     }
 
+	/* Hack -- repair the One Ring */
+	if (item->name1 == RING_ONE ||
+		(item->tval == TV_RING && 
+		strstr(item->note, "special") &&
+		strstr(item->note, "cursed"))) item->value = 999999;
 
     /* XXX XXX XXX Repair various "ego-items" */
+	if (item->kind == RING_DOG) item->pval = real_item->pval[DEFAULT_PVAL];
+	if (item->tval == TV_AMULET && item->sval == SV_AMULET_TELEPORTATION) item->value = 0; 
 
-#if 0
 	/* Repair the Planatir of Westerness. The borg thinks
 	 * it is an ego item.since it has an ego name (Westerness).
 	 */
@@ -2075,6 +2115,7 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 		item->pval = 2;
 	}
 
+#if 0
 	/* Repair the Shield of the Haradrim. The borg thinks
 	 * it is an ego item.since it has an ego name (Haradrim).
 	 */
@@ -2094,50 +2135,6 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 	 */
 	if (item->name2 == 61 || item->name2 == 21) item->name2 = 9;
 
-    /* Hack -- examine artifacts */
-    if (item->name1)
-    {
-        /* XXX XXX Hack -- fix "weird" artifacts */
-        if ((item->tval != a_info[item->name1].tval) ||
-            (item->sval != a_info[item->name1].sval))
-        {
-            /* Save the kind */
-            item->kind = borg_lookup_kind(item->tval, item->sval);
-
-            /* Save the tval/sval */
-            item->tval = k_info[item->kind].tval;
-            item->sval = k_info[item->kind].sval;
-        }
-
-        /* Extract the weight */
-        item->weight = a_info[item->name1].weight;
-
-     }
-
-
-    /* Known items */
-    if (item->ident)
-    {
-        /* Process various fields */
-        item->value = borg_object_value_known(item);
-		item->aware = TRUE;
-    }
-
-    /* Aware items */
-    else if (item->kind)
-    {
-        /* Aware items can assume template cost */
-        item->value = k_info[item->kind].cost;
-		item->aware = TRUE;
-    }
-	/* Non ID, assume some value */
-	else
-	{
-		item->value = 20L;
-		item->aware = FALSE;
-	}
-
-
     /* Parse various "inscriptions" */
     if (item->note[0])
     {
@@ -2149,21 +2146,6 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
         else if (streq(item->note, "{50% off}")) item->discount = 50;
         else if (streq(item->note, "{75% off}")) item->discount = 75;
         else if (streq(item->note, "{90% off}")) item->discount = 90;
-
-        /* Cursed indicators */
-        else if (strstr(item->note, "cursed}"))
-        {
-            /* One Ring is not junk */
-            if (item->activation != EFF_BIZARRE)
-            {
-                item->value = 0L;
-            }
-            item->cursed = TRUE;
-        }
-
-        else if (strstr(item->note, "broken")) item->value = 0L;
-        else if (strstr(item->note, "terrible")) item->value = 0L;
-        else if (strstr(item->note, "worthless")) item->value = 0L;
 
         /* Ignore certain feelings */
         /* "{average}" */
@@ -2181,10 +2163,15 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
     if (item->discount) item->value -= item->value * item->discount / 100;
 
 	/* Make sure any effect is known if not already known */
-	if (!item->activation)
+	if (!item->activation && item->ident)
 	{
 		item->activation = k_info[real_item->kind->kidx].effect;
 	}
+	/* if (!item->activation && item->name1)
+	 *{
+	 *	item->activation = a_info[real_item->name1].effect;
+	 *}
+	 */
 
 	/* Modifiers assumed if pseudoID.  This will allow him to trade his cloak +0 in for a cloak {magical} */
     if (strstr(item->note, "magical") && !item->ident)
@@ -2197,11 +2184,11 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 		/* Weapons are assumed to have at least +1/+1 */
 		if (slot == INVEN_WIELD || slot == INVEN_BOW)
 		{
-			item->to_h = 1;
-    		item->to_d = 1;
+			item->to_h = 3;
+    		item->to_d = 3;
 
 			/* In Muchkin_mode, we want to make money so we want to wear stuff to ID it.
-			 * Have him believe that the item is high bonus so that he will replace his
+			 * Have him believe that the item is high bonus so that he will replace his 
 			 * current equipment.  There is a chance that the item is cursed and this will
 			 * adversely impact his survivability.  He is able to buy ?Remove Curse.
 			 */
@@ -2216,7 +2203,7 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 		/* armors are assumed to have at least +1 */
     	if (slot > INVEN_BOW)
 		{
-			item->to_a = 1;
+			item->to_a = 4;
 
 			if (borg_munchkin_mode)
 			{
@@ -2244,8 +2231,8 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 		/* Weapons are assumed to have at least +1/+1 */
 		if (slot == INVEN_WIELD || slot == INVEN_BOW)
 		{
-			item->to_h = 5;
-    		item->to_d = 5;
+			item->to_h = 4;
+    		item->to_d = 4;
 
 			if (borg_munchkin_mode)
 			{
@@ -2253,7 +2240,7 @@ void borg_item_analyze(borg_item *item, object_type *real_item, char *desc)
 				item->to_d = 9;
 			}
 		}
-
+		
 		/* armors are assumed to have at least +1 */
     	if (slot > INVEN_BOW)
 		{
@@ -2363,65 +2350,44 @@ int borg_slot(int tval, int sval)
     return (n);
 }
 
-enum borg_need borg_maintain_light(void)
+
+
+/*
+ * Hack -- refuel a torch
+ */
+bool borg_refuel_torch(void)
 {
-	int i;
-	borg_item *current_light = &borg_items[INVEN_LIGHT];
+	/* 340 introduced no combining of torches.  So when the torch reaches
+	 * 0 turns, then it fades away.  The borg can then just wield one from
+	 * the inventory.
+	 */
 
-    /*  current torch */
-	if (current_light->tval == TV_LIGHT)
-	{
-		if (current_light->sval == SV_LIGHT_TORCH)
-		{
-			if (current_light->timeout > 250)
-			{
-				return BORG_NO_NEED;
-			}
-			else
-			{
-				/* Look for another torch */
-				i = borg_slot(TV_LIGHT, SV_LIGHT_TORCH);
-				if (i < 0)
-					return BORG_UNMET_NEED;
+    int i=-1;
 
-				/* Torches automatically disappear when they get to 0 turns
-				 * so we don't need to actively swap them out */
-				return BORG_NO_NEED;
-			}
-		}
+	/* No need if wielding a light source */
+	if (borg_items[INVEN_LIGHT].iqty) return(FALSE);
 
-		/* Refuel current lantern */
-		if (current_light->sval == SV_LIGHT_LANTERN)
-		{
-			/* Refuel the lantern if needed */
-			if (borg_items[INVEN_LIGHT].timeout < 1000)
-			{
-				if (borg_refuel_lantern())
-					return BORG_MET_NEED;
+	/* Look for a torch */
+    i = borg_slot(TV_LIGHT, SV_LIGHT_TORCH);
 
-				return BORG_UNMET_NEED;
-			}
-		}
-		return BORG_NO_NEED;
-	}
-	else
-	{
-		i = borg_slot(TV_LIGHT, SV_LIGHT_LANTERN);
-		if (i < 0)
-		{
-			i = borg_slot(TV_LIGHT, SV_LIGHT_TORCH);
-		}
+    /* None available */
+    if (i < 0) return (FALSE);
 
-		if (i < 0)
-		{
-			return BORG_UNMET_NEED;
-		} else {
-			borg_keypress('w');
-			borg_keypress(I2A(i));
-			return BORG_MET_NEED;
-		}
-	}
+    /* Log the message */
+    borg_note(format("# Refueling with %s.", borg_items[i].desc));
+
+    /* Perform the action */
+    borg_keypress('w');
+    borg_keypress(I2A(i));
+
+    /* Hack -- Clear "shop" goals */
+    goal_shop = goal_ware = goal_item = -1;
+
+    /* Success */
+    return (TRUE);
+
 }
+
 
 /*
  * Hack -- refuel a lantern
@@ -2612,6 +2578,7 @@ bool borg_quaff_unknown(void)
 bool borg_read_unknown(void)
 {
     int i, n = -1;
+    borg_grid *ag = &borg_grids[c_y][c_x];
 
     /* Scan the pack */
     for (i = 0; i < INVEN_MAX_PACK; i++)
@@ -2755,6 +2722,7 @@ bool borg_use_unknown(void)
 bool borg_read_scroll(int sval)
 {
     int i;
+    borg_grid *ag = &borg_grids[c_y][c_x];
 
     /* Dark */
     if (no_light()) return (FALSE);
@@ -2817,7 +2785,7 @@ int borg_activate_failure(int tval, int sval)
 
     /* High level objects are harder */
     fail = 100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10));
-
+	 
     /* Yep we got one */
     return (fail);
 }
@@ -2851,7 +2819,7 @@ bool borg_equips_rod(int sval)
 
     /* High level objects are harder */
     fail = 100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10));
-
+	 
     /* Roll for usage (at least 1/2 chance of success. */
     if (fail > 500) return (FALSE);
 
@@ -2889,7 +2857,7 @@ bool borg_zap_rod(int sval)
 
     /* High level objects are harder */
     fail = 100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10));
-
+	 
     /* Roll for usage */
     if (sval != SV_ROD_RECALL)
     {
@@ -3001,7 +2969,7 @@ bool borg_use_staff_fail(int sval)
 
     /* High level objects are harder */
     fail = 100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10));
-
+	 
     /* Roll for usage, but if its a Teleport be generous. */
     if (fail > 500)
     {
@@ -3062,7 +3030,7 @@ bool borg_equips_staff_fail(int sval)
 
     /* High level objects are harder */
     fail = 100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10));
-
+	 
 	/* If its a Destruction, we only use it in emergencies, attempt it */
 	if (sval == SV_STAFF_DESTRUCTION)
 	{
@@ -3135,7 +3103,7 @@ bool borg_activate_artifact(int activation, int location)
          * of the resists that go with the artifact.
          * Lights dont need *id* just regular id.
          */
-        if  ((op_ptr->opt[OPT_birth_randarts] || op_ptr->opt[OPT_birth_randarts]) && (item->activation != EFF_ILLUMINATION &&
+        if  ((op_ptr->opt[OPT_birth_randarts]) && (item->activation != EFF_ILLUMINATION &&
               item->activation != EFF_MAPPING &&
               item->activation != EFF_CLAIRVOYANCE) &&
              (!item->fully_identified))
@@ -3207,7 +3175,7 @@ bool borg_equips_artifact(int activation, int location)
          * of the resists that go with the artifact.
          * Lights dont need *id* just regular id.
          */
-        if  ((op_ptr->opt[OPT_birth_randarts] || op_ptr->opt[OPT_birth_randarts]) && (item->activation != EFF_ILLUMINATION &&
+        if  ((op_ptr->opt[OPT_birth_randarts]) && (item->activation != EFF_ILLUMINATION &&
               item->activation != EFF_MAPPING &&
               item->activation != EFF_CLAIRVOYANCE) &&
              (!item->fully_identified))
@@ -3225,7 +3193,7 @@ bool borg_equips_artifact(int activation, int location)
 }
 
 /*
- * Check and see if borg is wielding an artifact
+ * Check and see if borg is carrying a particular item
  */
 bool borg_equips_item(int tval, int sval)
 {
@@ -3233,8 +3201,8 @@ bool borg_equips_item(int tval, int sval)
     int lev, fail;
 	int skill;
 
-    /* Check the equipment-- */
-    for (i = INVEN_WIELD; i < INVEN_TOTAL; i++)
+    /* Check the inven and equipment-- */
+    for (i = 0; i < INVEN_TOTAL; i++)
     {
         borg_item *item = &borg_items[i];
 
@@ -3242,10 +3210,35 @@ bool borg_equips_item(int tval, int sval)
         if (item->tval != tval) continue;
         if (item->sval != sval) continue;
 
-        /* Check charge. */
-        if (item->timeout) continue;
+		/* Skip unid */
+		if (!item->kind) continue;
 
-        /* Extract the item level for fail rate check*/
+        /* Check charge on appropriate items. */
+        if ((item->tval != TV_POTION && item->tval != TV_SCROLL) &&
+			!item->pval) continue;
+
+		/* some items can't be used under certain circumstances */
+		if (item->tval == TV_SCROLL)
+		{
+			/* Blind, confused, dark */
+			/* Dark */
+			if (no_light()) continue;
+
+			/* Blind or Confused or Amnesia*/
+			if (borg_skill[BI_ISBLIND] || borg_skill[BI_ISCONFUSED] ||
+    			borg_skill[BI_ISFORGET]) continue;
+		}
+
+		if (item->tval == TV_WAND)
+		{
+			/* Confused*/
+			if (borg_skill[BI_ISCONFUSED]) continue;
+		}
+
+		/* Potions do not have a fail rate */
+		if (item->tval == TV_POTION || item->tval == TV_SCROLL) return (TRUE);
+
+		/* Extract the item level for fail rate check*/
         lev = item->level;
 
 		/* Base chance of success */
@@ -3256,7 +3249,7 @@ bool borg_equips_item(int tval, int sval)
 
 		/* High level objects are harder */
 		fail = 100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10));
-
+	 
         /* Roll for usage.  Return Fail if greater than 50% fail.  Must beat 500 to succeed. */
         if (fail > 500) continue;
 
@@ -3286,7 +3279,7 @@ bool borg_activate_item(int tval, int sval, bool target)
         if (item->sval != sval) continue;
 
         /* Check charge */
-        if (item->timeout) return (FALSE);
+        if (item->timeout) continue;
 
         /* Log the message */
         borg_note(format("# Activating item %s.", item->desc));
@@ -3309,6 +3302,212 @@ bool borg_activate_item(int tval, int sval, bool target)
     return (FALSE);
 }
 
+/*
+ * Check and see if borg is carrying an particular item which has an effect
+ * Effect: is the index of the effect we are looking for.
+ * Legal: is a check to see if the borg is able to cast the effect,
+ *        not necesarily right now.
+ * Infinite: the item can be used over and over (rod, artifact, spell)
+ *
+ * This method could be used for scrolls and potions.  But it is often a
+ * better idea to manually select which type of item we want the borg to
+ * consume.  So for now, we will just look at activatable equipment items.
+ */
+bool borg_has_effect(int effect, bool legal, bool infinite)
+{
+    int i;
+    int lev, fail;
+	int skill;
+	int start = 0;
+
+    /* Check the entire inventory and equipment-- */
+    for (i = start; i < INVEN_TOTAL; i++)
+    {
+        borg_item *item = &borg_items[i];
+
+		/* Skip empty */
+		if (item->iqty <= 0) continue;
+		
+		/* Wrong effect */
+		if (item->activation != effect) continue;
+
+		/* Randarts in dragonscale do not activate */
+		if ((effect < EFF_DRAGON_BLUE || effect > EFF_DRAGON_POWER) &&
+			item->tval == TV_DRAG_ARMOR) continue;
+
+		/* Check for infinite supply */
+		if (infinite)
+		{
+			/* Consumable item is not endless */
+			if (item->tval == TV_FOOD ||
+				item->tval == TV_POTION ||
+				item->tval == TV_SCROLL ||
+				item->tval == TV_WAND ||
+				item->tval == TV_STAFF) continue;
+		}
+
+
+		/* Check for immediate capacity */
+		if (!legal)
+		{
+			switch (item->tval)
+			{
+				case TV_ROD:
+					/* Blind or Confused or Amnesia*/
+					if (borg_skill[BI_ISCONFUSED]) continue;
+					if (!item->pval) continue;
+					break;
+				case TV_WAND:
+					/* Blind or Confused or Amnesia*/
+					if (borg_skill[BI_ISCONFUSED]) continue;
+					if (item->pval <= 0) continue;
+					break;
+				case TV_STAFF:
+					/* Blind or Confused or Amnesia*/
+					if (borg_skill[BI_ISCONFUSED]) continue;
+					if (item->pval <= 0) continue;
+					break;
+				case TV_POTION:
+					/* Conditional prohibition? */
+					if (!item->aware) continue;
+					break;
+				case TV_SCROLL:
+				   /* Dark */
+					if (no_light()) continue;
+					/* Blind or Confused or Amnesia*/
+					if (borg_skill[BI_ISBLIND] || borg_skill[BI_ISCONFUSED] ||
+    					borg_skill[BI_ISFORGET]) continue;
+					break;
+				default:
+					if (item->timeout >= 1) continue;
+					break;
+
+			}
+
+		}
+
+		/* Equipment items must be worn for the effect */
+		if (borg_wield_slot(item) >= INVEN_WIELD && i < INVEN_WIELD) continue;
+
+		/* Extract the item level for fail rate check*/
+        lev = item->level;
+
+		/* Base chance of success */
+		skill = borg_skill[BI_DEV];
+
+		/* Confusion hurts skill */
+		if (borg_skill[BI_ISCONFUSED]) skill = skill * 75 / 100;
+
+		/* High level objects are harder */
+		fail = 100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10));
+	 
+        /* Roll for usage.  Return Fail if greater than 50% fail.  Must beat 500 to succeed. */
+        if (fail > 500) continue;
+
+        /* Success */
+        return (TRUE);
+
+    }
+
+    /* I guess I dont have it, or it is not ready, or too hard to activate. */
+    return (FALSE);
+}
+
+/*
+ * Attempt to use the given equipment activation effect.
+ */
+bool borg_activate_effect(int effect, bool target)
+{
+    int i;
+	int start = 0;
+
+	/* make sure the right keyset is selected */
+	if (OPT(rogue_like_commands)) option_set("rogue_like_commands", FALSE);
+
+
+    /* Check the entire inventory and equipment */
+    for (i = start; i < INVEN_TOTAL; i++)
+    {
+        borg_item *item = &borg_items[i];
+
+		/* Wrong effect */
+		if (item->activation != effect) continue;
+
+        /* Check charge */
+        if ((item->tval != TV_WAND && item->tval != TV_STAFF && item->tval != TV_ROD) && item->timeout) continue;
+		if ((item->tval == TV_WAND || item->tval == TV_STAFF || item->tval == TV_ROD) && item->pval <= 0) continue;
+
+		/* Check legality */
+		if (item->tval == TV_SCROLL)
+		{
+		   /* Dark */
+			if (no_light()) continue;
+
+			/* Blind or Confused or Amnesia*/
+			if (borg_skill[BI_ISBLIND] || borg_skill[BI_ISCONFUSED] ||
+    			borg_skill[BI_ISFORGET]) continue;
+		}
+		if (item->tval == TV_WAND || item->tval == TV_STAFF || item->tval == TV_ROD)
+		{
+			/* Blind or Confused or Amnesia*/
+			if (borg_skill[BI_ISCONFUSED]) continue;
+		}
+
+		/* Equipment items must be worn for the effect */
+		if (borg_wield_slot(item) >= INVEN_WIELD && i < INVEN_WIELD) continue;
+
+		/* Log the message */
+        borg_note(format("# Activating item %s.", item->desc));
+
+        /* Perform the action */
+        switch (item->tval)
+		{
+			case TV_FOOD:
+				borg_keypress('E');
+				break;
+			case TV_ROD:
+				borg_keypress('z');
+				break;
+			case TV_WAND:
+				borg_keypress('a');
+			    /* record the address to avoid certain bugs with inscriptions&amnesia */
+			    zap_slot = i;
+				break;
+			case TV_STAFF:
+				borg_keypress('u');
+			    /* record the address to avoid certain bugs with inscriptions&amnesia */
+			    zap_slot = i;
+				break;
+			case TV_POTION:
+				borg_keypress('q');
+				break;
+			case TV_SCROLL:
+				borg_keypress('r');
+				break;
+			default:
+				borg_keypress('A');
+				break;
+		}
+
+		/* equipment */
+        if (i >= INVEN_WIELD) borg_keypress(I2A(i - INVEN_WIELD));
+		
+		/* Inventory */
+		else borg_keypress(I2A(i));
+
+		/* Some items require a target */
+		if (target)
+		{
+    	    borg_keypress('5');
+		}
+
+        /* Success */
+        return (TRUE);
+    }
+
+    /* Oops */
+    return (FALSE);
+}
 /*
  * Hack -- check and see if borg is wielding a dragon armor and if
  * he will pass a fail check.
@@ -3360,7 +3559,7 @@ bool borg_equips_dragon(int drag_sval)
 		if (denominator == 0) denominator = numerator > 0 ? 1 : -1;
 
 		fail = (100 * numerator) / denominator;
-
+		 
 		/* Roll for usage, but if its a Teleport be generous. */
 		if (fail > 500) return (FALSE);
 
@@ -3408,7 +3607,7 @@ bool borg_equips_ring(int ring_sval)
     int lev, fail, i;
 	int skill;
 
-    for (i = INVEN_LEFT; i < INVEN_RIGHT; i++)
+    for (i = INVEN_LEFT; i <= INVEN_RIGHT; i++)
     {
         borg_item *item = &borg_items[i];
 
@@ -3436,7 +3635,7 @@ bool borg_equips_ring(int ring_sval)
 
 		/* High level objects are harder */
 		fail = 100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10));
-
+		 
 		/* Roll for usage, but if its a Teleport be generous. */
 		if (fail > 500) continue;
 
@@ -3457,7 +3656,7 @@ bool borg_activate_ring(int ring_sval)
 	int i;
 
     /* Check the equipment */
-    for (i = INVEN_LEFT; i < INVEN_RIGHT; i++)
+    for (i = INVEN_LEFT; i <= INVEN_RIGHT; i++)
     {
         borg_item *item = &borg_items[i];
 
@@ -3516,6 +3715,8 @@ bool borg_spell_okay(int book, int what)
     int reserve_mana = 0;
 
     borg_magic *as = &borg_magics[book][what];
+
+    borg_grid *ag = &borg_grids[c_y][c_x];
 
     /* Dark */
     if (no_light()) return (FALSE);
@@ -3706,6 +3907,8 @@ bool borg_prayer_okay(int book, int what)
 
     borg_magic *as = &borg_magics[book][what];
 
+    borg_grid *ag = &borg_grids[c_y][c_x];
+
     /* Dark */
     if (no_light()) return (FALSE);
 
@@ -3740,6 +3943,7 @@ bool borg_prayer_okay(int book, int what)
 
 		/* Banishment is OK, */
         if (book == 8 && what == 2) return (TRUE);
+
 
         /* others are rejected */
         return (FALSE);
@@ -3860,6 +4064,7 @@ bool borg_prayer(int book, int what)
     borg_note(format("# Praying %s (%d,%d).", as->name, book, what));
 
     /* Pray a prayer */
+    borg_keypress(ESCAPE);
     borg_keypress('p');
     borg_keypress(I2A(i));
     borg_keypress(I2A(what));
@@ -3965,11 +4170,40 @@ void borg_send_deinscribe(int i)
         borg_keypress(I2A(i - INVEN_WIELD));
     }
 
+#if 0
 	/* May ask for a confirmation */
 	borg_keypress('y');
 	borg_keypress('y');
+#endif
 }
 
+/*
+ * Deinscribe some items
+ */
+extern bool borg_needed_deinscribe(void)
+{
+    int ii;
+
+    for (ii=0; ii < INVEN_TOTAL; ii++)
+    {
+        borg_item *item = &borg_items[ii];
+
+        /* Skip empty items */
+        if (!item->iqty) continue;
+
+		/* Certain things to have inscriptions removed */
+		if (strstr(item->note, "!") ||
+		   (strstr(item->note, "Quest") && item->fully_identified)) 
+		{
+			   borg_send_deinscribe(ii);
+			   return (TRUE);
+		}
+
+    }
+
+    /* all done */
+    return (FALSE);
+}
 /*
  * Return the owner struct for the given store.
  */
@@ -3977,7 +4211,7 @@ static struct owner *store_owner(int st) {
 	return stores[st].owner;
 }
 
-/* (This is copied from store.c
+/* (This is copied from store.c)
  * Determine the price of an object (qty one) in a store.
  *
  *  store_buying == TRUE  means the shop is buying, player selling
@@ -4066,7 +4300,7 @@ s32b borg_price_item(const object_type *o_ptr, bool store_buying, int qty, int t
 /*
  * Cheat the "equip" screen
  */
-void borg_cheat_equip(void)
+void borg_cheat_equip(bool fake_gear)
 {
     int i;
 
@@ -4092,18 +4326,16 @@ void borg_cheat_equip(void)
             object_desc(buf, sizeof(buf), &p_ptr->inventory[i], ODESC_FULL);
 
 			/* Analyze the item (no price) */
-			borg_item_analyze(&borg_items[i], &p_ptr->inventory[i], buf);
+			borg_item_analyze(&borg_items[i], &p_ptr->inventory[i], buf,i, fake_gear);
 
 			/* get the fully id stuff */
 			if (p_ptr->inventory[i].ident & (IDENT_KNOWN | IDENT_EFFECT))
 			{
 				borg_items[i].fully_identified = TRUE;
 				borg_items[i].needs_I = FALSE;
-			}
+    		}
 
-			/* Uninscribe items with ! inscriptions */
-			if (strstr(borg_items[i].desc, "!")) borg_send_deinscribe(i);
-        }
+		}
     }
 }
 
@@ -4111,7 +4343,7 @@ void borg_cheat_equip(void)
 /*
  * Cheat the "inven" screen
  */
-void borg_cheat_inven(void)
+void borg_cheat_inven(bool fake_gear)
 {
     int i;
 
@@ -4141,7 +4373,7 @@ void borg_cheat_inven(void)
 
 
     	/* Analyze the item (no price) */
-    	borg_item_analyze(&borg_items[i], &p_ptr->inventory[i], buf);
+    	borg_item_analyze(&borg_items[i], &p_ptr->inventory[i], buf, i, fake_gear);
 
     	/* get the fully id stuff */
     	if (p_ptr->inventory[i].ident & (IDENT_KNOWN | IDENT_EFFECT))
@@ -4155,9 +4387,6 @@ void borg_cheat_inven(void)
     	borg_do_crush_hole = TRUE;
     	borg_do_crush_slow = TRUE;
 
-		/* Uninscribe items with ! inscriptions */
-		if (strstr(borg_items[i].desc, "!"))
-		{borg_send_deinscribe(i);}
 	}
 }
 
@@ -4181,7 +4410,7 @@ void borg_cheat_store(void)
 
 #if 0
 		/* Skip a shop that has not been visited */
-		if (!borg_shops[shop_num].when && shop_num != 7) continue;
+		if (!borg_shops[shop_num].when && shop_num != STORE_HOME) continue;
 #endif
 		/* Access the current shop */
 		st_ptr = &stores[shop_num];
@@ -4212,7 +4441,7 @@ void borg_cheat_store(void)
 			strcpy(borg_shops[shop_num].ware[slot].desc, buf);
 
 			/* Analyze the item */
-			borg_item_analyze(&borg_shops[shop_num].ware[slot], &stores[shop_num].stock[slot], buf);
+			borg_item_analyze(&borg_shops[shop_num].ware[slot], &stores[shop_num].stock[slot], buf, slot, TRUE);
 
 			/*need to be able to analize the home inventory to see if it was */
 			/* *fully ID*d. */
@@ -4462,16 +4691,6 @@ void borg_clear_3(void)
  */
 void borg_init_3(void)
 {
-    int i, k, n;
-
-    int size;
-
-    s16b what[514];
-    char *text[514];
-
-    char buf[256];
-
-
     /*** Item/Ware arrays ***/
 
     /* Make the inventory array */
@@ -4491,7 +4710,7 @@ void borg_init_3(void)
     C_MAKE(safe_shops, 8, borg_shop);
 
     /*** Plural Object Templates ***/
-
+#if 0
     /* Start with no objects */
     size = 0;
 
@@ -4619,7 +4838,7 @@ void borg_init_3(void)
         object_prep(&hack, &k_info[k], 10, MINIMISE);
 
         /* Save the index */
-        /* hack.name1 = i; */
+        hack.name1 = i;
 
         /* Describe a "singular" object */
         hack.number = 1;
@@ -4714,6 +4933,7 @@ void borg_init_3(void)
     /* Save the entries */
     for (i = 0; i < size; i++) borg_artego_text[i] = text[i];
     for (i = 0; i < size; i++) borg_artego_what[i] = what[i];
+#endif 
 }
 
 char *borg_prt_item(int item)
@@ -4738,4 +4958,3 @@ char *borg_prt_item(int item)
 #ifdef MACINTOSH
 static int HACK = 0;
 #endif
-#endif /* ALLOW_BORG */

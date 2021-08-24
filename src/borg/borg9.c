@@ -25,6 +25,8 @@ extern bool keep_playing;
 #endif /* bablos */
 bool borg_cheat_death;
 
+static s16b stat_use[6];
+
 /*
  * This file implements the "Ben Borg", an "Automatic Angband Player".
  *
@@ -311,6 +313,9 @@ void borg_log_death(void)
    ang_file *borg_log_file;
    time_t death_time;
 
+   /* No looping if the monster is getting multiple hits on us */
+   if (borg_respawning) return;
+
 	/* Build path to location of the definition file */
    path_build(buf, 1024, ANGBAND_DIR_USER, "borg-log.txt");
 
@@ -334,8 +339,7 @@ void borg_log_death(void)
 
    file_putf(borg_log_file, buf);
 
-   file_putf(borg_log_file, "%s the %s %s, Level %d/%d\n",
-		   op_ptr->full_name,
+   file_putf(borg_log_file, "%s the %s %s, Level %d/%d\n", op_ptr->full_name,
            p_ptr->race->name,
 		   p_ptr->class->name,
            p_ptr->lev, p_ptr->max_lev);
@@ -357,6 +361,9 @@ void borg_log_death_data(void)
    char buf[1024];
    ang_file *borg_log_file;
    time_t death_time;
+
+   /* No looping if the monster is getting multiple hits on us */
+   if (borg_respawning) return;
 
    path_build(buf, 1024, ANGBAND_DIR_USER, "borg.dat");
 
@@ -382,6 +389,558 @@ void borg_log_death_data(void)
 
    file_close(borg_log_file);
 }
+
+/* 
+ * Initialize all the messages in the game.  Back in the day, they were hard coded.
+ * Now, there are edit files which can alter the pain messages and such.  The borg
+ * will need to know what the new messages are.
+ */
+	/* methods of killing a monster (order not important). */
+	static char *prefix_kill[] =
+	{
+		"You have killed ",
+		"You have slain ",
+		"You have destroyed ",
+		NULL
+	};
+
+	/* methods of monster death (order not important).*/
+static char *suffix_died[] =
+	{
+		" dies.",
+		" die.",
+		" is destroyed.",
+		" are destroyed.",
+		" dissolves!",
+		" dissolve!",
+		" shrivels away in the light!",
+		" shrivel away in the light!",
+		" is embedded in the rock!",
+		" disintegrates!",
+		" freezes and shatters!",
+		" freeze and shatter!",
+		NULL
+	};
+static	char *suffix_blink[] =
+	{
+		" disappears!",      /* from teleport other */
+		" changes!",         /* from polymorph spell */
+		" teleports away.",  /* RF6_TPORT */
+		" blinks away.",                /* RF6_BLINK */
+		" pushes past",		/* monster movement */
+		" tramples over",	/* monster movement */
+		NULL
+	};
+	/* methods of hitting the player (order not important).*/
+static	char *suffix_hit_by[] =
+	{
+		" hits you.",
+		" touches you.",
+		" punches you.",
+		" kicks you.",
+		" claws you.",
+		" bites you.",
+		" stings you.",
+		" butts you.",
+		" crushes you.",
+		" engulfs you.",
+		" crawls on you.",
+		" drools on you.",
+		" spits on you.",
+		" gazes at you.",
+		" wails at you.",
+		" releases spores at you.",
+		NULL
+	};
+
+	/* methods of casting spells at the player (order important). */
+static	char *suffix_spell[] =
+	{
+		" does something.",
+		" makes a high pitched shriek.",        /* 0 RF4_SHRIEK */
+		" tries to cast a spell, but fails.",   /* 1 RF4_FAILS */
+		" does something.",                     /* 2 RF4_XXX3X4 */
+		" does something.",                     /* 3 RF4_XXX4X4 */
+		" fires an arrow.",                     /* 4 RF4_ARROW_1 */
+		" fires an arrow.",                     /* 5 RF4_ARROW_2 */
+		" fires a missile.",                    /* 6 RF4_ARROW_3 */
+		" fires a missile.",                    /* 7 RF4_ARROW_4 */
+		" breathes acid.",                      /* 8 RF4_BR_ACID */
+		" breathes lightning.",                 /* 9 RF4_BR_ELEC */
+		" breathes fire.",                      /*10 RF4_BR_FIRE */
+		" breathes frost.",                     /*11 RF4_BR_COLD */
+		" breathes gas.",                       /*12 RF4_BR_POIS */
+		" breathes nether.",                    /*13 RF4_BR_NETH */
+		" breathes light.",                     /*14 RF4_BR_LIGHT */
+		" breathes darkness.",                  /*15 RF4_BR_DARK */
+		" breathes confusion.",                 /*16 RF4_BR_CONF */
+		" breathes sound.",                     /*17 RF4_BR_SOUN */
+		" breathes chaos.",                     /*18 RF4_BR_CHAO */
+		" breathes disenchantment.",            /*19 RF4_BR_DISE */
+		" breathes nexus.",                     /*20 RF4_BR_NEXU */
+		" breathes time.",                      /*21 RF4_BR_TIME */
+		" breathes inertia.",                   /*22 RF4_BR_INER */
+		" breathes gravity.",                   /*23 RF4_BR_GRAV */
+		" breathes shards.",                    /*24 RF4_BR_SHAR */
+		" breathes hellfire.",                    /*25 RF4_BR_PLAS */
+		" breathes force.",                     /*26 RF4_BR_WALL */
+		" breathes raw magic.",                     /*27 RF4_BR_MANA */
+		" does something.",                     /*28 RF4_XXX5X4 */
+		" does something.",                     /*29 RF4_XXX6X4 */
+		" does something.",                     /*30 RF4_XXX7X4 */
+		" hurls a boulder at you!",             /*31 RF4_BOULDER */
+		" casts a ball of acid.",                 /*32 RF5_BA_ACID */
+		" casts a ball of lightning.",             /*33 RF5_BA_ELEC */
+		" casts a ball of fire.",                  /*34 RF5_BA_FIRE */
+		" casts a ball of frost.",                 /*35 RF5_BA_COLD */
+		" creates a cloud of poison.",             /*36 RF5_BA_POIS */
+		" casts a ball of nether.",                /*37 RF5_BA_NETH */
+		" creates a whirlpool of water.",                   /*38 RF5_BA_WATE */
+		" invokes a storm of raw magic.",               /*39 RF5_BA_MANA */
+		" invokes a storm of darkness.",           /*40 RF5_BA_DARK */
+		" drains your mana away.",				      /*41 RF5_DRAIN_MANA */
+		" gazes at you with psionic energy.",          /*42 RF5_MIND_BLAST */
+		" smashes you with psionic energy.",          /*43 RF5_BRAIN_SMASH */
+		" points at you and curses.",           /*44 RF5_CAUSE_1 */
+		" points at you and curses horribly.",  /*45 RF5_CAUSE_2 */
+		" points at you and incants terribly.",  /*46 RF5_CAUSE_3 */
+		" points at you and screams the word 'DIE!'",  /*47 RF5_CAUSE_4 */
+		" casts a bolt of acid.",                  /*48 RF5_BO_ACID */
+		" casts a bolt of lightning.",             /*49 RF5_BO_ELEC */
+		" casts a bolt of fire.",                  /*50 RF5_BO_FIRE */
+		" casts a bolt of frost.",                 /*51 RF5_BO_COLD */
+		" spews a stream of poison.",                     /*52 RF5_BO_POIS */
+		" casts a bolt of nether.",                /*53 RF5_BO_NETH */
+		" fires a jet of water.",                 /*54 RF5_BO_WATE */
+		" casts a bolt of mana.",                  /*55 RF5_BO_MANA */
+		" casts a bolt of plasma.",                /*56 RF5_BO_PLAS */
+		" shoots a spear of ice.",                  /*57 RF5_BO_ICEE */
+		" fires a magic missile.",              /*58 RF5_MISSILE */
+		" conjures up scary horrors.",           /*59 RF5_SCARE */
+		" sets off a blinding flash.",   /*60 RF5_BLIND */
+		" conjures up weird things.",     /*61 RF5_CONF */
+		" tries to make you move slowly.",     /*62 RF5_SLOW */
+		" tries to make you stop moving.",         /*63 RF5_HOLD */
+		" starts moving faster.",           /*64 RF6_HASTE */
+		" does something.",                     /*65 RF6_XXX1X6 */
+		" magically starts closing wounds.",         /*66 RF6_HEAL */
+		" does something.",                     /*67 RF6_XXX2X6 */
+		" casts a phase door.",                     /*68 RF6_XXX3X6 */
+		" tries to teleport away.",                     /*69 RF6_XXX4X6 */
+		" commands you to come hither.",             /*70 RF6_TELE_TO */
+		" commands you to go away.",                 /*71 RF6_TELE_AWAY */
+		" commands you to go far away.",              /*72 RF6_TELE_LEVEL */
+		" does something.",                     /*73 RF6_XXX5 */
+		" surrounds you in darkness.",                 /*74 RF6_DARKNESS */
+		" cackles evilly about traps.",   /*75 RF6_TRAPS */
+		" tries to make you forget things.",           /*76 RF6_FORGET */
+		" does something.",                     /*77 RF6_XXX6X6 */
+		" summons its kin.",             /*80 RF6_S_MONSTER */
+		" summons major demons.",         /*81 RF6_S_MONSTERS */
+		" summons a companion.",         /*81 RF6_S_MONSTERS */
+		" summons some friends.",         /*81 RF6_S_MONSTERS */
+		" summons animals.",             /*82 RF6_S_ANIMAL */
+		" summons spiders.",          /*83 RF6_S_SPIDER */
+		" summons hounds.",           /*84 RF6_S_HOUND */
+		" summons hydrae.",           /*85 RF6_S_HYDRA */
+		" summons an ainu.",         /*86 RF6_S_ANGEL */
+		" summons a demon.",  /*87 RF6_S_DEMON */
+		" summons the undead.",  /*88 RF6_S_UNDEAD */
+		" summons a dragon.",         /*89 RF6_S_DRAGON */
+		" summons fiends of darkness.",   /*90 RF6_S_HI_UNDEAD */
+		" summons ancient dragons.",  /*91 RF6_S_HI_DRAGON */
+		" summons ringwraith.",  /*92 RF6_S_WRAITH */
+		" summons his servents.",        /*93 RF6_S_UNIQUE */
+
+		NULL
+	};
+
+static	char *suffix_spell_blind[] =
+	{
+		" does something.",
+		" shrieks.",							/* 0 RF4_SHRIEK */
+		" tries to cast a spell, but fails.",   /* 1 RF4_FAILS */
+		" does something.",                     /* 2 RF4_XXX3X4 */
+		" does something.",                     /* 3 RF4_XXX4X4 */
+		" fires an arrow.",                     /* 4 RF4_ARROW_1 */
+		" fires an arrow.",                     /* 5 RF4_ARROW_2 */
+		" fires a missile.",                    /* 6 RF4_ARROW_3 */
+		" fires a missile.",                    /* 7 RF4_ARROW_4 */
+		" hisses.",                      /* 8 RF4_BR_ACID */
+		" crackles.",                 /* 9 RF4_BR_ELEC */
+		" roars.",                      /*10 RF4_BR_FIRE */
+		" wooshes.",                     /*11 RF4_BR_COLD */
+		" retches.",                       /*12 RF4_BR_POIS */
+		" groans.",                    /*13 RF4_BR_NETH */
+		" breathes.",                     /*14 RF4_BR_LIGHT */
+		" breathes.",                  /*15 RF4_BR_DARK */
+		" does something.",                 /*16 RF4_BR_CONF */
+		" breathes.",                     /*17 RF4_BR_SOUN */
+		" breathes.",                     /*18 RF4_BR_CHAO */
+		" breathes.",            /*19 RF4_BR_DISE */
+		" breathes.",                     /*20 RF4_BR_NEXU */
+		" breathes.",                      /*21 RF4_BR_TIME */
+		" breathes.",                   /*22 RF4_BR_INER */
+		" breathes.",                   /*23 RF4_BR_GRAV */
+		" breathes.",                    /*24 RF4_BR_SHAR */
+		" breathes.",                    /*25 RF4_BR_PLAS */
+		" breathes.",                     /*26 RF4_BR_WALL */
+		" breaths.",                     /*27 RF4_BR_MANA */
+		" does something.",                     /*28 RF4_XXX5X4 */
+		" does something.",                     /*29 RF4_XXX6X4 */
+		" does something.",                     /*30 RF4_XXX7X4 */
+		" hurls a boulder.",             /*31 RF4_BOULDER */
+		" mumbles.",                 /*32 RF5_BA_ACID */
+		" mumbles.",             /*33 RF5_BA_ELEC */
+		" mumbles.",                  /*34 RF5_BA_FIRE */
+		" mumbles.",                 /*35 RF5_BA_COLD */
+		" mumbles.",             /*36 RF5_BA_POIS */
+		" mumbles.",                /*37 RF5_BA_NETH */
+		" gurgles.",                   /*38 RF5_BA_WATE */
+		" screams loudly.",               /*39 RF5_BA_MANA */
+		" mumbles loudly.",           /*40 RF5_BA_DARK */
+		" moans.",				/*41 RF5_DRAIN_MANA */
+		" draining fails."		/*41 RF5_DRAIN_MANA */
+		" focuses on your mind.",          /*42 RF5_MIND_BLAST */
+		" focuses on your mind.",          /*43 RF5_BRAIN_SMASH */
+		" mumbles.",           /*44 RF5_CAUSE_1 */
+		" mumbles.",  /*45 RF5_CAUSE_2 */
+		" mumbles loudly.",  /*46 RF5_CAUSE_3 */
+		" screams the word 'DIE!'",  /*47 RF5_CAUSE_4 */
+		" mumbles.",                  /*48 RF5_BO_ACID */
+		" mumbles.",             /*49 RF5_BO_ELEC */
+		" mumbles.",                  /*50 RF5_BO_FIRE */
+		" mumbles.",                 /*51 RF5_BO_COLD */
+		" retches.",                     /*52 RF5_BO_POIS */
+		" mumbles.",                /*53 RF5_BO_NETH */
+		" gurgles.",                 /*54 RF5_BO_WATE */
+		" screams.",                  /*55 RF5_BO_MANA */
+		" screams.",                /*56 RF5_BO_PLAS */
+		" mumbles.",                  /*57 RF5_BO_ICEE */
+		" mumbles.",              /*58 RF5_MISSILE */
+		" makes scary noises.",           /*59 RF5_SCARE */
+		" mumbles.",   /*60 RF5_BLIND */
+		" messes with your mind.",     /*61 RF5_CONF */
+		" mumbles.",     /*62 RF5_SLOW */
+		" mumbles.",         /*63 RF5_HOLD */
+		" mumbles.",           /*64 RF6_HASTE */
+		" does something.",                     /*65 RF6_XXX1X6 */
+		" mumbles.",         /*66 RF6_HEAL */
+		" makes a soft 'pop'.",                     /*67 RF6_XXX2X6 */
+		" does something.",                     /*68 RF6_XXX3X6 */
+		" does something.",                     /*69 RF6_XXX4X6 */
+		" commands you to come hither",             /*70 RF6_TELE_TO */
+		" commands you to go away",                 /*71 RF6_TELE_AWAY */
+		" commands you to go far away.",              /*72 RF6_TELE_LEVEL */
+		" does something.",                     /*73 RF6_XXX5 */
+		" mumbles.",                 /*74 RF6_DARKNESS */
+		" cackles evilly.",   /*75 RF6_TRAPS */
+		" messes with your mind.",           /*76 RF6_FORGET */
+		" does something.",                     /*77 RF6_XXX6X6 */
+		" mumbles.",							/*80 RF6_S_MONSTER */
+		" mumbles.",         /*81 RF6_S_MONSTERS */
+		" mumbles.",             /*82 RF6_S_ANIMAL */
+		" mumbles.",          /*83 RF6_S_SPIDER */
+		" mumbles.",           /*84 RF6_S_HOUND */
+		" mumbles.",           /*85 RF6_S_HYDRA */
+		" mumbles.",         /*86 RF6_S_ANGEL */
+		" mumbles.",  /*87 RF6_S_DEMON */
+		" mumbles.",  /*88 RF6_S_UNDEAD */
+		" mumbles.",         /*89 RF6_S_DRAGON */
+		" mumbles.",   /*90 RF6_S_HI_UNDEAD */
+		" mumbles.",  /*91 RF6_S_HI_DRAGON */
+		" mumbles.",  /*92 RF6_S_WRAITH */
+		" mumbles.",        /*93 RF6_S_UNIQUE */
+		NULL
+	};
+	
+	/* Spontaneous level feelings (order important).*/
+static	const char *prefix_feeling[] =
+	{
+		"You are still uncertain about this place",
+		"Omens of death haunt this place",
+		"This place seems murderous",
+		"This place seems terribly dangerous",
+		"You feel anxious about this place",
+		"You feel nervous about this place",
+		"This place does not seem too risky",
+		"This place seems reasonably safe",
+		"This seems a tame, sheltered place",
+		"This seems a quiet, peaceful place",
+		NULL
+	};
+static	const char *obj_prefix_feeling[] =
+	{
+		"Looks like any other level.",
+		"you sense an item of wondrous power!",
+		"there are superb treasures here.",
+		"there are excellent treasures here.",
+		"there are very good treasures here.",
+		"there are good treasures here.",
+		"there may be something worthwhile here.",
+		"there may not be much interesting here.",
+		"there aren't many treasures here.",
+		"there are only scraps of junk here.",
+		"there are naught but cobwebs here.",
+		NULL
+	};
+
+	/* methods of hurting a monster (order not important). */
+static	char *suffix_pain[] =
+	{
+		" is hit",
+		" are hit",
+		" resists a lot.",
+		" resist a lot.",
+		" is hit hard.",		/* MON_MSG_HIT_HARD */
+		" are hit hard.",		/* MON_MSG_HIT_HARD */
+		" resists.",
+		" resist.",
+		" is immune",
+		" are immune.",
+		" resists somewhat.",
+		" resist somewhat",
+		" is unaffected!",
+		" are unaffected!",
+		" spawns!",
+		" spawn!",
+		" look healthier.",
+		" looks healthier.",
+		" fall asleep!",
+		" falls asleep!",
+		" wake up.",
+		" wakes up.",
+		" cringes from the light!",/* MON_MSG_CRINGE_LIGHT */
+		" shrivels away in the light!",	/* MON_MSG_SHRIVEL_LIGHT */
+		" loses some skin!",		/* MON_MSG_LOSE_SKIN */
+		" dissolves!",				/* MON_MSG_DISSOLVE */
+		" catches fire!",			/* MON_MSG_CATCH_FIRE */
+		" is badly frozen.", 	 /* MON_MSG_BADLY_FROZEN */
+		" shudders.",				/* MON_MSG_SHUDDER */
+		" changes!",				/* MON_MSG_CHANGE */
+		" is even more stunned.",		/* MON_MSG_MORE_DAZED */
+		" is stunned.",		/* MON_MSG_DAZED */
+		" is no longer stunned.",	/* MON_MSG_NOT_DAZED */
+		" looks more confused.",	/* MON_MSG_MORE_CONFUSED */
+		" looks confused.",		/* MON_MSG_CONFUSED */
+		" is no longer confused.",/* MON_MSG_NOT_CONFUSED */
+		" looks more slowed.",		/* MON_MSG_MORE_SLOWED */
+		" looks slowed.",			/* MON_MSG_SLOWED */
+		" speeds up.",				/* MON_MSG_NOT_SLOWED */
+		" looks even faster!",		/* MON_MSG_MORE_HASTED */
+		" starts moving faster.",	/* MON_MSG_HASTED */
+		" slows down.",				/* MON_MSG_NOT_HASTED */
+		" looks more terrified!",	/* MON_MSG_MORE_AFRAID */
+		" flees in terror!",		/* MON_MSG_FLEE_IN_TERROR */
+		" is no longer afraid.",/* MON_MSG_NOT_AFRAID */
+		" You hear a scream of agony!",/* MON_MSG_MORIA_DEATH */
+		" loses some mana!",		/* MON_MSG_MANA_DRAIN */
+		" looks briefly puzzled.",	/* MON_MSG_BRIEF_PUZZLE */
+		" maintains the same shape.", /* MON_MSG_MAINTAIN_SHAPE */
+
+		/* From message_pain PLURAL*/
+		" are unharmed.",		/* MON_MSG_UNHARMED  */
+		" cringe from the light!",/* MON_MSG_CRINGE_LIGHT */
+		" shrivel away in the light!",	/* MON_MSG_SHRIVEL_LIGHT */
+		" lose some skin!",		/* MON_MSG_LOSE_SKIN */
+		" catch fire!",			/* MON_MSG_CATCH_FIRE */
+		" are badly frozen.", 	 /* MON_MSG_BADLY_FROZEN */
+		" shudder.",				/* MON_MSG_SHUDDER */
+		" change!",				/* MON_MSG_CHANGE */
+		" are even more stunned.",		/* MON_MSG_MORE_DAZED */
+		" are stunned.",		/* MON_MSG_DAZED */
+		" are no longer stunned.",	/* MON_MSG_NOT_DAZED */
+		" look more confused.",	/* MON_MSG_MORE_CONFUSED */
+		" look confused.",		/* MON_MSG_CONFUSED */
+		" are no longer confused.",/* MON_MSG_NOT_CONFUSED */
+		" look more slowed.",		/* MON_MSG_MORE_SLOWED */
+		" look slowed.",			/* MON_MSG_SLOWED */
+		" speed up.",				/* MON_MSG_NOT_SLOWED */
+		" look even faster!",		/* MON_MSG_MORE_HASTED */
+		" start moving faster.",	/* MON_MSG_HASTED */
+		" slows down.",				/* MON_MSG_NOT_HASTED */
+		" look more terrified!",	/* MON_MSG_MORE_AFRAID */
+		" flee in terror!",		/* MON_MSG_FLEE_IN_TERROR */
+		" are no longer afraid.",/* MON_MSG_NOT_AFRAID */
+		" You hear several screams of agony!",/* MON_MSG_MORIA_DEATH */
+		" lose some mana!",		/* MON_MSG_MANA_DRAIN */
+		" looks briefly puzzled.",	/* MON_MSG_BRIEF_PUZZLE */
+		" maintain the same shape.", /* MON_MSG_MAINTAIN_SHAPE */
+		" are unharmed.",		/* MON_MSG_UNHARMED  */
+		/* And the 7 variable types from pain.txt */
+		" shrugs off the attack.",
+		" grunts with pain.",
+		" cries out in pain.",
+		" screams in pain.",
+		" screams in agony.",
+		" writhes in agony.",
+		" cries out feebly.",
+		" barely notices.",
+		" flinches.",
+		" squelches.",
+		" quivers in pain.",
+		" writhes about.",
+		" writhes in agony.",
+		" jerks limply.",
+		" shrugs off the attack.",
+		" snarls with pain.",
+		" yelps in pain.",
+		" howls in pain.",
+		" howls in agony.",
+		" writhes in agony.",
+		" yelps feebly.",
+		" ignores the attack.",
+		" grunts with pain.",
+		" squeals in pain.",
+		" shrieks in pain.",
+		" shrieks in agony.",
+		" writhes in agony.",
+		" cries out feebly.",
+		" barely notices.",
+		" hisses.",
+		" rears up in anger.",
+		" hisses furiously.",
+		" writhes about.",
+		" writhes in agony.",
+		" jerks limply.",
+		" shrugs off the attack.",
+		" snarls.",
+		" growls angrily.",
+		" hisses in pain.",
+		" mewls in pain.",
+		" hisses in agony.",
+		" mewls pitifully.",
+		" ignores the attack.",
+		" drones angrily.",
+		" scuttles about.",
+		" twitches in pain.",
+		" jerks in pain.",
+		" jerks in agony.",
+		" jerks feebly.",
+		" shrugs off the attack.",
+		" flaps angrily.",
+		" jeers in pain.",
+		" squawks with pain.",
+		" twitters in agony.",
+		" flutters about.",
+		" chirps feebly.",
+		" ignores the attack.",
+		" jerks.",
+		" rattles.",
+		" clatters.",
+		" shakes.",
+		" staggers.",
+		" crumples.",
+		" ignores the attack.",
+		" grunts.",
+		" jerks.",
+		" moans.",
+		" groans.",
+		" hesitates.",
+		" staggers.",
+		" ignores the attack.",
+		" spins fiercely.",
+		" swirls about.",
+		" twists around.",
+		" spins slowly.",
+		" swirls weakly.",
+		" twists limply.",
+		" laughs off the attack.",
+		" sneers.",
+		" scowls.",
+		" bellows in rage.",
+		" screams in fury.",
+		" grunts.",
+		" winces.",
+
+		/* Plural */
+		" shrug off the attack.",
+		" grunt with pain.",
+		" cry out in pain.",
+		" scream in pain.",
+		" scream in agony.",
+		" writhe in agony.",
+		" cry out feebly.",
+		" barely notice.",
+		" flinch.",
+		" squelch.",
+		" quiver in pain.",
+		" writhe about.",
+		" writhe in agony.",
+		" jerk limply.",
+		" shrug off the attack.",
+		" snarl with pain.",
+		" yelp in pain.",
+		" howl in pain.",
+		" howl in agony.",
+		" writhe in agony.",
+		" yelp feebly.",
+		" ignore the attack.",
+		" grunt with pain.",
+		" squeal in pain.",
+		" shriek in pain.",
+		" shriek in agony.",
+		" writhe in agony.",
+		" cry out feebly.",
+		" barely notice.",
+		" hiss.",
+		" rear up in anger.",
+		" hiss furiously.",
+		" writhe about.",
+		" writhe in agony.",
+		" jerk limply.",
+		" shrug off the attack.",
+		" snarl.",
+		" growl angrily.",
+		" hiss in pain.",
+		" mewl in pain.",
+		" hiss in agony.",
+		" mewl pitifully.",
+		" ignore the attack.",
+		" drone angrily.",
+		" scuttle about.",
+		" twitch in pain.",
+		" jerk in pain.",
+		" jerk in agony.",
+		" jerk feebly.",
+		" shrug off the attack.",
+		" flap angrily.",
+		" jeer in pain.",
+		" squawk with pain.",
+		" twitter in agony.",
+		" flutter about.",
+		" chirp feebly.",
+		" ignore the attack.",
+		" jerk.",
+		" rattle.",
+		" clatter.",
+		" shake.",
+		" stagger.",
+		" crumple.",
+		" ignore the attack.",
+		" grunt.",
+		" jerk.",
+		" moan.",
+		" groan.",
+		" hesitate.",
+		" stagger.",
+		" ignore the attack.",
+		" spin fiercely.",
+		" swirl about.",
+		" twist around.",
+		" spin slowly.",
+		" swirl weakly.",
+		" twist limply.",
+		" laugh off the attack.",
+		" sneer.",
+		" scowl.",
+		" bellow in rage.",
+		" scream in fury.",
+		" grunt.",
+		" wince.",
+		NULL
+	};
+
 
 /*
  * Think about the world and perform an action
@@ -446,7 +1005,7 @@ static bool borg_think(void)
         borg_do_equip = FALSE;
 
         /* Cheat the "equip" screen */
-       borg_cheat_equip();
+        borg_cheat_equip(TRUE);
 
        /* Done */
        return (FALSE);
@@ -459,7 +1018,8 @@ static bool borg_think(void)
         borg_do_inven = FALSE;
 
         /* Cheat the "inven" screen */
-        borg_cheat_inven();
+        borg_cheat_inven(TRUE);
+		borg_object_star_id();
 
         /* Done */
         return (FALSE);
@@ -514,8 +1074,8 @@ static bool borg_think(void)
     }
 
     /* Parse "equip" mode */
-    if ((0 == borg_what_text(0, 0, 10, &t_a, buf)) &&
-        (streq(buf, "(Equipment) ")))
+    if ((0 == borg_what_text(0, 0, 11, &t_a, buf)) &&
+        (streq(buf, "(Equipment)")))
     {
         /* Parse the "equip" screen */
         /* borg_parse_equip(); */
@@ -529,8 +1089,8 @@ static bool borg_think(void)
 
 
     /* Parse "inven" mode */
-    if ((0 == borg_what_text(0, 0, 10, &t_a, buf)) &&
-        (streq(buf, "(Inventory) ")))
+    if ((0 == borg_what_text(0, 0, 11, &t_a, buf)) &&
+        (streq(buf, "(Inventory)")))
     {
         /* Parse the "inven" screen */
         /* borg_parse_inven(); */
@@ -542,22 +1102,7 @@ static bool borg_think(void)
         return (TRUE);
     }
 
-    /* Parse "inven" mode */
-    if ((0 == borg_what_text(0, 0, 6, &t_a, buf)) &&
-	    (streq(buf, "(Inven")))
-	{
-		if (borg_best_item != -1)
-			borg_keypress(I2A(borg_best_item));
-
-        /* Leave this mode */
-        borg_keypress(ESCAPE);
-		borg_best_item = -1;
-
-        /* Done */
-        return (TRUE);
-    }
-
-    /*** Find books ***/
+	/*** Find books ***/
 
     /* Only if needed */
     if (borg_do_spell && (borg_do_spell_aux == 0))
@@ -634,30 +1179,29 @@ static bool borg_think(void)
         /* Prepare to retire */
         if (borg_stop_king)
         {
-#ifndef BABLOS
             borg_write_map(FALSE);
-#endif /* bablos */
             borg_oops("retire");
         }
         /* Borg will be respawning */
         if (borg_respawn_winners)
         {
-#ifndef BABLOS
             borg_write_map(FALSE);
-#if 0
-            /* Note the score */
-            borg_enter_score();
-#endif
             /* Write to log and borg.dat */
             borg_log_death();
             borg_log_death_data();
 
             /* respawn */
             resurrect_borg();
-#endif /* bablos */
         }
 
     }
+
+	/* Clear and load the borg_prepared[] reports */
+	for (i = 0; i < 127; i++)
+	{
+
+		borg_prepared[i] = borg_prep(i);
+	}
 
     /*** Handle stores ***/
 
@@ -697,7 +1241,7 @@ static bool borg_think(void)
         borg_do_spell_aux = 0;
 
         /* Examine the inventory */
-        borg_notice(TRUE);
+        borg_notice(TRUE, TRUE);
 
         /* Evaluate the current world */
         my_power = borg_power();
@@ -800,14 +1344,14 @@ static bool borg_think(void)
     /* Increment the panel clock */
     time_this_panel++;
 
-    /* Examine the screen */
-    borg_update();
-
-    /* Examine the equipment/inventory */
-    borg_notice(TRUE);
-
+	/* Examine the equipment/inventory */
+	borg_notice(TRUE, TRUE);
+	
 	/* Evaluate the current world */
-    my_power = borg_power();
+	my_power = borg_power();
+
+	/* Examine the screen */
+    borg_update();
 
     /* Hack -- allow user abort */
     if (borg_cancel) return (TRUE);
@@ -818,264 +1362,7 @@ static bool borg_think(void)
 
 
 
-/*
- * Hack -- methods of hurting a monster (order not important).
- *
- * See "message_pain()" for details.
- */
-static char *suffix_pain[] =
-{
-    " is unharmed."
-    " barely notices.",
-    " flinches.",
-    " squelches.",
-    " quivers in pain.",
-    " writhes about.",
-    " writhes in agony.",
-    " jerks limply.",
 
-    " spawns!",
-    " looks healthier.",
-    " starts moving faster.",
-    " starts moving slower.",
-
-    " is unaffected!",
-    " is immune.",
-    " resists a lot.",
-    " resists.",
-    " resists somewhat.",
-
-    " shrugs off the attack.",
-    " snarls with pain.",
-    " yelps in pain.",
-    " howls in pain.",
-    " howls in agony.",
-    /* xxx */
-    " yelps feebly.",
-
-    " ignores the attack.",
-    " grunts with pain.",
-    " squeals in pain.",
-    " shrieks in pain.",
-    " shrieks in agony.",
-    /* xxx */
-    " cries out feebly.",
-
-    /* xxx */
-    /* xxx */
-    " cries out in pain.",
-    " screams in pain.",
-    " screams in agony.",
-    /* xxx */
-    " cringes from the light!",
-    " loses some skin!",
-
-    " is hit hard.",
-
-    NULL
-};
-
-
-/*
- * Hack -- methods of killing a monster (order not important).
- *
- * See "mon_take_hit()" for details.
- */
-static char *prefix_kill[] =
-{
-    "You have killed ",
-    "You have slain ",
-    "You have destroyed ",
-    NULL
-};
-
-
-/*
- * Hack -- methods of monster death (order not important).
- *
- * See "project_m()", "do_cmd_fire()", "mon_take_hit()" for details.
- */
-static char *suffix_died[] =
-{
-    " dies.",
-    " is destroyed.",
-    " dissolves!",
-    " shrivels away in the light!",
-    NULL
-};
-static char *suffix_blink[] =
-{
-    " disappears!",      /* from teleport other */
-    " changes!",         /* from polymorph spell */
-    " teleports away.",  /* RF6_TPORT */
-    " blinks away.",                /* RF6_BLINK */
-    NULL
-};
-
-/*
- * Hack -- methods of hitting the player (order not important).
- *
- * The "insult", "moan", and "begs you for money" messages are ignored.
- *
- * See "make_attack_normal()" for details.
- */
-static char *suffix_hit_by[] =
-{
-    " hits you.",
-    " touches you.",
-    " punches you.",
-    " kicks you.",
-    " claws you.",
-    " bites you.",
-    " stings you.",
-    " butts you.",
-    " crushes you.",
-    " engulfs you.",
-    " crawls on you.",
-    " drools on you.",
-    " spits on you.",
-    " gazes at you.",
-    " wails at you.",
-    " releases spores at you.",
-    NULL
-};
-
-
-/*
- * Hack -- methods of casting spells at the player (order important).
- *
- * See "make_attack_spell()" for details.
- */
-static char *suffix_spell[] =
-{
-    " makes a high pitched shriek.",        /* 0 RF4_SHRIEK */
-    " tries to cast a spell, but fails.",   /* 1 RF4_FAILS */
-    " does something.",                     /* 2 RF4_XXX3X4 */
-    " does something.",                     /* 3 RF4_XXX4X4 */
-    " fires an arrow.",                     /* 4 RF4_ARROW_1 */
-    " fires an arrow!",                     /* 5 RF4_ARROW_2 */
-    " fires a missile.",                    /* 6 RF4_ARROW_3 */
-    " fires a missile!",                    /* 7 RF4_ARROW_4 */
-    " breathes acid.",                      /* 8 RF4_BR_ACID */
-    " breathes lightning.",                 /* 9 RF4_BR_ELEC */
-    " breathes fire.",                      /*10 RF4_BR_FIRE */
-    " breathes frost.",                     /*11 RF4_BR_COLD */
-    " breathes gas.",                       /*12 RF4_BR_POIS */
-    " breathes nether.",                    /*13 RF4_BR_NETH */
-    " breathes light.",                     /*14 RF4_BR_LIGHT */
-    " breathes darkness.",                  /*15 RF4_BR_DARK */
-    " breathes confusion.",                 /*16 RF4_BR_CONF */
-    " breathes sound.",                     /*17 RF4_BR_SOUN */
-    " breathes chaos.",                     /*18 RF4_BR_CHAO */
-    " breathes disenchantment.",            /*19 RF4_BR_DISE */
-    " breathes nexus.",                     /*20 RF4_BR_NEXU */
-    " breathes time.",                      /*21 RF4_BR_TIME */
-    " breathes inertia.",                   /*22 RF4_BR_INER */
-    " breathes gravity.",                   /*23 RF4_BR_GRAV */
-    " breathes shards.",                    /*24 RF4_BR_SHAR */
-    " breathes plasma.",                    /*25 RF4_BR_PLAS */
-    " breathes force.",                     /*26 RF4_BR_WALL */
-    " does something.",                     /*27 RF4_BR_MANA */
-    " does something.",                     /*28 RF4_XXX5X4 */
-    " does something.",                     /*29 RF4_XXX6X4 */
-    " does something.",                     /*30 RF4_XXX7X4 */
-    " hurls a boulder at you!",             /*31 RF4_BOULDER */
-    " casts an acid ball.",                 /*32 RF5_BA_ACID */
-    " casts a lightning ball.",             /*33 RF5_BA_ELEC */
-    " casts a fire ball.",                  /*34 RF5_BA_FIRE */
-    " casts a frost ball.",                 /*35 RF5_BA_COLD */
-    " casts a stinking cloud.",             /*36 RF5_BA_POIS */
-    " casts a nether ball.",                /*37 RF5_BA_NETH */
-    " gestures fluidly.",                   /*38 RF5_BA_WATE */
-    " invokes a mana storm.",               /*39 RF5_BA_MANA */
-    " invokes a darkness storm.",           /*40 RF5_BA_DARK */
-    " draws psychic energy from you!",      /*41 RF5_DRAIN_MANA */
-    " gazes deep into your eyes.",          /*42 RF5_MIND_BLAST */
-    " looks deep into your eyes.",          /*43 RF5_BRAIN_SMASH */
-    " points at you and curses.",           /*44 RF5_CAUSE_1 */
-    " points at you and curses horribly.",  /*45 RF5_CAUSE_2 */
-    " points at you, incanting terribly!",  /*46 RF5_CAUSE_3 */
-    " points at you, screaming the word DIE!",  /*47 RF5_CAUSE_4 */
-    " casts a acid bolt.",                  /*48 RF5_BO_ACID */
-    " casts a lightning bolt.",             /*49 RF5_BO_ELEC */
-    " casts a fire bolt.",                  /*50 RF5_BO_FIRE */
-    " casts a frost bolt.",                 /*51 RF5_BO_COLD */
-    " does something.",                     /*52 RF5_BO_POIS */
-    " casts a nether bolt.",                /*53 RF5_BO_NETH */
-    " casts a water bolt.",                 /*54 RF5_BO_WATE */
-    " casts a mana bolt.",                  /*55 RF5_BO_MANA */
-    " casts a plasma bolt.",                /*56 RF5_BO_PLAS */
-    " casts an ice bolt.",                  /*57 RF5_BO_ICEE */
-    " casts a magic missile.",              /*58 RF5_MISSILE */
-    " casts a fearful illusion.",           /*59 RF5_SCARE */
-    " casts a spell, burning your eyes!",   /*60 RF5_BLIND */
-    " creates a mesmerising illusion.",     /*61 RF5_CONF */
-    " drains power from your muscles!",     /*62 RF5_SLOW */
-    " stares deep into your eyes!",         /*63 RF5_HOLD */
-    " concentrates on XXX body.",           /*64 RF6_HASTE */
-    " does something.",                     /*65 RF6_XXX1X6 */
-    " concentrates on XXX wounds.",         /*66 RF6_HEAL */
-    " does something.",                     /*67 RF6_XXX2X6 */
-    " does something.",                     /*68 RF6_XXX3X6 */
-    " does something.",                     /*69 RF6_XXX4X6 */
-    " commands you to return.",             /*70 RF6_TELE_TO */
-    " teleports you away.",                 /*71 RF6_TELE_AWAY */
-    " gestures at your feet.",              /*72 RF6_TELE_LEVEL */
-    " does something.",                     /*73 RF6_XXX5 */
-    " gestures in shadow.",                 /*74 RF6_DARKNESS */
-    " casts a spell and cackles evilly.",   /*75 RF6_TRAPS */
-    " tries to blank your mind.",           /*76 RF6_FORGET */
-    " does something.",                     /*77 RF6_XXX6X6 */
-    " does something.",                     /*78 RF6_XXX7X6 */
-    " does something.",                     /*79 RF6_XXX8X6 */
-    " magically summons help!",             /*80 RF6_S_MONSTER */
-    " magically summons monsters!",         /*81 RF6_S_MONSTERS */
-    " magically summons animals.",             /*82 RF6_S_ANIMAL */
-    " magically summons spiders.",          /*83 RF6_S_SPIDER */
-    " magically summons hounds.",           /*84 RF6_S_HOUND */
-    " magically summons hydras.",           /*85 RF6_S_HYDRA */
-    " magically summons an angel!",         /*86 RF6_S_ANGEL */
-    " magically summons a hellish adversary!",  /*87 RF6_S_DEMON */
-    " magically summons an undead adversary!",  /*88 RF6_S_UNDEAD */
-    " magically summons a dragon!",         /*89 RF6_S_DRAGON */
-    " magically summons greater undead!",   /*90 RF6_S_HI_UNDEAD */
-    " magically summons ancient dragons!",  /*91 RF6_S_HI_DRAGON */
-    " magically summons mighty undead opponents!",  /*92 RF6_S_WRAITH */
-    " magically summons special opponents!",        /*93 RF6_S_UNIQUE */
-
-    NULL
-};
-
-
-
-#if 0
-/* XXX XXX XXX */
-msg("%s looks healthier.", m_name);
-msg("%s looks REALLY healthy!", m_name);
-#endif
-
-
-
-/*
- * Hack -- Spontaneous level feelings (order important).
- *
- * See "do_cmd_feeling()" for details.
- */
-static char *prefix_feeling[] =
-{
-    "Looks like any other level",
-    "You feel there is something special",
-    "You have a superb feeling",
-    "You have an excellent feeling",
-    "You have a very good feeling",
-    "You have a good feeling",
-    "You feel strangely lucky",
-    "You feel your luck is turning",
-    "You like the look of this place",
-    "This level can't be all bad",
-    "What a boring place",
-    NULL
-};
 
 
 
@@ -1136,9 +1423,20 @@ static void borg_parse_aux(char *msg, int len)
     if (prefix(msg, "You die."))
     {
         /* Abort (unless cheating) */
-        if (!(p_ptr->wizard || op_ptr->opt[OPT_cheat_live]))
+
+
+
+   		if (!(p_ptr->wizard || borg_cheat_death || op_ptr->opt[OPT_cheat_live]))
         {
-            /* Abort */
+			/* Dump the Character Map*/
+			if (borg_skill[BI_CLEVEL] >= borg_dump_level ||
+				strstr(p_ptr->died_from, "starvation")) borg_write_map(FALSE);
+
+			/* Log the death */
+			borg_log_death();
+			borg_log_death_data();
+
+			/* Abort */
             borg_oops("death");
 
             /* Abort right now! */
@@ -1147,7 +1445,25 @@ static void borg_parse_aux(char *msg, int len)
             Term_xtra(TERM_XTRA_NOISE, 1);
         }
 
-        /* Done */
+		/* Cheat_live.  Make a new borg */
+        if (borg_cheat_death)
+        {
+			/* flush the buffer */
+			borg_flush();
+
+			/* Log death */
+			borg_log_death();
+			borg_log_death_data();
+
+			/* Dump the Character Map*/
+			if (borg_skill[BI_CLEVEL] >= borg_dump_level ||
+				strstr(p_ptr->died_from, "starvation")) borg_write_map(FALSE);
+
+			/* Res the borg */
+			resurrect_borg();
+		}
+
+		/* Done */
         return;
     }
 
@@ -1178,7 +1494,7 @@ static void borg_parse_aux(char *msg, int len)
             if (borg_skill[BI_DIS] < 20)
             {
                 /* Set door as jammed, then bash it */
-                ag->feat = FEAT_DOOR_HEAD + 0x08;
+                ag->feat = FEAT_DOOR_JAMMED;
             }
         }
 
@@ -1499,6 +1815,26 @@ static void borg_parse_aux(char *msg, int len)
         return;
     }
 
+    /* Hit somebody */
+    if (prefix(msg, "You smite "))
+    {
+        tmp = strlen("You smite ");
+        strnfmt(who, 1 + len - (tmp + 1), "%s", msg + tmp);
+        strnfmt(buf, 256, "HIT:%s", who);
+        borg_react(msg, buf);
+        return;
+    }
+
+	/* Hit somebody */
+    if (prefix(msg, "You freeze "))
+    {
+        tmp = strlen("You freeze ");
+        strnfmt(who, 1 + len - (tmp + 1), "%s", msg + tmp);
+        strnfmt(buf, 256, "HIT:%s", who);
+        borg_react(msg, buf);
+        return;
+    }
+
     /* Miss somebody */
     if (prefix(msg, "You miss "))
     {
@@ -1539,15 +1875,19 @@ static void borg_parse_aux(char *msg, int len)
     /* "It screams in pain." (etc) */
     for (i = 0; suffix_pain[i]; i++)
     {
-        /* "It screams in pain." (etc) */
-        if (suffix(msg, suffix_pain[i]))
-        {
-            tmp = strlen(suffix_pain[i]);
-            strnfmt(who, 1 + len - tmp, "%s", msg);
-            strnfmt(buf, 256, "PAIN:%s", who);
-            borg_react(msg, buf);
-            return;
-        }
+        /* Problem with "Something Moans."  It can be a pain message and an attack message. */
+		if (!strstr(msg, "Something moans."))
+		{
+			/* "It screams in pain." (etc) */
+			if (suffix(msg, suffix_pain[i]))
+			{
+				tmp = strlen(suffix_pain[i]);
+				strnfmt(who, 1 + len - tmp, "%s", msg);
+				strnfmt(buf, 256, "PAIN:%s", who);
+				borg_react(msg, buf);
+				return;
+			}
+		}
     }
 
 
@@ -1672,6 +2012,19 @@ static void borg_parse_aux(char *msg, int len)
         }
     }
 
+    /* "It casts a spell." (etc) */
+    for (i = 0; suffix_spell_blind[i]; i++)
+    {
+        /* "It casts a spell." (etc) */
+        if (suffix(msg, suffix_spell_blind[i]))
+        {
+            tmp = strlen(suffix_spell_blind[i]);
+            strnfmt(who, 1 + len - tmp, "%s", msg);
+            strnfmt(buf, 256, "SPELL_%03d:%s", i, who);
+            borg_react(msg, buf);
+            return;
+        }
+    }
 
     /* State -- Asleep */
     if (suffix(msg, " falls asleep!"))
@@ -1771,16 +2124,17 @@ static void borg_parse_aux(char *msg, int len)
     /* Feature XXX XXX XXX */
     if (streq(msg, "The door appears to be stuck."))
     {
-        /* Only process non-jammed doors */
-        if ((ag->feat >= FEAT_DOOR_HEAD) && (ag->feat <= FEAT_DOOR_HEAD + 0x07))
-        {
+		/* Mark every door near me as jammed. */
+		for (i = 0; i < 8; i++)
+		{
             /* Mark the door as jammed */
-            ag->feat = FEAT_DOOR_HEAD + 0x08;
-
-            /* Clear goals */
-            goal = 0;
-        }
-
+            ag = &borg_grids[c_y + ddy_ddd[i]][c_x + ddx_ddd[i]]; 
+			if (ag->feat >= FEAT_DOOR_HEAD && ag->feat <= FEAT_DOOR_HEAD + 0x07)
+			{
+				ag->feat = FEAT_DOOR_JAMMED;
+				goal = 0;
+			}
+		}
         return;
     }
 
@@ -1900,7 +2254,7 @@ static void borg_parse_aux(char *msg, int len)
     }
 
     /* Wearing Cursed Item */
-    if ((prefix(msg, "Oops! It feels deathly cold!")) ||
+    if ((suffix(msg, "It feels deathly cold!")) ||
         (suffix(msg, " seems to be cursed.")) ||
         (suffix(msg, " appears to be cursed.")))
     {
@@ -2043,8 +2397,6 @@ static void borg_parse_aux(char *msg, int len)
 	{
 		/* make sure the aligned dungeon is on */
 
-		/* make sure the borg does not think he's on one */
-		/* Remove all stairs from the array. */
         track_less_num = 0;
         track_more_num = 0;
 		borg_on_dnstairs = FALSE;
@@ -2181,7 +2533,8 @@ static void borg_parse_aux(char *msg, int len)
 
     /* Shield */
     if (prefix(msg, "A mystic shield forms around your body!") ||
-		prefix(msg, "Your skin turns to stone."))
+		prefix(msg, "Your skin turns to stone.") ||
+		prefix(msg, "The mystic shield strengthens."))
     {
         borg_shield = TRUE;
         return;
@@ -2331,7 +2684,7 @@ static void borg_parse_aux(char *msg, int len)
     if (prefix(msg, "You hear a door burst open!"))
     {
         /* on level 1 and 2 be concerned.  Could be Grip or Fang */
-        if (borg_skill[BI_CDEPTH] <= 3 && borg_skill[BI_CLEVEL] <= 5) scaryguy_on_level = TRUE;
+        if (borg_skill[BI_CDEPTH] <= 3 && borg_skill[BI_CLEVEL] <= 5) borg_depth |= DEPTH_SCARY;
     }
 
 	/* Some spells move the borg from his grid */
@@ -2359,6 +2712,16 @@ static void borg_parse_aux(char *msg, int len)
         {
             strnfmt(buf, 256, "FEELING:%d", i);
             borg_react(msg, buf);
+        }
+    }
+	/* Feelings about objects on the level */
+    for (i = 0; obj_prefix_feeling[i]; i++)
+    {
+        /* "You feel..." (etc) */
+        if (suffix(msg, obj_prefix_feeling[i]))
+        {
+            strnfmt(buf, 256, "FEELING:%d", i);
+            borg_react(msg, buf);
             return;
         }
     }
@@ -2381,7 +2744,167 @@ static void borg_parse(char *msg)
 	/* Note the long message */
 	if (borg_verbose && msg) borg_note(format("# Parsing msg <%s>", msg));
 
-    /* Flush messages */
+	/* Collect, verify, and grow */
+    len = strnfmt(buf, 1024, "%s", msg);
+
+	/* Attempt to correct the special characters in the unique names */
+    if (msg && (msg[0] != ' '))
+    {
+        int i, j;
+		int pos;
+
+        /* Split in the special characters */
+        for (j = i = 0; i < len-1; i++)
+        {
+            /* Smeagol */
+            if (buf[i] == 'é')
+            {
+                /* Replace with the first right special character */
+				buf[i] = 'Ã';
+
+				/* Move characters to the right one space */
+				for (pos = len; pos > i; pos--)
+				{
+					buf[pos+1] = buf[pos];
+				}
+				
+				/* Inject the second right character */
+				buf[i+1] = '©';
+
+				/* Lengthen the size */
+				len ++;
+			}
+			/* Grishnakh, Nar */
+            else if (buf[i] == 'á')
+            {
+                /* Replace with the first right special character */
+				buf[i] = 'Ã';
+
+				/* Move characters to the right one space */
+				for (pos = len; pos > i; pos--)
+				{
+					buf[pos+1] = buf[pos];
+				}
+				
+				/* Inject the second right character */
+				buf[i+1] = '¡';
+
+				/* Lengthen the size */
+				len ++;
+			}
+			/* Ugluk,  */
+            else if (buf[i] == 'ú')
+            {
+                /* Replace with the first right special character */
+				buf[i] = 'Ã';
+
+				/* Move characters to the right one space */
+				for (pos = len; pos > i; pos--)
+				{
+					buf[pos+1] = buf[pos];
+				}
+				
+				/* Inject the second right character */
+				buf[i+1] = 'º';
+
+				/* Lengthen the size */
+				len ++;
+			}
+			/* Ibum  */
+            else if (buf[i] == 'î')
+            {
+                /* Replace with the first right special character */
+				buf[i] = 'Ã';
+
+				/* Move characters to the right one space */
+				for (pos = len; pos > i; pos--)
+				{
+					buf[pos+1] = buf[pos];
+				}
+				
+				/* Inject the second right character */
+				buf[i+1] = '®';
+
+				/* Lengthen the size */
+				len ++;
+			}
+			/* Angamaite, Osse, */
+            else if (buf[i] == 'ë')
+            {
+                /* Replace with the first right special character */
+				buf[i] = 'Ã';
+
+				/* Move characters to the right one space */
+				for (pos = len; pos > i; pos--)
+				{
+					buf[pos+1] = buf[pos];
+				}
+				
+				/* Inject the second right character */
+				buf[i+1] = '«';
+
+				/* Lengthen the size */
+				len ++;
+			}
+			/* Eol  */
+            else if (buf[i] == 'ö')
+            {
+                /* Replace with the first right special character */
+				buf[i] = 'Ã';
+
+				/* Move characters to the right one space */
+				for (pos = len; pos > i; pos--)
+				{
+					buf[pos+1] = buf[pos];
+				}
+				
+				/* Inject the second right character */
+				buf[i+1] = '¶';
+
+				/* Lengthen the size */
+				len ++;
+			}
+			/* Ar-PharazÃ´n the Golden */
+            else if (buf[i] == 'ô')
+            {
+                /* Replace with the first right special character */
+				buf[i] = 'Ã';
+
+				/* Move characters to the right one space */
+				for (pos = len; pos > i; pos--)
+				{
+					buf[pos+1] = buf[pos];
+				}
+				
+				/* Inject the second right character */
+				buf[i+1] = '´';
+
+				/* Lengthen the size */
+				len ++;
+			}
+			/* Khamul */
+            else if (buf[i] == 'û')
+            {
+                /* Replace with the first right special character */
+				buf[i] = 'Ã';
+
+				/* Move characters to the right one space */
+				for (pos = len; pos > i; pos--)
+				{
+					buf[pos+1] = buf[pos];
+				}
+				
+				/* Inject the second right character */
+				buf[i+1] = '»';
+
+				/* Lengthen the size */
+				len ++;
+			}
+
+  		}
+    }
+
+	/* Flush messages */
     if (len && (!msg || (msg[0] != ' ')))
     {
         int i, j;
@@ -2446,9 +2969,6 @@ static void borg_parse(char *msg)
 
 
 #ifndef BABLOS
-
-#if 0
-static s16b stat_use[6];
 
 static int adjust_stat_borg(int value, int amount, int borg_roll)
 {
@@ -2711,10 +3231,11 @@ static void get_extra_borg(void)
  */
 static void get_history_borg(void)
 {
-    int i, roll, social_class;
-	struct history_chart *chart;
-	struct history_entry *entry;
-	char *res = NULL;
+#if 0
+	int i;
+	int chart, roll, 
+#endif
+	int social_class;
 
 
     /* Clear the previous history strings */
@@ -2724,23 +3245,11 @@ static void get_history_borg(void)
     /* Initial social class */
     social_class = randint1(4);
 
+#if 0
     /* Starting place */
     chart = p_ptr->race->history;
 
-
     /* Process the history */
-	while (chart) {
-		roll = randint1(100);
-		for (entry = chart->entries; entry; entry = entry->next)
-			if (roll <= entry->roll)
-				break;
-		assert(entry);
-
-		res = string_append(res, entry->text);
-		social_class += entry->bonus - 50;
-		chart = entry->succ;
-	}
-#if 0
     while (chart)
     {
         /* Start over */
@@ -2762,6 +3271,7 @@ static void get_history_borg(void)
         chart = h_info[i].next;
     }
 #endif
+
     /* Verify social class */
     if (social_class > 100) social_class = 100;
     else if (social_class < 1) social_class = 1;
@@ -2826,12 +3336,10 @@ static void get_money_borg(void)
     /* Save the gold */
     p_ptr->au = gold;
 }
-#endif
-
 /*
  * Name segments for random player names
  * Copied Cth by DvE
- * Copied from borgband by APW
+ * Copied from borgband by Andrew White
  */
 
 /* Dwarves */
@@ -2936,7 +3444,7 @@ static char *orc_syllable3[] =
  * based on a Javascript by Michael Hensley
  * "http://geocities.com/timessquare/castle/6274/"
  * Copied from Cth by DvE
- * Copied from borgband by APW
+ * Copied from borgband by andrew white
  */
 static void create_random_name(int race, char *name)
 {
@@ -3034,6 +3542,7 @@ static void player_outfit_borg(struct player *p)
 void resurrect_borg(void)
 {
 	int i,j;
+	int stats[A_MAX];
 
 	/* Cheat death */
     p_ptr->is_dead = FALSE;
@@ -3045,6 +3554,14 @@ void resurrect_borg(void)
 
     /* flush the commands */
     borg_flush();
+
+	/* fully healed and rested */
+	p_ptr->chp = p_ptr->mhp;
+	p_ptr->csp = p_ptr->msp;
+	p_ptr->is_dead = FALSE;
+
+	/* No looping if the monster is getting multiple hits on us */
+	if (borg_respawning) return;
 
     /* remove the spell counters */
     if (p_ptr->class->spell_book)
@@ -3063,19 +3580,16 @@ void resurrect_borg(void)
 
     /*** Wipe the player ***/
 	player_init(p_ptr);
-
-	borg_skill[BI_ISCUT] = borg_skill[BI_ISSTUN] = borg_skill[BI_ISHEAVYSTUN] = borg_skill[BI_ISIMAGE] = borg_skill[BI_ISSTUDY] = FALSE;
+    borg_skill[BI_ISCUT] = borg_skill[BI_ISSTUN] = borg_skill[BI_ISHEAVYSTUN] = borg_skill[BI_ISIMAGE] = borg_skill[BI_ISSTUDY] = FALSE;
+	
+	
 
     /* reset our panel clock */
     time_this_panel =1;
 
     /* reset our vault/unique check */
-    vault_on_level = FALSE;
     unique_on_level = 0;
-    scaryguy_on_level = FALSE;
-
-    /* reset our breeder flag */
-    breeder_level = FALSE;
+    borg_depth &= ~(DEPTH_SCARY | DEPTH_BREEDER | DEPTH_VAULT);
 
     /* Assume not leaving the level */
     goal_leaving = FALSE;
@@ -3097,7 +3611,7 @@ void resurrect_borg(void)
 	/* Full Random */
     if (borg_respawn_class == -1 && borg_respawn_race == -1)
     {
-		player_generate(p_ptr, NULL, NULL, NULL);
+		player_generate(p_ptr, NULL, player_id2race(randint0(MAX_RACES)), player_id2class(randint0(MAX_CLASSES)));
 	}
 
 	/* Selected Race, random Class */
@@ -3112,49 +3626,36 @@ void resurrect_borg(void)
 		player_generate(p_ptr, NULL, NULL, player_id2class(borg_respawn_class));
 	}
 
-		/* The dungeon is not ready */
-		character_dungeon = FALSE;
+	/* The dungeon is not ready */
+	character_dungeon = FALSE;
 
-		/* Start in town */
-		p_ptr->depth = 0;
+	/* Start in town */
+	p_ptr->depth = 0;
 
-		/* Hack -- seed for flavors */
-		seed_flavor = randint0(0x10000000);
+	/* Hack -- seed for flavors */
+	seed_flavor = randint0(0x10000000);
 
-		/* Hack -- seed for town layout */
-		seed_town = randint0(0x10000000);
+	/* Hack -- seed for town layout */
+	seed_town = randint0(0x10000000);
 
-		/* Roll up a new character. Quickstart is allowed if ht_birth is set */
-		player_birth(TRUE);
+	/* Seed for random artifacts */
+	if (!seed_randart || !OPT(birth_keep_randarts))
+		seed_randart = randint0(0x10000000);
 
-		/* Seed for random artifacts */
-		if (!seed_randart || !OPT(birth_keep_randarts))
-			seed_randart = randint0(0x10000000);
+	/* Randomize the artifacts if required */
+	if (OPT(birth_randarts))
+		do_randart(seed_randart, TRUE);
 
-		/* Randomize the artifacts if required */
-		if (OPT(birth_randarts))
-			do_randart(seed_randart, TRUE);
-
-#if 0
-	int stats[A_MAX];
-	/* Borrow commands from birth.c */
-	get_stats(stats);
-	get_bonuses();
-	get_ahw(p_ptr);
+	/* Some Extra things */
+	get_stats_borg();
+	get_extra_borg();
+	get_ahw_borg();
+	get_history_borg();
+	get_money_borg();
 	p_ptr->history = get_history(p_ptr->race->history, &p_ptr->sc);
 	p_ptr->sc_birth = p_ptr->sc;
-	roll_hp();
-	get_money();
 	store_reset();
-#endif
-#if 0
-	/* Some Extra things */
-    get_stats_borg();
-    get_extra_borg();
-    get_ahw_borg();
-    get_history_borg();
-   get_money_borg();
-#endif
+
 
     /* Get a random name */
    create_random_name(p_ptr->race->ridx,op_ptr->full_name);
@@ -3167,8 +3668,6 @@ void resurrect_borg(void)
     /* Hack -- flush it */
     Term_fresh();
 
-    /*** Hack -- Extract race ***/
-
     /* Insert the player Race--cheat */
 	borg_race = p_ptr->race->ridx;
 
@@ -3180,6 +3679,17 @@ void resurrect_borg(void)
     /* Notice the new race and class */
     prepare_race_class_info();
 
+	/* Reset the dungeon Level */
+	/* Generate a dungeon level */
+	cave_generate(cave, p_ptr);
+	p_ptr->playing = TRUE;
+
+	/* Reset visuals */
+	reset_visuals(TRUE);
+
+	/* Redraw stuff */
+	p_ptr->redraw |= (PR_INVEN | PR_EQUIP | PR_MONSTER | PR_MESSAGE);
+	redraw_stuff(p_ptr);
 
     /* need to check all stats */
     my_need_stat_check[0] = TRUE;
@@ -3208,13 +3718,14 @@ void resurrect_borg(void)
     borg_berserk = (p_ptr->timed[TMD_SHERO] ? TRUE : FALSE);
     if (p_ptr->timed[TMD_SINVIS]) borg_see_inv = 10000;
 
-    /* Message */
+	/* fully healed and rested */
+	p_ptr->chp = p_ptr->mhp;
+	p_ptr->csp = p_ptr->msp;
+	p_ptr->is_dead = FALSE;
+	
+	/* Message */
     borg_note("# Respawning");
     borg_respawning = 5;
-
-    /* fully healed and rested */
-    p_ptr->chp = p_ptr->mhp;
-    p_ptr->csp = p_ptr->msp;
 
 
 	/* Mark savefile as borg cheater */
@@ -3267,7 +3778,7 @@ extern struct keypress (*inkey_hack)(int flush_first);
 static struct keypress borg_inkey_hack(int flush_first)
 {
     keycode_t borg_ch;
-    struct keypress key = {EVT_KBRD, 0, 0};
+	struct keypress key = {EVT_KBRD, 0, 0};
 
 	ui_event ch_evt;
 
@@ -3281,7 +3792,9 @@ static struct keypress borg_inkey_hack(int flush_first)
 	bool borg_prompt;  /* ajg  For now we can just use this locally.
                            in the 283 borg he uses this to optimize knowing if
                            we are waiting at a prompt for info */
-    /* Locate the cursor */
+	key.mods = 0;
+
+	/* Locate the cursor */
      (void)Term_locate(&x, &y);
 
     /* Refresh the screen */
@@ -3333,14 +3846,13 @@ static struct keypress borg_inkey_hack(int flush_first)
     /* Assume no prompt/message is available */
     borg_prompt = FALSE;
 
-
     /* Mega-Hack -- check for possible prompts/messages */
     /* If the first four characters on the message line all */
     /* have the same attribute (or are all spaces), and they */
     /* are not all spaces (ascii value 0x20)... */
     if ((0 == borg_what_text(0, 0, 4, &t_a, buf)) &&
-        (t_a != TERM_DARK) &&
-        (*((u32b*)(buf)) != 0x20202020))
+        (t_a != TERM_DARK) && 
+		(*((u32b*)(buf)) != 0x20202020))
     {
         /* Assume a prompt/message is available */
         borg_prompt = TRUE;
@@ -3350,7 +3862,8 @@ static struct keypress borg_inkey_hack(int flush_first)
         borg_prompt = FALSE;
     }
 
-    /* Mega-Hack -- Catch "Die? [y/n]" messages */
+	
+	/* Mega-Hack -- Catch "Die? [y/n]" messages */
     /* If there is text on the first line... */
     /* And the game does not want a command... */
     /* And the cursor is on the top line... */
@@ -3369,7 +3882,6 @@ static struct keypress borg_inkey_hack(int flush_first)
         /* Take note */
         borg_note("# Cheating death...");
 
-#ifndef BABLOS
         /* Dump the Character Map*/
         if (borg_skill[BI_CLEVEL] >= borg_dump_level ||
             strstr(p_ptr->died_from, "starvation")) borg_write_map(FALSE);
@@ -3378,14 +3890,8 @@ static struct keypress borg_inkey_hack(int flush_first)
         borg_log_death();
         borg_log_death_data();
 
-#if 0
-		/* Note the score */
-        borg_enter_score();
-#endif
         /* Reset the player game data then resurrect a new player */
         resurrect_borg();
-
-#endif /* BABLOS */
 
         /* Cheat death */
         key.code = 'n';
@@ -3424,6 +3930,7 @@ static struct keypress borg_inkey_hack(int flush_first)
         return key;
     }
 
+#if 0
 	/* Wearing two rings.  Place this on the left hand */
 	if (borg_prompt && !inkey_flag &&
         (y == 0) && (x >= 12) &&
@@ -3434,35 +3941,44 @@ static struct keypress borg_inkey_hack(int flush_first)
         key.code = 'c';
         return key;
     }
+#endif
+
+    /* Leave the 'can't pick up' message dialog  */
+    if (borg_prompt && !inkey_flag &&
+		(0 == borg_what_text(0, 0, 34, &t_a, buf)) &&
+        (streq(buf, "You have no room for the following")))
+    {
+
+        /* Leave this mode */
+        key.code = (' ');
+		key.mods = KC_MOD_SHIFT;
+
+        /* Done */
+        return key;
+    }
 
 	/* Mega-Hack -- Handle death */
-    if (p_ptr->is_dead)
+    if (p_ptr->is_dead && borg_respawning)
     {
-#ifndef BABLOS
-        /* Print the map */
+
+		/* Print the map */
         if (borg_skill[BI_CLEVEL] >= borg_dump_level ||
             strstr(p_ptr->died_from, "starvation"))  borg_write_map(FALSE);
 
         /* Log death */
         borg_log_death();
         borg_log_death_data();
-#if 0
-        /* Note the score */
-        borg_enter_score();
-#endif
-#endif /* bablos */
-        /* flush the buffer */
+
+		/* flush the buffer */
         borg_flush();
 
         if (borg_cheat_death)
         {
             /* Reset death flag */
             p_ptr->is_dead = FALSE;
-#ifndef BABLOS
             /* Reset the player game data then resurrect a new player */
             resurrect_borg();
-#endif /* bablos */
-        }
+		}
         else
         {
             /* Oops  */
@@ -3478,23 +3994,81 @@ static struct keypress borg_inkey_hack(int flush_first)
     /* Mega-Hack -- Catch "-more-" messages */
     /* If there is text on the first line... */
     /* And the game does not want a command... */
-    /* And the cursor is on the top line... */
-    /* And there is text before the cursor... */
     /* And that text is "-more-" */
     if (borg_prompt && !inkey_flag &&
-        (y == 0) && (x >= 7) &&
-        (0 == borg_what_text(x-7, y, 7, &t_a, buf)) &&
-        (streq(buf, " -more-")))
+        (0 == borg_what_text(0, 0, ((Term->wid - 1) / (tile_width)), &t_a, buf)) &&
+        (strstr(buf, " -more-")))
     {
         /* Get the message */
-        if (0 == borg_what_text(0, 0, x-7, &t_a, buf))
+        if (0 == borg_what_text(0, 0, ((Term->wid - 1) / (tile_width)), &t_a, buf))
         {
-            /* Parse it */
+            int k;
+			for (k = 7; k < strlen(buf); k++)
+			{
+				/* Identify the -more- then terminate */
+				if (buf[k - 2] == 'r' && buf[k - 1] == 'e' && buf[k] == '-') 
+						borg_what_text(0, 0, k-6, &t_a, buf);					
+
+
+			}
+			/* Parse it */
             borg_parse(buf);
         }
         /* Clear the message */
-        key.code = ' ';
-        return key;
+            key.code = (' ');
+            return key;
+	}
+	/* Version 341 introduced a problem with the "-more-" message being cut to "-mor".  
+	 * This can be reproduced by k'rushing (squelching) the magic book of Incantations and Illusions.
+	 *
+	 * This upset the way the borg was parsing the screen and caused him to get out of sync.
+	 */
+    else if (borg_prompt && !inkey_flag &&
+        (0 == borg_what_text(0, 0, ((Term->wid - 1) / (tile_width)), &t_a, buf)) &&
+        (streq(buf, "-mor")))
+    {
+        /* Get the message */
+        if (0 == borg_what_text(0, 0, ((Term->wid - 1) / (tile_width)), &t_a, buf))
+        {
+            int k;
+			for (k = 4; k < strlen(buf); k++)
+			{
+				/* Identify the '-mor' then terminate */
+				if (buf[k - 3] == '-' && buf[k - 2] == 'm' && buf[k - 1] == 'o' && buf[k] == 'r')
+				{
+		            /* Strip '-more-' */
+				    borg_what_text(0, 0, k-3, &t_a, buf);					
+				}
+			}
+			/* Parse it */
+            borg_parse(buf);
+        }
+        /* Clear the message */
+            key.code = (' ');
+            return key;
+    }
+    if ((0 == borg_what_text(0, 0, ((Term->wid - 1) / (tile_width)), &t_a, buf)) &&
+        (streq(buf, "Illegal")))
+    {
+        /* Get the message */
+        if (0 == borg_what_text(0, 0, ((Term->wid - 1) / (tile_width)), &t_a, buf))
+        {
+            int k;
+			for (k = 4; k < strlen(buf); k++)
+			{
+				/* Identify the '-mor' then terminate */
+				if (buf[k - 3] == '-' && buf[k - 2] == 'm' && buf[k - 1] == 'o' && buf[k] == 'r')
+				{
+		            /* Strip '-more-' */
+				    borg_what_text(0, 0, k-3, &t_a, buf);					
+				}
+			}
+			/* Parse it */
+            borg_parse(buf);
+        }
+        /* Clear the message */
+            key.code = (' ');
+            return key;
     }
 
 
@@ -3519,7 +4093,7 @@ static struct keypress borg_inkey_hack(int flush_first)
         }
 
         /* Clear the message */
-        key.code = ' ';
+        key.code = (' ');
         return key;
 
     }
@@ -3531,7 +4105,8 @@ static struct keypress borg_inkey_hack(int flush_first)
     borg_ch = borg_inkey(TRUE);
 
     /* Use the key */
-    if (borg_ch) {
+    if (borg_ch) 
+	{
         key.code = borg_ch;
         return key;
     }
@@ -3545,16 +4120,20 @@ static struct keypress borg_inkey_hack(int flush_first)
 
 
 	if (!borg_in_shop && (ch_evt.type & EVT_KBRD) && ch_evt.key.code > 0 &&
-		ch_evt.key.code != 10)
+		 ch_evt.key.code != 10 && ch_evt.key.mods == 0)
 	{
-		/* Oops */
-		borg_note(format("# User key press <%d><%c>",ch_evt.key.code ,ch_evt.key.code));
-		borg_note(format("# Key type was <%d><%c>",ch_evt.type,ch_evt.type));
-		borg_oops("user abort");
 
-		/* Hack -- Escape */
-		key.code = ESCAPE;
-		return key;
+		if (ch_evt.type & EVT_KBRD)
+		{
+			/* Oops */
+			borg_note(format("# User key press <%d><%c>",ch_evt.key.code ,ch_evt.key.code));
+			borg_note(format("# Key type was <%d><%c>",ch_evt.type,ch_evt.type));
+			borg_oops("user abort");
+
+			/* Hack -- Escape */
+			key.code = ESCAPE;
+			return key;
+		}
 	}
 
 	/* for some reason, selling and buying in the store sets the event handler to Select. */
@@ -3597,10 +4176,12 @@ static struct keypress borg_inkey_hack(int flush_first)
     borg_ch = borg_inkey(TRUE);
 
     /* Use the key */
-    if (borg_ch) {
+    if (borg_ch) 
+	{
         key.code = borg_ch;
         return key;
     }
+
 
 
     /* Oops */
@@ -3640,13 +4221,14 @@ static void borg_prt_binary(u32b flags, int row, int col)
  * item has.  Select the item by inven # prior to hitting
  * the ^zo.
  */
-static void borg_display_item(object_type *item2)
+static void borg_display_item(const object_type *item2)
 {
 	int j = 0;
 
 	bitflag f[OF_SIZE];
 
 	borg_item *item;
+	/* char buf[256]; */
 
 	item = &borg_items[p_ptr->command_arg];
 
@@ -3691,7 +4273,7 @@ static void borg_display_item(object_type *item2)
 	prt("+------------FLAGS2------------+", 17, j);
 	prt("SUST........IMM.RESIST.........", 18, j);
 	prt("            afecaefcpfldbc s n  ", 19, j);
-	prt("siwdcc      cilocliooeialoshnecd", 20, j);
+	prt("siwdcc      cilocliooeialoshnecd", 20, j);	
 	prt("tnieoh      irelierliatrnnnrethi", 21, j);
 	prt("rtsxna......decddcedsrekdfddxhss", 22, j);
 	if (item->fully_identified) borg_prt_binary(f[1], 23, j);
@@ -3706,7 +4288,9 @@ static void borg_display_item(object_type *item2)
 	prt("seteticfe   craxierl  etropd sss", 17, j+32);
 	prt("trenhstel   tttpdced  detwes eee", 18, j+32);
 	if (item->fully_identified) borg_prt_binary(f[2], 19, j+32);
+	prt("o_ptr->ident:", 20, j+34);
 }
+
 
 static int
 borg_getval(char ** string, char * val)
@@ -3933,7 +4517,7 @@ static bool add_power_item(int class_num,
                            int item_num,
                            int power)
 {
-    if ((class_num > MAX_CLASSES &&
+    if ((class_num >= MAX_CLASSES &&
         class_num != 999 ) ||
         depth_num >= MAX_DEPTH ||
         item_num >= (z_info->k_max + z_info->k_max + z_info->a_max + BI_MAX) ||
@@ -4101,7 +4685,7 @@ static bool borg_load_power(char * string)
 }
 static bool add_required_item(int class_num, int depth_num, int item_num, int number_items)
 {
-    if ((class_num >MAX_CLASSES &&
+    if ((class_num >= MAX_CLASSES &&
         class_num != 999 ) ||
         depth_num >= MAX_DEPTH ||
         item_num >= (z_info->k_max + z_info->k_max + z_info->a_max + BI_MAX))
@@ -4242,45 +4826,47 @@ void init_borg_txt_file(void)
 		fp = file_open(buf, MODE_READ, -1);
 	    /*fp = fopen(buf, "r"); */
 
-	/* setup default values, in case any are missing */
-	borg_worships_damage = FALSE;
-	borg_worships_speed = FALSE;
-	borg_worships_hp= FALSE;
-	borg_worships_mana = FALSE;
-	borg_worships_ac = FALSE;
-	borg_worships_gold = FALSE;
-	borg_plays_risky = FALSE;
-	borg_scums_uniques = TRUE;
-	borg_kills_uniques = FALSE;
-	borg_uses_swaps = TRUE;
-	borg_slow_optimizehome = FALSE;
-	borg_stop_dlevel = 128;
-	borg_stop_clevel = 55;
-	borg_no_deeper = 127;
-	borg_stop_king = TRUE;
-	borg_uses_calcs = FALSE;
-	borg_respawn_winners = FALSE;
-	borg_respawn_class = -1;
-	borg_respawn_race = -1;
-	borg_chest_fail_tolerance = 7;
-	borg_delay_factor = 1;
-	borg_money_scum_amount = 0;
-	borg_self_scum = TRUE;
-	borg_lunal_mode = FALSE;
-	borg_self_lunal = TRUE;
-	borg_verbose = FALSE;
-	borg_munchkin_start = FALSE;
-	borg_munchkin_level = 12;
-	borg_munchkin_depth = 16;
-	borg_enchant_limit = 10;
-
     /* No file, use defaults*/
     if (!fp)
     {
         /* Complain */
         msg("*****WARNING***** You do not have a proper BORG.TXT file!");
+		msg("It should be located in %s", buf);
         msg("Make sure BORG.TXT is located in the \\user\\ subdirectory!");
-        msg(NULL);
+       msg("%s", NULL);
+
+        /* use default values */
+        borg_worships_damage = FALSE;
+        borg_worships_speed = FALSE;
+        borg_worships_hp= FALSE;
+        borg_worships_mana = FALSE;
+        borg_worships_ac = FALSE;
+        borg_worships_gold = FALSE;
+        borg_plays_risky = FALSE;
+        borg_scums_uniques = TRUE;
+        borg_kills_uniques = FALSE;
+        borg_uses_swaps = TRUE;
+        borg_slow_optimizehome = FALSE;
+        borg_stop_dlevel = 128;
+        borg_stop_clevel = 55;
+		borg_no_deeper = 127;
+        borg_stop_king = TRUE;
+        borg_uses_calcs = FALSE;
+        borg_respawn_winners = FALSE;
+        borg_respawn_class = -1;
+        borg_respawn_race = -1;
+        borg_chest_fail_tolerance = 7;
+        borg_delay_factor = 1;
+        borg_money_scum_amount = 0;
+		borg_self_scum = TRUE;
+		borg_lunal_mode = FALSE;
+		borg_self_lunal = TRUE;
+		borg_verbose = FALSE;
+		borg_munchkin_start = FALSE;
+		borg_munchkin_level = 12;
+		borg_munchkin_depth = 16;
+		borg_enchant_limit = 8;
+
         return;
     }
 
@@ -4427,7 +5013,15 @@ void init_borg_txt_file(void)
             continue;
         }
 
-        if (prefix(buf, "borg_lunal_mode ="))
+        if (prefix(buf, "borg_respawn_death ="))
+        {
+            if (buf[strlen("borg_respawn_death =")+1] == 'T' ||
+                buf[strlen("borg_respawn_death =")+1] == '1' ||
+                buf[strlen("borg_respawn_death =")+1] == 't') borg_cheat_death = TRUE;
+            continue;
+        }
+
+		if (prefix(buf, "borg_lunal_mode ="))
         {
             if (buf[strlen("borg_lunal_mode =")+1] == 'T' ||
                 buf[strlen("borg_lunal_mode =")+1] == '1' ||
@@ -4472,7 +5066,7 @@ void init_borg_txt_file(void)
             continue;
         }
 
-        if (prefix(buf, "borg_munchkin_level ="))
+		if (prefix(buf, "borg_munchkin_level ="))
         {
             sscanf(buf+strlen("borg_munchkin_level =")+1, "%d", &borg_munchkin_level);
             if (borg_munchkin_level <= 1) borg_munchkin_level = 1;
@@ -4597,6 +5191,7 @@ void borg_init_9(void)
 {
     byte *test;
 
+
     /*** Hack -- verify system ***/
 
     /* Message */
@@ -4660,46 +5255,23 @@ void borg_init_9(void)
 	/* Pile symbol '&' confuse the borg */
 	option_set("show_piles", FALSE);
 
-	/* We repeat by hand */
-    /* always_repeat = FALSE; */
-
-    /* We do not haggle */
-	/* auto_haggle = TRUE; */
-
     /* We need space */
 	option_set("show_labels", FALSE);
 
 	/* show_weights = FALSE; */
 	option_set("show_flavors", FALSE);
 
-
-    /* Allow items to stack */
-    /* stack_force_notes = TRUE; */
-    /* stack_force_costs = TRUE; */
-
-
-    /* Ignore discounts */
-    /* stack_force_costs = TRUE; */
-
-    /* Ignore inscriptions */
-    /* stack_force_notes = TRUE; */
-
-    /* Efficiency */
-    /* avoid_abort = TRUE; */
-
-    /* Efficiency */
-    op_ptr->hitpoint_warn = 0;
-
-
    /* The "easy" options confuse the Borg */
 	option_set("easy_open", FALSE);
    	option_set("easy_alter", FALSE);
-   /* easy_floor = FALSE; */
+
+	    /* Efficiency */
+    op_ptr->hitpoint_warn = 0;
+
 
 #ifndef ALLOW_BORG_GRAPHICS
     if (!borg_graphics)
     {
-    	int i;
         /* Reset the # and % -- Scan the features */
         for (i = 1; i < z_info->f_max; i++)
         {
@@ -4715,18 +5287,6 @@ void borg_init_9(void)
     }
 #endif
 
-#ifdef USE_GRAPHICS
-   /* The Borg can't work with graphics on, so switch it off */
-   if (use_graphics)
-   {
-       /* Reset to ASCII mode */
-       use_graphics = FALSE;
-       arg_graphics = FALSE;
-
-       /* Reset visuals */
-       reset_visuals(TRUE);
-   }
-#endif /* USE_GRAPHICS */
 
     /*** Redraw ***/
     /* Redraw map */
@@ -4744,9 +5304,6 @@ void borg_init_9(void)
 
 
     /*** Cheat / Panic ***/
-
-    /* more cheating */
-    borg_cheat_death = FALSE;
 
     /* set the continous play mode if the game cheat death is on */
     if (op_ptr->opt[OPT_cheat_live]) borg_cheat_death = TRUE;
@@ -4835,7 +5392,7 @@ void borg_init_9(void)
  * Write a file with the current dungeon info (Borg)
  * and his equipment, inventory and home (Player)
  * and his swap armor, weapon (Borg)
- * From Dennis Van Es,  With an addition of last messages from me (APW)
+ * From Dennis Van Es,  With an addition of last messages from me andrew white
  */
 void borg_write_map(bool ask)
 {
@@ -4931,8 +5488,12 @@ void borg_write_map(bool ask)
             if (ag->take)
             {
                 borg_take *take = &borg_takes[ag->take];
-                object_kind *k_ptr = take->kind;
-                ch = k_ptr->d_char;
+				/* Safety check */
+				if (take->kind)
+				{
+	                object_kind *k_ptr = take->kind;
+		            ch = k_ptr->d_char;
+				}
             }
 
             /* UnKnown Monsters */
@@ -5014,8 +5575,8 @@ void borg_write_map(bool ask)
     {
 		borg_item *item = &borg_items[i];
 
-        file_putf(borg_map_file, "%c) %s\n",
-                index_to_label(i), item->desc);
+        file_putf(borg_map_file, "%c) %d %s\n",
+                index_to_label(i), borg_items[i].iqty, item->desc);
     }
     file_putf(borg_map_file, "\n\n");
 
@@ -5025,7 +5586,7 @@ void borg_write_map(bool ask)
     for (i = 0; i < 12; i++)
     {
         object_desc(o_name, sizeof(o_name), &st_ptr->stock[i], ODESC_FULL);
-        file_putf(borg_map_file, "%c) %s\n", I2A(i%12), o_name);
+        file_putf(borg_map_file, "%c) %d %s\n", I2A(i%12),st_ptr->stock[i].number, o_name);
     }
     file_putf(borg_map_file, "\n\n");
 
@@ -5034,7 +5595,7 @@ void borg_write_map(bool ask)
     for (i = 12; i < 24; i++)
     {
         object_desc(o_name, sizeof(o_name), &st_ptr->stock[i], ODESC_FULL);
-        file_putf(borg_map_file, "%c) %s\n", I2A(i%12), o_name);
+        file_putf(borg_map_file, "%c) %d %s\n", I2A(i%12),st_ptr->stock[i].number,  o_name);
     }
     file_putf(borg_map_file, "\n\n");
 
@@ -5146,8 +5707,8 @@ void borg_write_map(bool ask)
     file_putf(borg_map_file, "Food in town; %d\n", borg_food_onsale);
     file_putf(borg_map_file, "Fuel in town; %d\n", borg_fuel_onsale);
     file_putf(borg_map_file, "Borg_no_retreat; %d\n", borg_no_retreat);
-    file_putf(borg_map_file, "Breeder_level; %d\n", breeder_level);
-    file_putf(borg_map_file, "Unique_on_level; %d\n", unique_on_level);
+    file_putf(borg_map_file, "Breeder_level; %d\n", (borg_depth & DEPTH_BREEDER));
+    file_putf(borg_map_file, "Unique_on_level; %d\n", (unique_on_level));
     if ((turn % (10L * TOWN_DAWN)) < ((10L * TOWN_DAWN) / 2))
 		file_putf(borg_map_file, "It is daytime in town.\n");
     else file_putf(borg_map_file, "It is night-time in town.\n");
@@ -5212,9 +5773,6 @@ void borg_write_map(bool ask)
 	}
 
 #if 0
-    /* Allocate the "okay" array */
-    C_MAKE(okay, z_info->a_max, bool);
-
     /*** Dump the Uniques and Artifact Lists ***/
 
     /* Scan the artifacts */
@@ -5699,7 +6257,7 @@ void borg_status(void)
    else attr = TERM_SLATE;
    Term_putstr(28, 3, -1, attr, "Berserk");
 
-   if (borg_shield) attr = TERM_WHITE;
+   if (borg_shield || borg_stone) attr = TERM_WHITE;
    else attr = TERM_SLATE;
    Term_putstr(28, 4, -1, attr, "Shielded");
 
@@ -5718,7 +6276,7 @@ void borg_status(void)
    /* Temporary effects */
    Term_putstr(42, 0, -1, TERM_WHITE, "Level Information");
 
-   if (vault_on_level) attr = TERM_WHITE;
+   if (borg_depth & DEPTH_VAULT) attr = TERM_WHITE;
    else attr = TERM_SLATE;
    Term_putstr(42, 1, -1, attr, "Vault on level");
 
@@ -5729,11 +6287,11 @@ void borg_status(void)
                        r_info[unique_on_level].name));
    else Term_putstr(58, 2, -1, attr, "                                                ");
 
-   if (scaryguy_on_level) attr = TERM_WHITE;
+   if (borg_depth & DEPTH_SCARY) attr = TERM_WHITE;
    else attr = TERM_SLATE;
    Term_putstr(42, 3, -1, attr, "Scary Guy on level");
 
-   if (breeder_level) attr = TERM_WHITE;
+   if ((borg_depth & DEPTH_BREEDER)) attr = TERM_WHITE;
    else attr = TERM_SLATE;
    Term_putstr(42, 4, -1, attr,"Breeder level (closing doors)");
 
@@ -5745,7 +6303,7 @@ void borg_status(void)
    attr = TERM_SLATE;
    Term_putstr(42, 6, -1, attr,"Reason for not diving:");
    attr = TERM_WHITE;
-   Term_putstr(64, 6, -1, attr,format("%s                              ", borg_prepared(borg_skill[BI_MAXDEPTH]+1)));
+   Term_putstr(64, 6, -1, attr,format("%s                              ", borg_prepared[borg_skill[BI_MAXDEPTH]+1]));
 
    attr = TERM_SLATE;
    Term_putstr(42, 7, -1, attr,"Scumming: not active                          ");
@@ -5781,15 +6339,23 @@ void borg_status(void)
        Term_putstr(11, 18, -1, attr, format("%d   ",num_life));
 
 	   attr = TERM_SLATE;
-       Term_putstr(1, 19, -1, attr, "Res_Mana:        ");
+       Term_putstr(1, 19, -1, attr, "Home Mana:        ");
        attr = TERM_WHITE;
        Term_putstr(11, 19, -1, attr, format("%d   ",num_mana));
 
-       if (morgoth_on_level)  attr = TERM_BLUE;
-       else attr = TERM_SLATE;
-       Term_putstr(1, 20, -1, attr, format("Morgoth on Level.  Last seen:%d       ", borg_t - borg_t_morgoth));
+	   if (borg_skill[BI_MAXDEPTH] <= 99)
+	   {
+		   if (borg_depth & DEPTH_BORER) attr = TERM_BLUE;
+		   else attr = TERM_SLATE;				
+				Term_putstr(1, 20, -1, attr, format("Atlas/Maeglin on Level.  Last seen:%d          ", borg_t - borg_t_questor ));
+	   }
+       else if (borg_depth & DEPTH_BORER)
+		{
+			attr = TERM_BLUE;
+			Term_putstr(1, 20, -1, attr, format("Morgoth on Level.  Last seen:%d       ", borg_t - borg_t_questor));
+	   }
 
-       if (borg_morgoth_position)  attr = TERM_BLUE;
+       if (borg_position & (POSITION_SEA))  attr = TERM_BLUE;
        else attr = TERM_SLATE;
        if (borg_needs_new_sea) attr = TERM_WHITE;
        Term_putstr(1, 21, -1, attr, "Sea of Runes.");
@@ -5852,6 +6418,7 @@ void do_cmd_borg(void)
     cmd.type = EVT_KBRD;
 
 #ifdef BABLOS
+
     if (auto_play)
     {
         auto_play = FALSE;
@@ -5878,7 +6445,7 @@ void do_cmd_borg(void)
 #endif /* BABLOS */
 
     /* Simple help */
-    if (cmd.code == '?')
+    if (cmd.code ==  '?')
     {
         int i = 2;
 
@@ -5924,7 +6491,7 @@ void do_cmd_borg(void)
         Term_putstr(2, i++, -1, TERM_WHITE, "Command 'r' Restock Stores.");
 
         /* Prompt for key */
-        msg("Commands: ");
+        get_com("Commands:", &cmd);
 
         /* Restore the screen */
         Term_load();
@@ -6013,6 +6580,7 @@ void do_cmd_borg(void)
 		    borg_skill[BI_TRPOIS] = (p_ptr->timed[TMD_OPP_POIS] ? TRUE : FALSE);
 		    borg_bless = (p_ptr->timed[TMD_BLESSED] ? TRUE : FALSE);
 		    borg_shield = (p_ptr->timed[TMD_SHIELD] ? TRUE : FALSE);
+		    borg_stone = (p_ptr->timed[TMD_STONESKIN] ? TRUE : FALSE);
 		    borg_hero = (p_ptr->timed[TMD_HERO] ? TRUE : FALSE);
 		    borg_berserk = (p_ptr->timed[TMD_SHERO] ? TRUE : FALSE);
 		    if (p_ptr->timed[TMD_SINVIS]) borg_see_inv = 10000;
@@ -6058,6 +6626,7 @@ void do_cmd_borg(void)
 		    borg_skill[BI_TRPOIS] = (p_ptr->timed[TMD_OPP_POIS] ? TRUE : FALSE);
 		    borg_bless = (p_ptr->timed[TMD_BLESSED] ? TRUE : FALSE);
 		    borg_shield = (p_ptr->timed[TMD_SHIELD] ? TRUE : FALSE);
+		    borg_stone = (p_ptr->timed[TMD_STONESKIN] ? TRUE : FALSE);
 		    borg_hero = (p_ptr->timed[TMD_HERO] ? TRUE : FALSE);
 		    borg_berserk = (p_ptr->timed[TMD_SHERO] ? TRUE : FALSE);
 		    if (p_ptr->timed[TMD_SINVIS]) borg_see_inv = 10000;
@@ -6105,6 +6674,7 @@ void do_cmd_borg(void)
 		    borg_skill[BI_TRPOIS] = (p_ptr->timed[TMD_OPP_POIS] ? TRUE : FALSE);
 		    borg_bless = (p_ptr->timed[TMD_BLESSED] ? TRUE : FALSE);
 		    borg_shield = (p_ptr->timed[TMD_SHIELD] ? TRUE : FALSE);
+		    borg_stone = (p_ptr->timed[TMD_STONESKIN] ? TRUE : FALSE);
 		    borg_hero = (p_ptr->timed[TMD_HERO] ? TRUE : FALSE);
 		    borg_berserk = (p_ptr->timed[TMD_SHERO] ? TRUE : FALSE);
 		    if (p_ptr->timed[TMD_SINVIS]) borg_see_inv = 10000;
@@ -6316,8 +6886,7 @@ void do_cmd_borg(void)
             }
 
             /* Get keypress */
-            msg("Press any key.");
-            msg(NULL);
+	        get_com("Press any key.", &cmd);
 
             /* Redraw map */
             prt_map();
@@ -6402,8 +6971,7 @@ void do_cmd_borg(void)
             }
 
             /* Get keypress */
-            msg("Press any key.");
-            msg(NULL);
+	        get_com("Press any key.", &cmd);
 
             /* Redraw map */
             prt_map();
@@ -6417,6 +6985,10 @@ void do_cmd_borg(void)
 			int y = 1;
 			int x = 1;
 			s16b ty, tx;
+
+			u16b mask;
+
+			mask = borg_grids[y][x].info;
 
 			target_get(&tx, &ty);
 			y = ty;
@@ -6469,7 +7041,7 @@ void do_cmd_borg(void)
 
             /* Get keypress */
             msg("(%d,%d of %d,%d) Avoidance value %d.", c_y, c_x, Term->offset_y / PANEL_HGT,Term->offset_x / PANEL_WID,avoidance);
-            msg(NULL);
+           msg("%s", NULL);
 
             /* Redraw map */
             prt_map();
@@ -6490,7 +7062,7 @@ void do_cmd_borg(void)
                         /* Display */
                         print_rel('*', a, track_step_y[track_step_num-i], track_step_x[track_step_num-i]);
 			            msg("(-%d) Steps noted %d,%d", i,track_step_y[track_step_num-i], track_step_x[track_step_num-i]);
-						msg(NULL);
+						/* msg(NULL); */
                         print_rel('*', TERM_ORANGE, track_step_y[track_step_num-i], track_step_x[track_step_num-i]);
                     }
             /* Redraw map */
@@ -6524,10 +7096,33 @@ void do_cmd_borg(void)
             }
 
             /* Get keypress */
-            msg("There are %d known monsters.", n);
-            msg(NULL);
+            get_com(format("There are %d known monsters.", n), &cmd);
 
-            /* Redraw map */
+            /* Scan the monsters */
+            for (i = 1; i < borg_kills_nxt; i++)
+            {
+                borg_kill *kill = &borg_kills[i];
+                borg_grid *ag = &borg_grids[kill->y][kill->x];
+
+
+                /* No monster index for this grid */
+                if (!ag->kill)
+                {
+                    int x = kill->x;
+                    int y = kill->y;
+
+                    /* Display */
+                    print_rel('*', TERM_YELLOW, y, x);
+
+                    /* Count */
+                    n++;
+                }
+            }
+
+            /* Get keypress */
+            get_com(format("There are %d missing monsters.", n), &cmd);
+
+			/* Redraw map */
             prt_map();
             break;
         }
@@ -6560,7 +7155,6 @@ void do_cmd_borg(void)
 
             /* Get keypress */
             msg("There are %d known objects.", n);
-            msg(NULL);
 
             /* Redraw map */
             prt_map();
@@ -6597,7 +7191,7 @@ void do_cmd_borg(void)
 			}
 
             msg("Borg's Targetting Path");
-            msg(NULL);
+           msg("%s", NULL);
 
 		    /* Determine "path" */
 		    n_x = p_ptr->px;
@@ -6611,7 +7205,7 @@ void do_cmd_borg(void)
 
 
             msg("Actual Targetting Path");
-            msg(NULL);
+           msg("%s", NULL);
 
             /* Redraw map */
             prt_map();
@@ -6624,6 +7218,7 @@ void do_cmd_borg(void)
                 int x, y;
                 int o;
                 int false_y, false_x;
+                borg_grid *ag;
 
                 false_y = c_y;
                 false_x = c_x;
@@ -6651,6 +7246,9 @@ void do_cmd_borg(void)
                         x = false_x + ddx_ddd[i];
                         y = false_y + ddy_ddd[i];
 
+                        /* Access the grid */
+                        ag = &borg_grids[y][x];
+
                         /* Flow cost at that grid */
                         c = borg_data_flow->data[y][x] * 10;
 
@@ -6661,7 +7259,7 @@ void do_cmd_borg(void)
                         if (c < b_c) b_n = 0;
 
                         /* Apply the randomizer to equivalent values */
-                        if ((++b_n >= 2) && (randint0(b_n) != 0)) continue;
+                        if ((++b_n >= 2)) continue;
 
                         /* Track it */
                         b_i = i; b_c = c;
@@ -6684,8 +7282,7 @@ void do_cmd_borg(void)
 
                 }
                 print_rel('*', TERM_YELLOW, borg_flow_y[0], borg_flow_x[0]);
-                msg("Probable Flow Path");
-                msg(NULL);
+                get_com("Probable Flow Path", &cmd);
 
                 /* Redraw map */
                 prt_map();
@@ -6743,15 +7340,15 @@ void do_cmd_borg(void)
 
             /* Get keypress */
             msg("(%d,%d of %d,%d) Regional Fear.", c_y, c_x, Term->offset_y / PANEL_HGT,Term->offset_x / PANEL_WID);
-            msg(NULL);
+	        get_com("Press any key.", &cmd);
 
             /* Redraw map */
             prt_map();
 
             /* Scan map */
-            for (y = 1; y <= AUTO_MAX_Y; y++)
+            for (y = 1; y < AUTO_MAX_Y; y++)
             {
-                for (x = 1; x <= AUTO_MAX_X; x++)
+                for (x = 1; x < AUTO_MAX_X; x++)
                 {
                     byte a = TERM_BLUE;
 
@@ -6790,7 +7387,7 @@ void do_cmd_borg(void)
 
             /* Get keypress */
             msg("(%d,%d of %d,%d) Monster Fear.", c_y, c_x, Term->offset_y / PANEL_HGT,Term->offset_x / PANEL_WID);
-            msg(NULL);
+	        get_com("Press any key.", &cmd);
 
             /* Redraw map */
             prt_map();
@@ -6806,18 +7403,13 @@ void do_cmd_borg(void)
             /* Examine the screen */
             borg_update_frame();
 
-            /* Cheat the "equip" screen */
-            borg_cheat_equip();
-
-            /* Cheat the "inven" screen */
-            borg_cheat_inven();
-
             /* Examine the screen */
             borg_update();
 
 			/* Examine the inventory */
             borg_object_star_id();
-            borg_notice(TRUE);
+            borg_notice(TRUE, TRUE);
+
             /* Evaluate */
             p = borg_power();
 
@@ -6863,8 +7455,7 @@ void do_cmd_borg(void)
             }
 
             /* Get keypress */
-            msg("Borg has Projectable to these places.");
-            msg(NULL);
+	        get_com("Borg has Projectable to these places.", &cmd);
 
             /* Scan map */
             for (y = w_y; y < w_y + SCREEN_HGT; y++)
@@ -6880,8 +7471,7 @@ void do_cmd_borg(void)
                     print_rel('*', a, y, x);
                 }
             }
-            msg("Borg has Projectable Dark to these places.");
-            msg(NULL);
+	        get_com("Borg has Projectable Dark to these places.", &cmd);
 
             /* Scan map */
             for (y = w_y; y < w_y + SCREEN_HGT; y++)
@@ -6897,8 +7487,7 @@ void do_cmd_borg(void)
                     print_rel('*', a, y, x);
                 }
             }
-            msg("Borg has LOS to these places.");
-            msg(NULL);
+	        get_com("Borg has LOS to these places.", &cmd);
             /* Redraw map */
             prt_map();
             break;
@@ -6932,7 +7521,7 @@ void do_cmd_borg(void)
 
            borg_stop_dlevel = new_borg_stop_dlevel;
            borg_stop_clevel = new_borg_stop_clevel;
-           if (cmd.code =='n' || cmd.code =='N' ) borg_stop_king = FALSE;
+           if (cmd.code == 'n' || cmd.code =='N' ) borg_stop_king = FALSE;
 
            break;
        }
@@ -6957,10 +7546,7 @@ void do_cmd_borg(void)
         case '2':
         {
           int i=0;
-
-            /* Extract some "hidden" variables */
-            borg_cheat_equip();
-            borg_cheat_inven();
+		  char borg_prep_buffer[1024];
 
 			/* Examine the screen */
             borg_update_frame();
@@ -6969,17 +7555,22 @@ void do_cmd_borg(void)
 
             /* Examine the inventory */
             borg_object_star_id();
-            borg_notice(TRUE);
+            borg_notice(TRUE, TRUE);
             borg_notice_home(NULL, FALSE);
 
             /* Dump prep codes */
-            for (i = 1; i <= 101; i++)
+            for (i = 1; i <= 120; i++)
             {
+
   			   /* Dump fear code*/
-               if ((char*)NULL != borg_prepared(i)) break;
+               if ((char *)NULL != borg_prepared[i])
+			   {
+		       		strnfmt(borg_prep_buffer, 1024, borg_prepared[i]);
+				   break;
+			   }
             }
             borg_slow_return = TRUE;
-            msg("Max Level: %d  Prep'd For: %d  Reason: %s", borg_skill[BI_MAXDEPTH], i-1, borg_prepared(i) );
+            msg("Max Level: %d  Prep'd For: %d  Reason: %s", borg_skill[BI_MAXDEPTH], i-1, borg_prep_buffer);
             borg_slow_return = FALSE;
             if (borg_ready_morgoth == 1)
             {
@@ -7025,12 +7616,8 @@ void do_cmd_borg(void)
             borg_item *item;
 
 
-            /* Cheat the "equip" screen */
-            borg_cheat_equip();
-            /* Cheat the "inven" screen */
-            borg_cheat_inven();
             /* Examine the inventory */
-            borg_notice(TRUE);
+            borg_notice(TRUE, TRUE);
             borg_notice_home(NULL, FALSE);
             /* Check the power */
             borg_power();
@@ -7132,10 +7719,10 @@ void do_cmd_borg(void)
                     break;
             }
             /* Cheat the "equip" screen */
-            borg_cheat_equip();
+            borg_cheat_equip(TRUE);
 
             /* Cheat the "inven" screen */
-            borg_cheat_inven();
+            borg_cheat_inven(TRUE);
 
 			/* Examine the screen */
             borg_update_frame();
@@ -7146,7 +7733,7 @@ void do_cmd_borg(void)
 
             /* Examine the inventory */
             borg_object_star_id();
-            borg_notice(TRUE);
+            borg_notice(TRUE, TRUE);
             borg_notice_home(NULL, FALSE);
             for (;item < to; item++)
             {
@@ -7198,11 +7785,11 @@ void do_cmd_borg(void)
             n = (p_ptr->command_arg ? p_ptr->command_arg : 1);
 
             /* Cheat the "equip" screen */
-            borg_cheat_equip();
+            borg_cheat_equip(TRUE);
             /* Cheat the "inven" screen */
-            borg_cheat_inven();
+            borg_cheat_inven(TRUE);
             /* Examine the inventory */
-            borg_notice(TRUE);
+            borg_notice(TRUE, TRUE);
             borg_notice_home(NULL, FALSE);
             /* Check the power */
             borg_power();
@@ -7223,8 +7810,7 @@ void do_cmd_borg(void)
 			borg_display_item(item2);
 
 			/* pause for study */
-            msg("Borg believes: ");
-            msg(NULL);
+           get_com("Borg believes item has these properties:", &cmd);
 
 			/* Restore the screen */
             Term_load();
@@ -7236,41 +7822,34 @@ void do_cmd_borg(void)
 		/* Command: Resurrect Borg */
 		case 'R':
 		{
-			/* Confirm it */
-			get_com("Are you sure you want to Respawn this borg? (y or n)? ", &cmd);
+			int i =0;
 
-			if (cmd.code =='y' || cmd.code =='Y' )
-			{
+           /* Confirm it */
+           get_com("Are you sure you want to Respawn this borg? (y or n)? ", &cmd);
+
+		   if (cmd.code == 'y' || cmd.code =='Y' )
+           {
 			   resurrect_borg();
-			}
-			break;
+		   }
+           break;
        }
 
 		/* Command: Restock the Stores */
 		case 'r':
 		{
-			int n;
-
 			/* Confirm it */
-			get_com("Are you sure you want to Restock the stores? (y or n)? ", &cmd);
+           get_com("Are you sure you want to Restock the stores? (y or n)? ", &cmd);
 
-			if (cmd.code =='y' || cmd.code =='Y' )
-			{
+           if (cmd.code == 'y' || cmd.code =='Y' )
+           {
 				/* Message */
 				msg("Updating Shops...");
 
-				/* Maintain each shop (except home) */
-				for (n = 0; n < MAX_STORES; n++)
-				{
-					/* Skip the home */
-					if (n == STORE_HOME) continue;
+				/* use the game function */
+				store_reset();
+		   }
 
-					/* Maintain */
-					store_maint(&stores[n]);
-				}
-			}
-
-			break;
+           break;
        }
 
         case ';':
@@ -7284,7 +7863,7 @@ void do_cmd_borg(void)
 					/* Display */
                     print_rel('*', a, track_glyph_y[glyph_check], track_glyph_x[glyph_check]);
 					msg("Borg has Glyph (%d)noted.", glyph_check);
-		            msg(NULL);
+		           msg("%s", NULL);
             }
 
             /* Get keypress */
