@@ -194,7 +194,7 @@ borg_chest_fail_tolerance = 7
 # to slow the borg down use the following variable.  The formula is:
 # base_game_delay_factor^2 + borg_delay_factor^2.
 
-borg_delay_factor = 6
+borg_delay_factor = 4
 
 
 # Money Scumming
