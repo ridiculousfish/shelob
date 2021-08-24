@@ -1,6 +1,6 @@
 /*
  * File: main-emscripten.c
- * Purpose: Core game initialisation for UNIX (and other) machines
+ * Purpose: Core game initialisation for emscripten web build.
  **
  * This work is free software; you can redistribute it and/or modify it
  * under the terms of either:
