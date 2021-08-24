@@ -28,6 +28,9 @@ var angband;
             this.activateBorg = false;
             // Whee!
             this.turbo = false;
+            // The module object.
+            // This is set once the module is loaded.
+            this.module = undefined;
             // Incoming message handler.
             this.onMessage = (msg) => {
                 let evt = msg.data;
@@ -104,7 +107,7 @@ var angband;
             // Here we hard-code the Angband savefile name.
             let contents;
             try {
-                let data = FS.readFile("/lib/save/PLAYER");
+                let data = this.fs().readFile("/lib/save/PLAYER");
                 contents = data.buffer.slice(data.byteOffset, data.byteLength + data.byteOffset);
             }
             catch (_err) {
@@ -151,15 +154,22 @@ var angband;
                 this.moduleSetStatus(left ? 'Preparing... (' + (totalDependencies - left) + '/' + totalDependencies + ')' : 'All downloads complete.');
             };
         }
+        // \return our filesystem, asserting that we have one.
+        fs() {
+            if (this.module === undefined)
+                throw new Error("No module set");
+            return this.module.FS;
+        }
         /** The following functions are called from emscripten **/
         // Called from C to perform any initial setup.
         initializeFilesystem() {
             if (this.fsInitialized)
                 return;
+            if (this.module === undefined)
+                throw new Error("Module not set");
             this.fsInitialized = true;
-            /* Mount our writable filesystem. Do this here instead in loader.ts to satisfy TypeScript, which doesn't know about FS. */
-            FS.mkdir("/lib/save");
-            FS.mount(IDBFS, {}, "/lib/save");
+            this.fs().mkdir("/lib/save");
+            this.fs().mount(this.module.IDBFS, {}, "/lib/save");
             this.fsync(true /* populate */);
         }
         // Called to trigger an syncfs().
@@ -171,7 +181,7 @@ var angband;
             // Collapse undefined to false.
             this.fsyncRequested = false;
             this.fsyncInFlight = true;
-            FS.syncfs(populate || false, (err) => {
+            this.fs().syncfs(populate || false, (err) => {
                 if (err)
                     ANGBAND.reportError(JSON.stringify(err));
                 // fsync is complete. Perhaps run another one.
@@ -313,15 +323,21 @@ var angband;
 var ANGBAND = new angband.ThreadWorker(self);
 // JS has a global worker onmessage hook.
 onmessage = ANGBAND.onMessage.bind(ANGBAND);
-// Set up our Module object for emscripten.
-var Module = {};
-Module['setStatus'] = ANGBAND.moduleSetStatus.bind(ANGBAND);
-Module['monitorRunDependencies'] = ANGBAND.getModuleDependencyMonitor();
-Module['print'] = ANGBAND.modulePrint.bind(ANGBAND);
-Module['printErr'] = ANGBAND.modulePrintErr.bind(ANGBAND);
-Module['locateFile'] = angband.locateFile;
 try {
     importScripts('angband-gen.js');
+    // Set up our Module object for emscripten.
+    var moduleDefaults = {
+        setStatus: ANGBAND.moduleSetStatus.bind(ANGBAND),
+        monitorRunDependencies: ANGBAND.getModuleDependencyMonitor(),
+        print: ANGBAND.modulePrint.bind(ANGBAND),
+        printErr: ANGBAND.modulePrintErr.bind(ANGBAND),
+        locateFile: angband.locateFile,
+        noInitialRun: true,
+    };
+    createAngbandModule(moduleDefaults).then((module) => {
+        ANGBAND.module = module;
+        module.callMain();
+    });
 }
 catch (error) {
     ANGBAND.reportError(error.message);
