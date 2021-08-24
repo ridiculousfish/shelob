@@ -238,6 +238,7 @@ body {
 	border: none;
 	padding: 0;
 	border-spacing: 0;
+	image-rendering: crisp-edges;
 }
 
 /* CSS supporting the built-in Angband image sprite sheets. */
