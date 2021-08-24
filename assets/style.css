@@ -96,7 +96,6 @@ body {
 	background-color: #111;
 	padding: 0px 50px 0px 20px;
 	z-index: 100;
-	font-size: large;
 	min-height: 100%;
 	line-height: 1.7em;
 	overflow: visible;
@@ -120,6 +119,7 @@ body {
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
+	font-size: 10pt;
 }
 
 #controls .borg-button, #controls .download-savefile-button {
@@ -136,6 +136,12 @@ body {
 	margin: 0;
 	border: none;
 	min-height: 1.5em;
+}
+
+#controls .minispacer {
+	margin: 0;
+	border: none;
+	min-height: .75em;
 }
 
 #controls hr.separator {
@@ -238,6 +244,7 @@ body {
 	border: none;
 	padding: 0;
 	border-spacing: 0;
+	image-rendering: pixelated;
 }
 
 /* CSS supporting the built-in Angband image sprite sheets. */
