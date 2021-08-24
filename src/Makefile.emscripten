@@ -8,7 +8,7 @@ EM_INCLUDE_PATH := ${EMSDK}/upstream/emscripten/system/include/
 # This is extremely ad-hoc. However not asyncifying aggressively has some advantages:
 #  - reduces compiled wasm size
 #  - prevents weird stack overflow errors in Safari
-NO_ASYNCIFY_FUNCS := quit,quit_fmt,borg_sort_aux,vformat,sscanf,borg_notice,borg_notice_aux1,Term_fresh,Term_fresh_row_pict,Term_fresh_row_text,Term_fresh_row_both,Term_mbstowcs,Term_activate
+NO_ASYNCIFY_FUNCS := quit,quit_fmt,borg_sort_aux,vformat,sscanf,borg_notice,borg_notice_aux1,Term_fresh,Term_fresh_row_pict,Term_fresh_row_text,Term_fresh_row_both,Term_mbstowcs,Term_activate,vstrnfmt,vfiprintf,qsort,game_event_dispatch
 
 # Basic compiler stuff
 CC := emcc
